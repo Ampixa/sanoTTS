@@ -1,22 +1,54 @@
-# sanoTTS — distill a tiny neural voice that runs anywhere
+# sanoTTS — a tiny neural voice that runs anywhere
 
-***sano*** — "sound" / "healthy" (Latin · Spanish · Italian · Esperanto). A lean,
-*sound* neural TTS.
+***sano*** (सानो) — Nepali for **"small."** A small neural TTS: distill a Piper/VITS
+teacher voice into a **~1.4M-parameter** model that runs with **no cloud and no
+NPU** — real-time on a ~$3 ESP32-S3 (out a GPIO into an LM386 and a speaker), or in
+the browser via WASM.
 
-Distill a Piper/VITS teacher voice into a **sub-1M-parameter** neural TTS, then
-run it with **no cloud and no NPU** — real-time on a ~$3 ESP32-S3 (out a GPIO into
-an LM386 and a speaker), or in the browser via WASM.
+![text in → ESP32 → speech out](docs/assets/saanotts-mcu-hero.png)
 
-The reference voice (en_US "Kristin") is **~745k int8 params**, runs **faster than
-real time on the ESP32-S3**, and is intelligible on-device (Whisper WER ~18% with
-on-chip espeak G2P). It's a full stack — duration + acoustic + iSTFT decoder —
-distilled from the teacher, not a lookup of pre-rendered clips.
+It's a full neural stack — duration → acoustic → iSTFT decoder — distilled from the
+teacher, not a lookup of pre-rendered clips. The on-device variant shrinks to
+**~745k int8 params**, runs **faster than real time on the ESP32-S3**, and stays
+intelligible on-chip (Whisper WER ~18% with on-chip espeak G2P).
+
+## How it stacks up
+
+Open small-scale TTS on an honest gate — a diverse 24-sentence set scored with the
+**same** no-reference suite (SCOREQ / UTMOS are naturalness predictors, DNSMOS-SIG
+is signal quality; higher is better). Parameter counts are inference-time and
+exclude the shared external G2P.
+
+| System | Params | SCOREQ | UTMOS | DNS-SIG |
+| --- | ---: | :---: | :---: | :---: |
+| **sanoTTS** | **1.40 M** | **4.09** | **3.98** | 3.58 |
+| TinyTTS | 1.62 M | 3.94 | 3.65 | **3.62** |
+| Inflect Nano | 4.63 M | 3.81 | 3.65 | 3.58 |
+| Kitten TTS nano | 15 M | 3.02 | 3.58 | 3.43 |
+| _Piper (teacher)_ | _~15 M_ | _4.68_ | _4.42_ | _3.60_ |
+| _Kokoro_ | _82 M_ | _4.90_ | _4.52_ | _3.70_ |
+
+sanoTTS is the **smallest** model here and the **best on naturalness (SCOREQ and
+UTMOS) among everything up to 15M params** — beating TinyTTS while being smaller,
+and it's the only one that runs a full neural stack on a $3 MCU. Parameter count
+isn't destiny at this scale: Kitten TTS at 10× the size scores a full SCOREQ point
+lower. The frontier only pulls ahead at the teacher (~15M) and Kokoro (82M, 60×
+larger) — a gap we don't claim to close. Reproduce it with `tools/eval_mos_all.py`
++ `tools/eval_scorecard.py`.
+
+## How it works
+
+![text → duration → acoustic → decoder → audio](docs/assets/saanotts-signal-path.png)
+
+Piper provides phoneme IDs; a duration student predicts timing; an acoustic student
+predicts the generator latents; a compact decoder student renders 22 kHz audio via
+an iSTFT head. All three are distilled from the teacher and quantized to int8.
 
 ## Distill your own voice
 
 The end-to-end recipe is [`docs/distillation-recipe.md`](docs/distillation-recipe.md):
 build a probe pack from a Piper teacher → train the duration, acoustic-latent, and
-decoder students → joint finetune → export int8. Porting to a new language is
+decoder students → joint finetune → export int8. New-language porting is
 [`docs/roota-language-porting-recipe.md`](docs/roota-language-porting-recipe.md).
 
 ```bash
@@ -50,7 +82,7 @@ ports), `web/` (browser demo), `configs/` + `data/textsets/` (contracts).
 
 GPLv3 — see [`LICENSE`](LICENSE). The distillation + G2P path builds on
 [piper](https://github.com/OHF-Voice/piper1-gpl) and
-[espeak-ng](https://github.com/espeak-ng/espeak-ng), both GPLv3, so the project
-as a whole is GPLv3.
+[espeak-ng](https://github.com/espeak-ng/espeak-ng), both GPLv3, so the project as a
+whole is GPLv3.
 
 Copyright (C) 2026 Ampixa.
