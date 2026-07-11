@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "saanotts"
+version = "0.1.0.dev0"
+description = "Research and tooling for compact Piper/VITS-distilled TTS"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+research = [
+  "numpy>=1.26",
+  "onnx>=1.16",
+  "onnxruntime>=1.17",
+  "piper-tts>=1.3",
+  "scipy>=1.11",
+  "scoreq",
+  "soundfile>=0.12",
+  "torch>=2.3",
+  "torchcodec",
+]
+
+[project.scripts]
+saanotts-paths = "saanotts.workspace:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

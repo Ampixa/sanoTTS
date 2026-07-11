@@ -1,0 +1,12 @@
+{"id":"en-001","text":"The small voice model should read this sentence clearly without rushing."}
+{"id":"en-002","text":"A quiet assistant needs stable timing, clean vowels, and no metallic ringing."}
+{"id":"en-003","text":"Please compare the teacher output with the student output on unfamiliar text."}
+{"id":"en-004","text":"Numbers like 42, 105, and 2026 must be handled by the frontend before synthesis."}
+{"id":"en-005","text":"The decoder is allowed to be tiny, but it must not sound like a broken radio."}
+{"id":"en-006","text":"If the oracle latent sounds bad, blame the decoder before blaming the acoustic model."}
+{"id":"en-007","text":"This longer sentence checks whether breath groups and pauses remain natural after distillation."}
+{"id":"en-008","text":"Edge devices need fast speech synthesis that still feels pleasant for repeated listening."}
+{"id":"en-009","text":"The package should expose phoneme IDs first, then add a standalone text frontend later."}
+{"id":"en-010","text":"A useful benchmark needs short, medium, and longer sentences in the held out set."}
+{"id":"en-011","text":"Do not hide the teacher dependency inside a self contained model claim."}
+{"id":"en-012","text":"The final English student should stay under the same parameter budget as Nepali."}

@@ -1,0 +1,20 @@
+{"id":"kdec-eval-0001","text":"The tiny voice should read this fresh sentence without borrowing rhythm from the training set."}
+{"id":"kdec-eval-0002","text":"Mira opened the toolbox, found two screws missing, and laughed at the timing."}
+{"id":"kdec-eval-0003","text":"Please say the code is 7391, then pause before saying the door is unlocked."}
+{"id":"kdec-eval-0004","text":"A smooth decoder should not leave a metallic shadow after warm vowels."}
+{"id":"kdec-eval-0005","text":"The weather report mentioned fog, drizzle, and a cold wind from the harbor."}
+{"id":"kdec-eval-0006","text":"Does the final word stop cleanly, or does a small robot keep talking?"}
+{"id":"kdec-eval-0007","text":"I need practical speech for a local assistant, not a laboratory trick."}
+{"id":"kdec-eval-0008","text":"The bookshelf tilted slowly until the dictionary slid onto the floor."}
+{"id":"kdec-eval-0009","text":"Say ordinary things: groceries, parking ticket, green umbrella, and morning tea."}
+{"id":"kdec-eval-0010","text":"This sample has commas, numbers, 18 percent, and one abrupt ending."}
+{"id":"kdec-eval-0011","text":"A story voice needs calm pacing when the sentence becomes longer than expected."}
+{"id":"kdec-eval-0012","text":"The microphone is cheap, but the model should not add extra crackle."}
+{"id":"kdec-eval-0013","text":"Please read this as if it were a helpful notification on a quiet phone."}
+{"id":"kdec-eval-0014","text":"The scientist measured the tail artifact after the vowel in machine."}
+{"id":"kdec-eval-0015","text":"Do not rush the ending just because the model is tiny."}
+{"id":"kdec-eval-0016","text":"If the decoder improves, teacher latents should sound cleaner immediately."}
+{"id":"kdec-eval-0017","text":"A tired driver needs clear directions, not dramatic narration."}
+{"id":"kdec-eval-0018","text":"Say river, silver, window, yellow, and tomorrow in a natural line."}
+{"id":"kdec-eval-0019","text":"The sentence ends here, and the audio should end with it."}
+{"id":"kdec-eval-0020","text":"This held-out prompt is deliberately different from please read item number something."}

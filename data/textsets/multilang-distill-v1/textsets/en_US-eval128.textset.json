@@ -1,0 +1,521 @@
+{
+  "schema_version": 1,
+  "name": "en_US-eval128",
+  "language": "en_US",
+  "source_jsonl": "data/textsets/multilang-distill-v1/en_US.eval.jsonl",
+  "selection_policy": "all eval rows, fixed order",
+  "texts": [
+    {
+      "id": "en_US-eval-00001",
+      "text": "Please read item 1 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00002",
+      "text": "Please read item 2 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00003",
+      "text": "Please read item 3 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00004",
+      "text": "Please read item 4 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00005",
+      "text": "Please read item 5 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00006",
+      "text": "Please read item 6 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00007",
+      "text": "Please read item 7 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00008",
+      "text": "Please read item 8 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00009",
+      "text": "Please read item 9 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00010",
+      "text": "Please read item 10 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00011",
+      "text": "Please read item 11 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00012",
+      "text": "Please read item 12 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00013",
+      "text": "Please read item 13 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00014",
+      "text": "Please read item 14 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00015",
+      "text": "Please read item 15 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00016",
+      "text": "Please read item 16 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00017",
+      "text": "Please read item 17 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00018",
+      "text": "Please read item 18 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00019",
+      "text": "Please read item 19 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00020",
+      "text": "Please read item 20 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00021",
+      "text": "Please read item 21 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00022",
+      "text": "Please read item 22 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00023",
+      "text": "Please read item 23 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00024",
+      "text": "Please read item 24 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00025",
+      "text": "Please read item 25 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00026",
+      "text": "Please read item 26 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00027",
+      "text": "Please read item 27 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00028",
+      "text": "Please read item 28 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00029",
+      "text": "Please read item 29 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00030",
+      "text": "Please read item 30 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00031",
+      "text": "Please read item 31 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00032",
+      "text": "Please read item 32 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00033",
+      "text": "Please read item 33 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00034",
+      "text": "Please read item 34 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00035",
+      "text": "Please read item 35 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00036",
+      "text": "Please read item 36 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00037",
+      "text": "Please read item 37 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00038",
+      "text": "Please read item 38 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00039",
+      "text": "Please read item 39 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00040",
+      "text": "Please read item 40 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00041",
+      "text": "Please read item 41 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00042",
+      "text": "Please read item 42 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00043",
+      "text": "Please read item 43 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00044",
+      "text": "Please read item 44 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00045",
+      "text": "Please read item 45 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00046",
+      "text": "Please read item 46 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00047",
+      "text": "Please read item 47 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00048",
+      "text": "Please read item 48 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00049",
+      "text": "Please read item 49 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00050",
+      "text": "Please read item 50 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00051",
+      "text": "Please read item 51 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00052",
+      "text": "Please read item 52 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00053",
+      "text": "Please read item 53 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00054",
+      "text": "Please read item 54 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00055",
+      "text": "Please read item 55 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00056",
+      "text": "Please read item 56 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00057",
+      "text": "Please read item 57 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00058",
+      "text": "Please read item 58 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00059",
+      "text": "Please read item 59 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00060",
+      "text": "Please read item 60 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00061",
+      "text": "Please read item 61 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00062",
+      "text": "Please read item 62 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00063",
+      "text": "Please read item 63 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00064",
+      "text": "Please read item 64 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00065",
+      "text": "Please read item 65 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00066",
+      "text": "Please read item 66 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00067",
+      "text": "Please read item 67 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00068",
+      "text": "Please read item 68 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00069",
+      "text": "Please read item 69 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00070",
+      "text": "Please read item 70 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00071",
+      "text": "Please read item 71 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00072",
+      "text": "Please read item 72 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00073",
+      "text": "Please read item 73 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00074",
+      "text": "Please read item 74 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00075",
+      "text": "Please read item 75 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00076",
+      "text": "Please read item 76 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00077",
+      "text": "Please read item 77 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00078",
+      "text": "Please read item 78 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00079",
+      "text": "Please read item 79 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00080",
+      "text": "Please read item 80 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00081",
+      "text": "Please read item 81 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00082",
+      "text": "Please read item 82 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00083",
+      "text": "Please read item 83 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00084",
+      "text": "Please read item 84 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00085",
+      "text": "Please read item 85 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00086",
+      "text": "Please read item 86 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00087",
+      "text": "Please read item 87 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00088",
+      "text": "Please read item 88 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00089",
+      "text": "Please read item 89 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00090",
+      "text": "Please read item 90 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00091",
+      "text": "Please read item 91 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00092",
+      "text": "Please read item 92 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00093",
+      "text": "Please read item 93 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00094",
+      "text": "Please read item 94 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00095",
+      "text": "Please read item 95 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00096",
+      "text": "Please read item 96 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00097",
+      "text": "Please read item 97 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00098",
+      "text": "Please read item 98 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00099",
+      "text": "Please read item 99 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00100",
+      "text": "Please read item 100 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00101",
+      "text": "Please read item 101 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00102",
+      "text": "Please read item 102 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00103",
+      "text": "Please read item 103 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00104",
+      "text": "Please read item 104 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00105",
+      "text": "Please read item 105 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00106",
+      "text": "Please read item 106 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00107",
+      "text": "Please read item 107 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00108",
+      "text": "Please read item 108 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00109",
+      "text": "Please read item 109 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00110",
+      "text": "Please read item 110 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00111",
+      "text": "Please read item 111 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00112",
+      "text": "Please read item 112 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00113",
+      "text": "Please read item 113 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00114",
+      "text": "Please read item 114 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00115",
+      "text": "Please read item 115 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00116",
+      "text": "Please read item 116 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00117",
+      "text": "Please read item 117 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00118",
+      "text": "Please read item 118 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00119",
+      "text": "Please read item 119 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00120",
+      "text": "Please read item 120 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00121",
+      "text": "Please read item 121 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00122",
+      "text": "Please read item 122 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00123",
+      "text": "Please read item 123 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00124",
+      "text": "Please read item 124 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00125",
+      "text": "Please read item 125 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00126",
+      "text": "Please read item 126 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00127",
+      "text": "Please read item 127 with a calm pause, then continue with the next phrase.  Variant 3."
+    },
+    {
+      "id": "en_US-eval-00128",
+      "text": "Please read item 128 with a calm pause, then continue with the next phrase.  Variant 3."
+    }
+  ]
+}

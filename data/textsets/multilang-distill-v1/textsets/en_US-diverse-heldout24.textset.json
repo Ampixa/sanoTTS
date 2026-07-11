@@ -1,0 +1,105 @@
+{
+ "schema_version": 1,
+ "name": "en_US-diverse-heldout24",
+ "language": "en_US",
+ "source_jsonl": "data/textsets/multilang-distill-v1/en_US.diverse-heldout24.jsonl",
+ "selection_policy": "all 24 rows, LJSpeech validation, disjoint from all training text",
+ "texts": [
+  {
+   "id": "en_US-diverse24-00001",
+   "text": "From those willing to join in establishing this hoped-for period of peace,"
+  },
+  {
+   "id": "en_US-diverse24-00002",
+   "text": "the fatal consequences whereof might be prevented if the justices of the peace were duly authorized"
+  },
+  {
+   "id": "en_US-diverse24-00003",
+   "text": "Hill had both feet on the car and was climbing aboard to assist President and Mrs. Kennedy."
+  },
+  {
+   "id": "en_US-diverse24-00004",
+   "text": "yet he could not overcome the strange fascination it had for him, and remained by the side of the corpse till the stretcher came."
+  },
+  {
+   "id": "en_US-diverse24-00005",
+   "text": "Roger D. Craig, a deputy sheriff of Dallas County,"
+  },
+  {
+   "id": "en_US-diverse24-00006",
+   "text": "Even the Caslon type when enlarged shows great shortcomings in this respect:"
+  },
+  {
+   "id": "en_US-diverse24-00007",
+   "text": "that he could only testify with certainty that the print was less than three days old."
+  },
+  {
+   "id": "en_US-diverse24-00008",
+   "text": "who came from his room ready dressed, a suspicious circumstance, as he was always late in the morning."
+  },
+  {
+   "id": "en_US-diverse24-00009",
+   "text": "and improve the morals of the prisoners, and shall insure the proper measure of punishment to convicted offenders."
+  },
+  {
+   "id": "en_US-diverse24-00010",
+   "text": "On the seventh July, eighteen thirty-seven,"
+  },
+  {
+   "id": "en_US-diverse24-00011",
+   "text": "The first physician to see the President at Parkland Hospital was Dr. Charles J. Carrico, a resident in general surgery."
+  },
+  {
+   "id": "en_US-diverse24-00012",
+   "text": "Mr. Wakefield winds up his graphic but somewhat sensational account by describing another religious service, which may appropriately be inserted here."
+  },
+  {
+   "id": "en_US-diverse24-00013",
+   "text": "At last, in the twentieth month,"
+  },
+  {
+   "id": "en_US-diverse24-00014",
+   "text": "seeing that since the establishment of the Central Criminal Court, Newgate received prisoners for trial from several counties,"
+  },
+  {
+   "id": "en_US-diverse24-00015",
+   "text": "reached the same conclusion as Latona that the prints found on the cartons were those of Lee Harvey Oswald."
+  },
+  {
+   "id": "en_US-diverse24-00016",
+   "text": "This is the approximate time he entered the roominghouse, according to Earlene Roberts, the housekeeper there."
+  },
+  {
+   "id": "en_US-diverse24-00017",
+   "text": "This plan of mine is no attack on the Court;"
+  },
+  {
+   "id": "en_US-diverse24-00018",
+   "text": "is closely reproduced in the life-history of existing deer. Or, in other words,"
+  },
+  {
+   "id": "en_US-diverse24-00019",
+   "text": "he was reported to have fallen away to a shadow."
+  },
+  {
+   "id": "en_US-diverse24-00020",
+   "text": "long narrow rooms -- one thirty-six feet, six twenty-three feet, and the eighth eighteen,"
+  },
+  {
+   "id": "en_US-diverse24-00021",
+   "text": "during the morning of November twenty-two prior to the motorcade."
+  },
+  {
+   "id": "en_US-diverse24-00022",
+   "text": "together with a great increase in the payrolls, there has come a substantial rise in the total of industrial profits"
+  },
+  {
+   "id": "en_US-diverse24-00023",
+   "text": "contracted with sheriffs and conveners to work by the job."
+  },
+  {
+   "id": "en_US-diverse24-00024",
+   "text": "The inadequacy of the jail was noticed and reported upon again and again by the grand juries of the city of London,"
+  }
+ ]
+}

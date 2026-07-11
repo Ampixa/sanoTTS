@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "name": "en_US-kristin-u600-diverse32",
+  "language": "en_US",
+  "created_date": "2026-07-01",
+  "selection_policy": "Manual fixed duration/intelligibility gate for Kristin u600; covers short, medium, long, punctuation, numbers, abbreviations, questions, quotes, and pause-sensitive clauses.",
+  "notes": [
+    "This replaces the narrow en_US.eval.jsonl gate for duration decisions.",
+    "Rows should be kept fixed so duration, acoustic, and decoder changes remain comparable.",
+    "The gate is intended for module-isolation dashboards and duration-ratio checks, not for training."
+  ],
+  "texts": [
+    {
+      "id": "kdur-001",
+      "index": 1,
+      "category": "short",
+      "text": "The small voice should speak clearly."
+    },
+    {
+      "id": "kdur-002",
+      "index": 2,
+      "category": "short",
+      "text": "Please slow down and finish each word."
+    },
+    {
+      "id": "kdur-003",
+      "index": 3,
+      "category": "medium",
+      "text": "The tiny speaker needs clean vowels, stable rhythm, and no metallic buzz."
+    },
+    {
+      "id": "kdur-004",
+      "index": 4,
+      "category": "medium",
+      "text": "A useful assistant should answer calmly without rushing through punctuation."
+    },
+    {
+      "id": "kdur-005",
+      "index": 5,
+      "category": "comma",
+      "text": "Wait, take a breath, then read the next phrase."
+    },
+    {
+      "id": "kdur-006",
+      "index": 6,
+      "category": "comma",
+      "text": "If the duration model is too short, the words run together."
+    },
+    {
+      "id": "kdur-007",
+      "index": 7,
+      "category": "question",
+      "text": "Can you hear whether the compact model pauses naturally?"
+    },
+    {
+      "id": "kdur-008",
+      "index": 8,
+      "category": "question",
+      "text": "Did the teacher say yes, or did the student say no?"
+    },
+    {
+      "id": "kdur-009",
+      "index": 9,
+      "category": "exclamation",
+      "text": "Stop rushing! This sentence needs a clear ending."
+    },
+    {
+      "id": "kdur-010",
+      "index": 10,
+      "category": "semicolon",
+      "text": "The decoder sounds small; the rhythm should still feel natural."
+    },
+    {
+      "id": "kdur-011",
+      "index": 11,
+      "category": "colon",
+      "text": "Check three things: timing, clarity, and the robotic tail."
+    },
+    {
+      "id": "kdur-012",
+      "index": 12,
+      "category": "quote",
+      "text": "She said, \"read this slowly,\" and then closed the notebook."
+    },
+    {
+      "id": "kdur-013",
+      "index": 13,
+      "category": "numbers",
+      "text": "Numbers like 42, 105, and 2026 must not break the rhythm."
+    },
+    {
+      "id": "kdur-014",
+      "index": 14,
+      "category": "numbers",
+      "text": "The package weighs 3.5 kilograms and costs 42 dollars before tax."
+    },
+    {
+      "id": "kdur-015",
+      "index": 15,
+      "category": "time",
+      "text": "Dr. Morgan sent the note at 8:15 a.m. before the API review."
+    },
+    {
+      "id": "kdur-016",
+      "index": 16,
+      "category": "technical",
+      "text": "The acoustic student predicts a latent sequence for the compact decoder."
+    },
+    {
+      "id": "kdur-017",
+      "index": 17,
+      "category": "technical",
+      "text": "A duration error can make a good decoder sound clipped and confusing."
+    },
+    {
+      "id": "kdur-018",
+      "index": 18,
+      "category": "contrast",
+      "text": "The teacher sounds smooth, but the student still has a delayed robotic tail."
+    },
+    {
+      "id": "kdur-019",
+      "index": 19,
+      "category": "contrast",
+      "text": "The first sample is slow enough, while the second sample is too compressed."
+    },
+    {
+      "id": "kdur-020",
+      "index": 20,
+      "category": "long",
+      "text": "When the meeting ended, everyone stayed quiet for a moment because the decision was important."
+    },
+    {
+      "id": "kdur-021",
+      "index": 21,
+      "category": "long",
+      "text": "This longer sentence checks whether breath groups and pauses remain natural after distillation."
+    },
+    {
+      "id": "kdur-022",
+      "index": 22,
+      "category": "long",
+      "text": "If the acoustic model drifts away from the teacher manifold, the decoder may produce noise instead of speech."
+    },
+    {
+      "id": "kdur-023",
+      "index": 23,
+      "category": "names",
+      "text": "Kristin, Morgan, and Taylor compared the teacher voice with the compact voice."
+    },
+    {
+      "id": "kdur-024",
+      "index": 24,
+      "category": "rare_words",
+      "text": "The algorithm handles synthesis, calibration, quantization, and waveform decoding."
+    },
+    {
+      "id": "kdur-025",
+      "index": 25,
+      "category": "pause_sensitive",
+      "text": "Read the first clause, pause briefly, and then continue with the second clause."
+    },
+    {
+      "id": "kdur-026",
+      "index": 26,
+      "category": "pause_sensitive",
+      "text": "Before you answer, listen for the hiss that follows each voiced sound."
+    },
+    {
+      "id": "kdur-027",
+      "index": 27,
+      "category": "short_question",
+      "text": "Is this sentence intelligible?"
+    },
+    {
+      "id": "kdur-028",
+      "index": 28,
+      "category": "short_statement",
+      "text": "This sample should not sound frantic."
+    },
+    {
+      "id": "kdur-029",
+      "index": 29,
+      "category": "frontend",
+      "text": "The frontend should expose phoneme IDs before the standalone package claims independence."
+    },
+    {
+      "id": "kdur-030",
+      "index": 30,
+      "category": "frontend",
+      "text": "Do not hide the teacher dependency inside a self contained model claim."
+    },
+    {
+      "id": "kdur-031",
+      "index": 31,
+      "category": "stress",
+      "text": "A reliable text to speech model must pronounce unfamiliar phrases without rushing."
+    },
+    {
+      "id": "kdur-032",
+      "index": 32,
+      "category": "stress",
+      "text": "This final sentence checks rhythm, clarity, pauses, and basic intelligibility."
+    }
+  ]
+}

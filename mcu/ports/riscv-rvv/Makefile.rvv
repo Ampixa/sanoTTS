@@ -1,0 +1,39 @@
+# Makefile.rvv -- build & run the RVV port kernel tests.
+#
+# Cross-compile for riscv64 with vectors and run under qemu-user:
+#   make -f Makefile.rvv run          # vlen=128 and vlen=256 under QEMU
+#   make -f Makefile.rvv host         # scalar-fallback build on any host cc
+#
+# Toolchain used for validation: Ubuntu 24.04 gcc-riscv64-linux-gnu 13.3.0
+# (RVV intrinsics v0.11) + qemu-user 8.2.2.
+
+CROSS   ?= riscv64-linux-gnu-gcc
+QEMU    ?= qemu-riscv64
+HOSTCC  ?= cc
+
+INC      = -I../../include
+CFLAGS   = -O2 -Wall -Wextra $(INC)
+RVFLAGS  = -march=rv64gcv -mabi=lp64d -static
+
+SRCS     = snt_port_rvv.c test_rvv_kernels.c
+
+test_rvv: $(SRCS) ../../include/snt_port.h
+	$(CROSS) $(CFLAGS) $(RVFLAGS) -o $@ $(SRCS)
+
+.PHONY: run run-vlen128 run-vlen256 host clean
+
+run: run-vlen128 run-vlen256
+
+run-vlen128: test_rvv
+	$(QEMU) -cpu rv64,v=true,vlen=128 ./test_rvv
+
+run-vlen256: test_rvv
+	$(QEMU) -cpu rv64,v=true,vlen=256 ./test_rvv
+
+# Scalar fallback path (no RVV): proves the file compiles anywhere.
+host: $(SRCS)
+	$(HOSTCC) $(CFLAGS) -o test_scalar $(SRCS)
+	./test_scalar
+
+clean:
+	rm -f test_rvv test_scalar

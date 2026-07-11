@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>saanoTTS — neural text-to-speech in your browser</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🔊</text></svg>">
+<style>
+  :root { color-scheme: light dark; --fg:#111; --muted:#666; --bg:#fafafa;
+          --card:#fff; --line:#e5e5e5; --accent:#2a6; --bad:#c33; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg:#eee; --muted:#9aa; --bg:#0d0f12; --card:#161a1f;
+            --line:#252b33; --accent:#4c9; --bad:#e66; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",
+         Roboto,Helvetica,Arial,sans-serif; color:var(--fg); background:var(--bg); }
+  main { max-width:760px; margin:0 auto; padding:2.5rem 1.25rem 4rem; }
+  h1 { font-size:1.7rem; margin:.2rem 0 .3rem; letter-spacing:-.01em; }
+  .sub { color:var(--muted); margin:0 0 1.6rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px;
+          padding:1.25rem 1.35rem; margin:1rem 0; }
+  button { font:inherit; font-weight:600; padding:.7rem 1.3rem; border-radius:9px;
+           border:1px solid var(--accent); background:var(--accent); color:#fff;
+           cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  button.secondary { background:transparent; color:var(--accent); }
+  .row { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; }
+  .stat { display:grid; grid-template-columns:auto 1fr; gap:.35rem 1.1rem;
+          margin-top:1rem; font-variant-numeric:tabular-nums; }
+  .stat dt { color:var(--muted); }
+  .stat dd { margin:0; font-weight:600; }
+  .badge { display:inline-block; padding:.15rem .55rem; border-radius:999px;
+           font-size:.8rem; font-weight:700; }
+  .ok  { background:color-mix(in srgb,var(--accent) 18%,transparent); color:var(--accent); }
+  .err { background:color-mix(in srgb,var(--bad) 18%,transparent); color:var(--bad); }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.9em; }
+  .note { color:var(--muted); font-size:.9rem; }
+  a { color:var(--accent); }
+  #log { white-space:pre-wrap; font-family:ui-monospace,Menlo,monospace;
+         font-size:.82rem; color:var(--muted); margin-top:.8rem; }
+  label.toggle { display:flex; gap:.5rem; align-items:center; color:var(--muted);
+                 font-size:.9rem; cursor:pointer; }
+</style>
+</head>
+<body>
+<main>
+  <h1>saanoTTS in your browser</h1>
+  <p class="sub">The full neural text-to-speech stack — duration, acoustic, and
+  iSTFT decoder — compiled to WebAssembly and run entirely on this page. No
+  server, no network calls after load, no WebGPU. The same C99 core that runs
+  on an ESP32 microcontroller, in ~600&nbsp;KB of int8 weights.</p>
+
+  <div class="card">
+    <div class="row">
+      <button id="go" disabled>Synthesize</button>
+      <button id="play" class="secondary" disabled>▶ Play again</button>
+      <span id="state" class="note">loading runtime…</span>
+    </div>
+    <label class="toggle" style="margin-top:.9rem">
+      <input type="checkbox" id="predict"> use the model's own duration head
+      (unvalidated length) instead of reference durations
+    </label>
+
+    <dl class="stat" id="stats" hidden>
+      <dt>Verification</dt><dd id="corr">—</dd>
+      <dt>Audio produced</dt><dd id="dur">—</dd>
+      <dt>Compute time (this CPU)</dt><dd id="time">—</dd>
+      <dt>Speed on this machine</dt><dd id="rtf">—</dd>
+    </dl>
+    <div id="log"></div>
+  </div>
+
+  <p class="note">The <b>speed shown is this browser on your CPU</b>, not a
+  microcontroller measurement — a laptop runs this far faster than real time.
+  The point of the demo is that the <i>identical bit-exact runtime</i> executes
+  client-side; the per-device MCU numbers (ESP32-S3 at 0.22× real time, etc.)
+  live in the <a href="https://github.com/Ampixa/saanotts-embedded">repo</a>.
+  The verification score is a live Pearson correlation of this run's PCM against
+  the PyTorch reference audio, computed in your browser.</p>
+</main>
+
+<script src="snt_tts.js"></script>
+<script>
+const SR = 22050;                 // model output sample rate (Hz)
+const ARENA = 320 * 1024;         // matches the host golden gate
+const OUT_CAP = 400000;           // float samples (~18s headroom)
+const ASSET = "assets/";
+
+const $ = id => document.getElementById(id);
+const logEl = $("log");
+const log = m => { logEl.textContent += m + "\n"; };
+
+let Mod = null, audioCtx = null, lastPcm = null;
+
+async function fetchBytes(name) {
+  const r = await fetch(ASSET + name);
+  if (!r.ok) throw new Error(`fetch ${name}: ${r.status}`);
+  return new Uint8Array(await r.arrayBuffer());
+}
+function toHeap(bytes) {
+  const p = Mod._malloc(bytes.length);
+  Mod.HEAPU8.set(bytes, p);
+  return p;
+}
+function pearson(a, b) {
+  const n = Math.min(a.length, b.length);
+  let sa=0, sb=0, saa=0, sbb=0, sab=0;
+  for (let i=0;i<n;i++){ const x=a[i],y=b[i];
+    sa+=x; sb+=y; saa+=x*x; sbb+=y*y; sab+=x*y; }
+  const cov = sab - sa*sb/n;
+  return cov / Math.sqrt((saa - sa*sa/n)*(sbb - sb*sb/n) + 1e-30);
+}
+
+let assets = null;
+async function loadAssets() {
+  if (assets) return assets;
+  const [front, dec, ids, durs, gold] = await Promise.all(
+    ["front_q8.bin","model_q8.bin","e2e_ids.bin","e2e_durs.bin","e2e_audio.bin"]
+      .map(fetchBytes));
+  assets = { front, dec, ids, durs,
+             gold: new Float32Array(gold.buffer, gold.byteOffset, gold.byteLength/4) };
+  return assets;
+}
+
+function play(pcm) {
+  audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+  const buf = audioCtx.createBuffer(1, pcm.length, SR);
+  buf.getChannelData(0).set(pcm);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf; src.connect(audioCtx.destination); src.start();
+}
+
+async function synth() {
+  $("go").disabled = true;
+  $("state").textContent = "synthesizing…";
+  logEl.textContent = "";
+  try {
+    const a = await loadAssets();
+    const usePredicted = $("predict").checked;
+
+    const frontP = toHeap(a.front);
+    const decP   = toHeap(a.dec);
+    const idsP   = toHeap(a.ids);
+    const nIds   = a.ids.byteLength / 4;
+    const dursP  = usePredicted ? 0 : toHeap(a.durs);
+    const arenaP = Mod._malloc(ARENA);
+    const outP   = Mod._malloc(OUT_CAP * 4);
+
+    const t0 = performance.now();
+    const n = Mod._snt_web_synthesize(
+      frontP, decP, idsP, nIds, dursP, arenaP, ARENA, outP, OUT_CAP);
+    const t1 = performance.now();
+
+    if (n < 0) throw new Error(`synth returned ${n} (arena/OOM or bad input)`);
+
+    // copy out before freeing / possible heap growth invalidates the view
+    const pcm = new Float32Array(n);
+    pcm.set(Mod.HEAPF32.subarray(outP>>2, (outP>>2)+n));
+    lastPcm = pcm;
+
+    Mod._free(frontP); Mod._free(decP); Mod._free(idsP);
+    if (dursP) Mod._free(dursP);
+    Mod._free(arenaP); Mod._free(outP);
+
+    const secs = n / SR;
+    const wall = (t1 - t0) / 1000;
+    const rtf  = wall / secs;
+    $("dur").textContent  = `${n.toLocaleString()} samples · ${secs.toFixed(2)} s @ ${SR/1000} kHz`;
+    $("time").textContent = `${wall.toFixed(3)} s`;
+    $("rtf").textContent  = rtf < 1
+        ? `${(1/rtf).toFixed(1)}× faster than real time`
+        : `${rtf.toFixed(2)}× real time (slower)`;
+
+    if (usePredicted) {
+      $("corr").innerHTML = `<span class="note">predicted durations — not length-matched to reference</span>`;
+    } else {
+      const c = pearson(pcm, a.gold);
+      const pass = c > 0.98;
+      $("corr").innerHTML =
+        `<span class="badge ${pass?'ok':'err'}">corr ${c.toFixed(4)}</span> ` +
+        `<span class="note">vs PyTorch reference${pass?' — matches':''}</span>`;
+    }
+    $("stats").hidden = false;
+    $("state").textContent = "done.";
+    $("play").disabled = false;
+    play(pcm);
+    log(`ids=${nIds} durations=${usePredicted?'predicted':'reference'} samples=${n}`);
+  } catch (e) {
+    $("state").innerHTML = `<span class="badge err">error</span>`;
+    log(String(e && e.message || e));
+  } finally {
+    $("go").disabled = false;
+  }
+}
+
+SaanoTTS().then(m => {
+  Mod = m;
+  $("state").textContent = "ready.";
+  $("go").disabled = false;
+  $("go").addEventListener("click", synth);
+  $("play").addEventListener("click", () => lastPcm && play(lastPcm));
+}).catch(e => {
+  $("state").innerHTML = `<span class="badge err">runtime failed to load</span>`;
+  log(String(e && e.message || e));
+});
+</script>
+</body>
+</html>

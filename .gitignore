@@ -1,0 +1,69 @@
+.DS_Store
+.playwright-mcp/
+**/__pycache__/
+*.pyc
+*.egg-info/
+/build/
+
+# Generated model/data artifacts. Keep reproducible scripts and docs in git.
+artifacts/
+*.ckpt
+*.gguf
+*.onnx
+*.onnx.data
+*.pt
+*.pth
+*.safetensors
+*.bin
+*.npz
+*.npy
+*.wav
+*.mp3
+*.flac
+*.m4a
+*.png
+!docs/assets/
+!docs/assets/*.png
+*.jpg
+*.jpeg
+*.webp
+
+# Small, immutable runtime fixtures are deliberately versioned for CI.
+!mcu/test/fixtures/**/*.bin
+
+# WASM demo build outputs (regenerate: bash mcu/ports/wasm/build.sh).
+web/snt_tts.js
+web/snt_tts.wasm
+web/assets/
+
+# Scratch/runtime folders.
+.venv/
+dist/
+logs/
+runs/
+tmp/
+esp32c3/test/emu_out/
+
+# Host build products. Source files with similar names remain tracked.
+/mcu/snt_golden_test
+/mcu/snt_test_*
+/esp32c3/fsd/fsd_e2e_fast
+/esp32c3/fsd/fsd_e2e_frozen
+/esp32c3/fsd/fsd_e2e_full
+/esp32c3/fsd/fsd_e2e_test
+/esp32c3/fsd/fsd_q8_test
+/esp32c3/fsd/fsd_test
+
+# LaTeX build products. Submission PDFs belong in release assets.
+/paper/*.aux
+/paper/*.bbl
+/paper/*.blg
+/paper/*.log
+/paper/*.out
+/paper/*.pdf
+
+# Scratchpad host build outputs.
+scratchpad/**/test_u600_acoustic
+scratchpad/**/test_u600_decoder
+scratchpad/**/test_u600_whole
+scratchpad/**/test_u600_pipe
