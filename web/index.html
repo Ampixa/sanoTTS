@@ -3,23 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>saanoTTS — neural text-to-speech in your browser</title>
+<title>saanoTTS — hear a tiny neural voice</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🔊</text></svg>">
 <style>
   :root { color-scheme: light dark; --fg:#111; --muted:#666; --bg:#fafafa;
-          --card:#fff; --line:#e5e5e5; --accent:#2a6; --bad:#c33; }
+          --card:#fff; --line:#e5e5e5; --accent:#2a6; --accent2:#57f; --bad:#c33; }
   @media (prefers-color-scheme: dark) {
     :root { --fg:#eee; --muted:#9aa; --bg:#0d0f12; --card:#161a1f;
-            --line:#252b33; --accent:#4c9; --bad:#e66; }
+            --line:#252b33; --accent:#4c9; --accent2:#8af; --bad:#e66; }
   }
   * { box-sizing: border-box; }
   body { margin:0; font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",
          Roboto,Helvetica,Arial,sans-serif; color:var(--fg); background:var(--bg); }
-  main { max-width:760px; margin:0 auto; padding:2.5rem 1.25rem 4rem; }
-  h1 { font-size:1.7rem; margin:.2rem 0 .3rem; letter-spacing:-.01em; }
-  .sub { color:var(--muted); margin:0 0 1.6rem; }
+  main { max-width:820px; margin:0 auto; padding:2.5rem 1.25rem 4rem; }
+  h1 { font-size:1.9rem; margin:.2rem 0 .3rem; letter-spacing:-.01em; }
+  h2 { font-size:1.25rem; margin:2.4rem 0 .4rem; letter-spacing:-.01em; }
+  .sub { color:var(--muted); margin:0 0 .4rem; }
+  .lede { font-size:1.05rem; margin:.4rem 0 1.4rem; }
+  .lede b { color:var(--fg); }
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px;
-          padding:1.25rem 1.35rem; margin:1rem 0; }
+          padding:1.1rem 1.25rem; margin:1rem 0; }
   button { font:inherit; font-weight:600; padding:.7rem 1.3rem; border-radius:9px;
            border:1px solid var(--accent); background:var(--accent); color:#fff;
            cursor:pointer; }
@@ -31,34 +34,128 @@
   .stat dt { color:var(--muted); }
   .stat dd { margin:0; font-weight:600; }
   .badge { display:inline-block; padding:.15rem .55rem; border-radius:999px;
-           font-size:.8rem; font-weight:700; }
+           font-size:.78rem; font-weight:700; }
   .ok  { background:color-mix(in srgb,var(--accent) 18%,transparent); color:var(--accent); }
   .err { background:color-mix(in srgb,var(--bad) 18%,transparent); color:var(--bad); }
+  .wip { background:color-mix(in srgb,var(--accent2) 16%,transparent); color:var(--accent2); }
   code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.9em; }
   .note { color:var(--muted); font-size:.9rem; }
   a { color:var(--accent); }
+
+  /* --- language gallery --- */
+  .langhead { display:flex; align-items:baseline; gap:.6rem; flex-wrap:wrap; }
+  .langhead h3 { font-size:1.1rem; margin:0; }
+  .langhead .meta { color:var(--muted); font-size:.85rem; }
+  .quote { margin:.7rem 0 .9rem; padding:.55rem .8rem; border-left:3px solid var(--line);
+           color:var(--fg); font-size:.98rem; }
+  .quote.rtl, .quote[lang="zh"] { font-size:1.05rem; }
+  .lanes { display:grid; gap:.55rem; }
+  .lane { display:grid; grid-template-columns:9.5rem 1fr; align-items:center;
+          gap:.6rem; }
+  .lane .who { font-weight:600; font-size:.9rem; }
+  .lane .who small { display:block; font-weight:400; color:var(--muted); font-size:.8rem; }
+  .lane.primary .who { color:var(--accent); }
+  audio { width:100%; height:38px; }
+  @media (max-width:560px) {
+    .lane { grid-template-columns:1fr; gap:.2rem; }
+    audio { height:34px; }
+  }
   #log { white-space:pre-wrap; font-family:ui-monospace,Menlo,monospace;
          font-size:.82rem; color:var(--muted); margin-top:.8rem; }
   label.toggle { display:flex; gap:.5rem; align-items:center; color:var(--muted);
                  font-size:.9rem; cursor:pointer; }
+  .foot { margin-top:3rem; padding-top:1.2rem; border-top:1px solid var(--line);
+          color:var(--muted); font-size:.9rem; }
 </style>
 </head>
 <body>
 <main>
-  <h1>saanoTTS in your browser</h1>
-  <p class="sub">The full neural text-to-speech stack — duration, acoustic, and
-  iSTFT decoder — compiled to WebAssembly and run entirely on this page. No
-  server, no network calls after load, no WebGPU. The same C99 core that runs
-  on an ESP32 microcontroller, in ~600&nbsp;KB of int8 weights.</p>
+  <h1>saanoTTS 🔊</h1>
+  <p class="sub"><b><i>sano</i></b> (सानो) — Nepali for <b>“small.”</b> A tiny neural
+  text-to-speech voice.</p>
+  <p class="lede">A full neural stack — duration → acoustic → iSTFT decoder — distilled
+  from a Piper/VITS teacher down to <b>~1.4M parameters</b>, small enough to run with
+  <b>no cloud and no NPU</b>: real-time on a ~$3 ESP32-S3 microcontroller, or right here
+  in your browser. Below you can <b>hear all four voices</b> and <b>run the English
+  runtime live</b> on this page.</p>
+
+  <h2>Hear the voices</h2>
+  <p class="note">One frozen evaluation sentence per language, three lanes each:
+  <b>saanoTTS</b> is our full ~1.4M student stack, <b>Piper teacher</b> is the ~15M model
+  it was distilled from (the reference), and <b>oracle decoder</b> feeds the teacher’s
+  own acoustics through our small decoder — an upper bound on what the decoder can do.
+  Trust your ear, not a metric.</p>
+
+  <!-- Nepali -->
+  <div class="card">
+    <div class="langhead">
+      <h3>Nepali 🇳🇵</h3>
+      <span class="meta">teacher <code>chitwan-medium</code> · student 1,474,771 params</span>
+    </div>
+    <p class="quote" lang="ne" dir="auto">देश भनेको अथवा देशको इतिहास भनेको फगत संख्या मात्रै होइन नि राजनीतिशाास्त्रको कोरा परिभाषामा चाै देश भनेको हामी चार वटा</p>
+    <div class="lanes">
+      <div class="lane primary"><span class="who">saanoTTS <small>~1.4M student</small></span><audio controls preload="none" src="samples/nepali-row01-student.mp3"></audio></div>
+      <div class="lane"><span class="who">Piper teacher <small>~15M reference</small></span><audio controls preload="none" src="samples/nepali-row01-teacher.mp3"></audio></div>
+      <div class="lane"><span class="who">Oracle decoder <small>teacher latents</small></span><audio controls preload="none" src="samples/nepali-row01-oracle-decoder.mp3"></audio></div>
+    </div>
+  </div>
+
+  <!-- English -->
+  <div class="card">
+    <div class="langhead">
+      <h3>English 🇺🇸</h3>
+      <span class="meta">teacher <code>en_US-kristin-medium</code> · student 1,390,936 params</span>
+    </div>
+    <p class="quote" lang="en">Please read item 1 with a calm pause, then continue with the next phrase. Variant 3.</p>
+    <div class="lanes">
+      <div class="lane primary"><span class="who">saanoTTS <small>~1.4M student</small></span><audio controls preload="none" src="samples/english-row01-student.mp3"></audio></div>
+      <div class="lane"><span class="who">Piper teacher <small>~15M reference</small></span><audio controls preload="none" src="samples/english-row01-teacher.mp3"></audio></div>
+      <div class="lane"><span class="who">Oracle decoder <small>teacher latents</small></span><audio controls preload="none" src="samples/english-row01-oracle-decoder.mp3"></audio></div>
+    </div>
+  </div>
+
+  <!-- Hindi -->
+  <div class="card">
+    <div class="langhead">
+      <h3>Hindi 🇮🇳</h3>
+      <span class="meta">teacher <code>hi_IN-pratham-medium</code> · student 1,499,407 params</span>
+    </div>
+    <p class="quote" lang="hi" dir="auto">कृपया वस्तु 1 को शांत विराम के साथ पढ़ो, फिर अगला वाक्य बोलो। Variant 3.</p>
+    <div class="lanes">
+      <div class="lane primary"><span class="who">saanoTTS <small>~1.4M student</small></span><audio controls preload="none" src="samples/hindi-row01-student.mp3"></audio></div>
+      <div class="lane"><span class="who">Piper teacher <small>~15M reference</small></span><audio controls preload="none" src="samples/hindi-row01-teacher.mp3"></audio></div>
+      <div class="lane"><span class="who">Oracle decoder <small>teacher latents</small></span><audio controls preload="none" src="samples/hindi-row01-oracle-decoder.mp3"></audio></div>
+    </div>
+  </div>
+
+  <!-- Chinese -->
+  <div class="card">
+    <div class="langhead">
+      <h3>Chinese 🇨🇳</h3>
+      <span class="meta">teacher <code>zh_CN-huayan-medium</code> · student 1,499,481 params</span>
+    </div>
+    <p class="quote" lang="zh">请用平稳的停顿朗读第1项，然后继续下一句话。 Variant 3.</p>
+    <div class="lanes">
+      <div class="lane primary"><span class="who">saanoTTS <small>~1.4M student</small></span><audio controls preload="none" src="samples/chinese-row01-student.mp3"></audio></div>
+      <div class="lane"><span class="who">Piper teacher <small>~15M reference</small></span><audio controls preload="none" src="samples/chinese-row01-teacher.mp3"></audio></div>
+      <div class="lane"><span class="who">Oracle decoder <small>teacher latents</small></span><audio controls preload="none" src="samples/chinese-row01-oracle-decoder.mp3"></audio></div>
+    </div>
+  </div>
+
+  <h2>Run the runtime live (English, in your browser)</h2>
+  <p class="note">This synthesizes one fixed English sentence with the <i>identical
+  bit-exact C99 runtime</i> that runs on the ESP32 — compiled to WebAssembly, executed
+  client-side. No server, no network after load, no WebGPU. It also verifies its own
+  output against the PyTorch reference in your browser.</p>
 
   <div class="card">
     <div class="row">
-      <button id="go" disabled>Synthesize</button>
+      <button id="go" disabled>Synthesize &amp; play</button>
       <button id="play" class="secondary" disabled>▶ Play again</button>
       <span id="state" class="note">loading runtime…</span>
     </div>
     <label class="toggle" style="margin-top:.9rem">
-      <input type="checkbox" id="predict"> use the model's own duration head
+      <input type="checkbox" id="predict"> use the model’s own duration head
       (unvalidated length) instead of reference durations
     </label>
 
@@ -72,12 +169,34 @@
   </div>
 
   <p class="note">The <b>speed shown is this browser on your CPU</b>, not a
-  microcontroller measurement — a laptop runs this far faster than real time.
-  The point of the demo is that the <i>identical bit-exact runtime</i> executes
-  client-side; the per-device MCU numbers (ESP32-S3 at 0.22× real time, etc.)
-  live in the <a href="https://github.com/Ampixa/saanotts-embedded">repo</a>.
-  The verification score is a live Pearson correlation of this run's PCM against
-  the PyTorch reference audio, computed in your browser.</p>
+  microcontroller measurement — a laptop runs this far faster than real time. The point
+  is that the <i>identical runtime</i> executes client-side; per-device MCU numbers
+  (ESP32-S3 at 0.22× real time, etc.) live in the
+  <a href="https://github.com/Ampixa/saanotts">repo</a>.</p>
+
+  <h2>Expanding — honest status</h2>
+  <p class="note">Beyond the four above, three more teachers are trained end-to-end but
+  <b>not yet demo-quality</b>, so there’s no audio to play here yet. The acoustic and
+  decoder lanes are strong in isolation; the weak lane is the full stack composed
+  together (full-stack cosine vs the teacher, higher is closer):</p>
+  <div class="card">
+    <div class="lanes" style="gap:.4rem">
+      <div class="lane"><span class="who">Indonesian <small><code>id_ID-news_tts-medium</code></small></span><span><span class="badge wip">full-stack cosine 0.43</span> <span class="note">in progress</span></span></div>
+      <div class="lane"><span class="who">Vietnamese <small><code>vi_VN-vais1000-medium</code></small></span><span><span class="badge wip">full-stack cosine 0.52</span> <span class="note">in progress</span></span></div>
+      <div class="lane"><span class="who">Telugu <small><code>te_IN-padmavathi-medium</code></small></span><span><span class="badge wip">full-stack cosine 0.56</span> <span class="note">in progress</span></span></div>
+    </div>
+    <p class="note" style="margin:.9rem 0 0">For reference, the four shipped voices clear
+    this bar comfortably. These three are a preview of the porting pipeline, not a quality
+    claim — we’ll add audio here when they cross into intelligible.</p>
+  </div>
+
+  <div class="foot">
+    <p>saanoTTS is open source under <b>GPL-3.0</b> — the distillation and G2P path build
+    on <a href="https://github.com/OHF-Voice/piper1-gpl">piper</a> and
+    <a href="https://github.com/espeak-ng/espeak-ng">espeak-ng</a>. Distill your own tiny
+    voice: <a href="https://github.com/Ampixa/saanotts">github.com/Ampixa/saanotts</a>.
+    Copyright © 2026 Ampixa.</p>
+  </div>
 </main>
 
 <script src="snt_tts.js"></script>

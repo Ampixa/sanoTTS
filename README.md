@@ -61,7 +61,9 @@ pip install -e .
 - **ESP32-S3 talking device** — a standalone WiFi dashboard: type text, the board
   phonemizes (on-chip espeak-ng) and speaks. See
   [`mcu/ports/esp32s3/`](mcu/ports/esp32s3/).
-- **Browser** — the full stack in WASM, no server. See [`web/`](web/).
+- **Browser** — the full stack in WASM, no server. **[▶ Hear all four voices and
+  run it live](https://ampixa.github.io/sanoTTS/)** (GitHub Pages); source in
+  [`web/`](web/).
 - **Other MCUs** — which chips can run it and how well:
   [`docs/mcu-classes-and-porting.md`](docs/mcu-classes-and-porting.md).
 

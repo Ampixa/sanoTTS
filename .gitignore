@@ -32,9 +32,18 @@ artifacts/
 !mcu/test/fixtures/**/*.bin
 
 # WASM demo build outputs (regenerate: bash mcu/ports/wasm/build.sh).
+# The browser demo is hosted on GitHub Pages, so its (small) prebuilt assets
+# and sample audio are deliberately versioned — the un-ignores below re-include
+# them past the global *.mp3 / web/* rules above.
 web/snt_tts.js
 web/snt_tts.wasm
 web/assets/
+!web/snt_tts.js
+!web/snt_tts.wasm
+!web/assets/
+!web/assets/*.bin
+!web/samples/
+!web/samples/*.mp3
 
 # Scratch/runtime folders.
 .venv/

@@ -1,0 +1,38 @@
+name: Deploy web demo to GitHub Pages
+
+# Publishes the self-contained browser demo in web/ (the WASM runtime + the
+# four-language sample gallery) to GitHub Pages. The demo is static — no build
+# step — so we just upload web/ as the Pages artifact.
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "web/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One live deployment at a time; don't cancel an in-flight publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deployment
+        uses: actions/deploy-pages@v4
