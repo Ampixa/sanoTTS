@@ -98,7 +98,7 @@
   <p class="statement">A full neural TTS in <b>~1.4M parameters</b>. No cloud, no NPU.
   Real-time on a <b>$3 microcontroller</b> — or right here in your browser.</p>
   <p class="lead" style="text-align:center">duration → acoustic → iSTFT decoder, distilled
-  from a Piper/VITS teacher and quantized to int8. Below: hear all four voices, and run the
+  from a Piper/VITS teacher and quantized to int8. Below: hear all six voices, and run the
   English runtime live on this page.</p>
 
   <hr>
@@ -119,15 +119,15 @@
 
   <div class="voice">
     <div class="head"><span class="lang">English 🇺🇸</span>
-      <span class="meta">teacher <code>en_US-kristin-medium</code> · 1,396,151 params</span>
-      <span class="pill">best · SCOREQ 4.09</span></div>
+      <span class="meta">teacher <code>en_US-amy-medium</code> · 1,455,180 params</span>
+      <span class="pill">best · SCOREQ 4.13</span></div>
     <p class="quote" lang="en">Even the Caslon type when enlarged shows great shortcomings in this respect:</p>
     <table class="lanes">
-      <tr><td class="who"><span class="flag">▸</span> sanoTTS</td><td><audio controls preload="none" src="samples/english-best-student.mp3"></audio></td></tr>
-      <tr><td class="who">Piper teacher</td><td><audio controls preload="none" src="samples/english-best-teacher.mp3"></audio></td></tr>
+      <tr><td class="who"><span class="flag">▸</span> sanoTTS</td><td><audio controls preload="none" src="samples/english-amy-student.mp3"></audio></td></tr>
+      <tr><td class="who">Piper teacher</td><td><audio controls preload="none" src="samples/english-amy-teacher.mp3"></audio></td></tr>
     </table>
-    <p class="note">This is the de-smoothed 1.4M web stack — beats open TinyTTS (3.94) on
-    naturalness (SCOREQ &amp; UTMOS) at a smaller size.</p>
+    <p class="note">SCOREQ 4.13 / UTMOS 4.10 at 1.46M params — beats open TinyTTS (3.94 / 3.65,
+    1.6M) on naturalness at a smaller size, and ties its signal cleanliness.</p>
   </div>
 
   <div class="voice">
@@ -180,21 +180,36 @@
 
   <hr>
 
+  <div class="voice">
+    <div class="head"><span class="lang">Vietnamese 🇻🇳</span>
+      <span class="meta">teacher <code>vi_VN-vais1000-medium</code> · 1,464,812 params</span></div>
+    <p class="quote" lang="vi" dir="auto">Vui lòng đọc mục 1 với khoảng dừng bình tĩnh, rồi tiếp tục câu tiếp theo. Variant 3.</p>
+    <table class="lanes">
+      <tr><td class="who"><span class="flag">▸</span> sanoTTS</td><td><audio controls preload="none" src="samples/vietnamese-student.mp3"></audio></td></tr>
+      <tr><td class="who">Piper teacher</td><td><audio controls preload="none" src="samples/vietnamese-teacher.mp3"></audio></td></tr>
+    </table>
+  </div>
+
+  <div class="voice">
+    <div class="head"><span class="lang">Indonesian 🇮🇩</span>
+      <span class="meta">teacher <code>id_ID-news_tts-medium</code> · 1,462,796 params</span></div>
+    <p class="quote" lang="id" dir="auto">Tolong baca butir 1 dengan jeda yang tenang, lalu lanjutkan ke kalimat berikutnya. Variant 3.</p>
+    <table class="lanes">
+      <tr><td class="who"><span class="flag">▸</span> sanoTTS</td><td><audio controls preload="none" src="samples/indonesian-student.mp3"></audio></td></tr>
+      <tr><td class="who">Piper teacher</td><td><audio controls preload="none" src="samples/indonesian-teacher.mp3"></audio></td></tr>
+    </table>
+  </div>
+
+  <hr>
+
   <h2>Expanding</h2>
-  <p class="note">Three more teachers were trained end-to-end (~1.5M each), but the full
-  student stack is <b>not yet demo-quality</b> — the acoustic/decoder lanes hold up in
-  isolation, the composed stack doesn't (full-stack cosine vs teacher; higher is closer).
-  Listening verdict below is candid, and there's no audio to ship yet.</p>
+  <p class="note">Vietnamese and Indonesian graduated from this section — their first stacks
+  composed badly (full-stack cosine 0.53 / 0.43), and a retrained pipeline (de-smoothed
+  acoustic + decoder adapted to predicted latents) fixed the composition. One remains:</p>
   <table class="lanes">
-    <tr><td class="who">Indonesian</td><td><span class="pill mute">cosine 0.43</span>
-      <span class="note">should be better at ~1.5M — in progress</span></td></tr>
-    <tr><td class="who">Vietnamese</td><td><span class="pill mute">cosine 0.53</span>
-      <span class="note">should be better at ~1.5M — in progress</span></td></tr>
     <tr><td class="who">Telugu</td><td><span class="pill mute">cosine 0.56</span>
-      <span class="note">full-student speech not yet usable — needs the interface fixed</span></td></tr>
+      <span class="note">full-student speech not yet usable — different failure lane, needs its own diagnosis</span></td></tr>
   </table>
-  <p class="note">The four above clear this bar comfortably. These three are a preview of the
-  porting pipeline, not a quality claim — audio lands here when they cross into intelligible.</p>
 
   <hr>
 

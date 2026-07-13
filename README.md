@@ -21,20 +21,21 @@ exclude the shared external G2P.
 
 | System | Params | SCOREQ | UTMOS | DNS-SIG |
 | --- | ---: | :---: | :---: | :---: |
-| **sanoTTS** | **1.40 M** | **4.09** | **3.98** | 3.58 |
+| **sanoTTS (amy)** | **1.46 M** | **4.13** | **4.10** | 3.61 |
 | TinyTTS | 1.62 M | 3.94 | 3.65 | **3.62** |
 | Inflect Nano | 4.63 M | 3.81 | 3.65 | 3.58 |
 | Kitten TTS nano | 15 M | 3.02 | 3.58 | 3.43 |
-| _Piper (teacher)_ | _~15 M_ | _4.68_ | _4.42_ | _3.60_ |
-| _Kokoro_ | _82 M_ | _4.90_ | _4.52_ | _3.70_ |
+| _Piper (teacher)_ | _~15 M_ | _4.71_ | _4.47_ | _3.65_ |
+| _Kokoro_ | _82 M_ | _4.89_ | _4.52_ | _3.69_ |
 
 sanoTTS is the **smallest** model here and the **best on naturalness (SCOREQ and
 UTMOS) among everything up to 15M params** — beating TinyTTS while being smaller,
-and it's the only one that runs a full neural stack on a $3 MCU. Parameter count
-isn't destiny at this scale: Kitten TTS at 10× the size scores a full SCOREQ point
-lower. The frontier only pulls ahead at the teacher (~15M) and Kokoro (82M, 60×
-larger) — a gap we don't claim to close. Reproduce it with `tools/eval_mos_all.py`
-+ `tools/eval_scorecard.py`.
+and effectively tying its signal cleanliness (DNS-SIG within noise). It's the only
+one that runs a full neural stack on a $3 MCU. Parameter count isn't destiny at
+this scale: Kitten TTS at 10× the size scores a full SCOREQ point lower. The
+frontier only pulls ahead at the teacher (~15M) and Kokoro (82M, 60× larger) — a
+gap we don't claim to close. Reproduce it with `tools/eval_mos_all.py` +
+`tools/eval_scorecard.py`.
 
 ## How it works
 
