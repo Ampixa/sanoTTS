@@ -1,0 +1,34 @@
+version: "0.1.0"
+description: >-
+  On-device neural text-to-speech: a portable C99 int8 iSTFT engine
+  (~745k params, ~680 KB weights). Feed it Piper phoneme ids (from a host
+  G2P tool); it synthesizes 22.05 kHz PCM on-chip, no network, no cloud TTS
+  call. Also ships an int8-decoder path for bigger Piper-class voices and
+  the sibilant fricative-noise fix, off by default.
+license: "GPL-3.0-or-later"
+url: "https://github.com/Ampixa/saanotts"
+repository: "https://github.com/Ampixa/saanotts.git"
+repository_info:
+  path: "arduino"
+documentation: "https://github.com/Ampixa/saanotts/blob/master/arduino/README.md"
+issues: "https://github.com/Ampixa/saanotts/issues"
+maintainers:
+  - "Ampixa <ashish@ampixa.com>"
+tags:
+  - tts
+  - text-to-speech
+  - speech-synthesis
+  - audio
+  - esp32
+  - istft
+  - int8
+  - piper
+# Only chips this library's own README documents as fitting/running (see
+# "Memory requirements" in README.md): esp32s3 is the measured reference
+# port, esp32c3 is measured-but-slow (Tier S scalar), plain esp32 fits by
+# memory analysis only. esp32s2/esp32p4/etc. are not claimed anywhere and
+# are deliberately omitted rather than guessed.
+targets:
+  - esp32
+  - esp32s3
+  - esp32c3

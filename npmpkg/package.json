@@ -2,7 +2,7 @@
   "name": "sanotts-web",
   "version": "0.1.0",
   "description": "Browser-native neural text-to-speech, WebAssembly, no server. Wraps the saanoTTS espeak-ng G2P + acoustic/decoder runtime used at https://ampixa.github.io/sanoTTS/.",
-  "license": "GPL-3.0",
+  "license": "GPL-3.0-or-later",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

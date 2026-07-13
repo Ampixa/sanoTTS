@@ -214,6 +214,44 @@ esp32:esp32:esp32s3 examples/SpeakGolden` (after providing the model blobs
 per "Model blobs" above, since the sketch will otherwise fail at runtime,
 not compile time, without them) is the natural next check to run.
 
+## Distribution channels
+
+| Channel | Status today | How to get the library |
+| --- | --- | --- |
+| Arduino IDE (.zip) | works now | zip the `arduino/` directory, Sketch → Include Library → Add .ZIP Library (see "Install" above) |
+| PlatformIO (`lib_deps` git URL) | works now | `lib_deps = https://github.com/Ampixa/saanotts.git#master` (see "Install" above) |
+| Arduino Library Manager | not yet submitted | none — no registry listing exists yet |
+| PlatformIO Registry (`pio pkg install`) | not yet published | none — no registry listing exists yet |
+| ESP-IDF Component Registry | not yet published | none — `idf_component.yml` manifest is prepared (`arduino/idf_component.yml`) but nothing has been uploaded |
+
+### Publishing to registries (maintainer note)
+
+None of the three package-manager registries below have had anything
+submitted or uploaded yet — this is a plan, not a status report.
+
+- **Arduino Library Manager** — tag a GitHub release of this repo, then
+  submit a one-time pull request adding the repo URL
+  (`https://github.com/Ampixa/saanotts`) to
+  [arduino/library-registry](https://github.com/arduino/library-registry).
+  Arduino's indexer re-scans the repo on every subsequent tag, so only the
+  first submission needs a PR. Run `arduino-lint` against `arduino/` before
+  submitting (see "Compile verification" above for why the full
+  `arduino-cli` toolchain wasn't installed in this environment).
+- **PlatformIO Registry** — `pio pkg publish` run from inside `arduino/`
+  (needs a PlatformIO account; `library.json` in this directory is already
+  in the required format).
+- **ESP-IDF Component Registry** — `compote component upload --name
+  sanotts --namespace ampixa` (needs an Espressif account and an
+  `IDF_COMPONENT_API_TOKEN`); manifest is `arduino/idf_component.yml`. Note
+  its `license: "GPL-3.0"` matches this directory's own
+  `library.properties`/`library.json`, but that bare SPDX identifier is
+  deprecated in favor of `GPL-3.0-only` or `GPL-3.0-or-later` — resolve
+  which one this project actually intends (the `sanotts` PyPI package's
+  `pypkg/pyproject.toml` already says `GPL-3.0-or-later`, a different
+  choice than this directory's own manifests) before the first real
+  upload, since the component registry may validate against current SPDX
+  identifiers strictly.
+
 ## License
 
 GPL-3.0 (see `LICENSE`).

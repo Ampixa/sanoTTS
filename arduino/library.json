@@ -2,7 +2,17 @@
   "name": "SanoTTS",
   "version": "0.1.0",
   "description": "On-device neural text-to-speech: a portable C99 int8 iSTFT engine (~745k params, ~680 KB weights) wrapped for Arduino/PlatformIO. Feed it Piper phoneme ids (from a host G2P tool); it synthesizes 22.05 kHz PCM on-chip. Also ships an int8-decoder path for bigger Piper-class voices and the sibilant fricative-noise fix, off by default.",
-  "keywords": ["tts", "text-to-speech", "speech-synthesis", "audio", "esp32", "rp2040", "istft", "int8", "piper"],
+  "keywords": [
+    "tts",
+    "text-to-speech",
+    "speech-synthesis",
+    "audio",
+    "esp32",
+    "rp2040",
+    "istft",
+    "int8",
+    "piper"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Ampixa/saanotts.git"
@@ -14,9 +24,16 @@
       "url": "https://ampixa.com"
     }
   ],
-  "license": "GPL-3.0",
-  "frameworks": ["arduino", "espidf"],
-  "platforms": ["espressif32", "raspberrypi", "*"],
+  "license": "GPL-3.0-or-later",
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "platforms": [
+    "espressif32",
+    "raspberrypi",
+    "*"
+  ],
   "headers": "SanoTTS.h",
   "build": {
     "flags": [
@@ -29,6 +46,14 @@
     ]
   },
   "export": {
-    "include": ["src", "examples", "extras", "library.properties", "library.json", "README.md", "LICENSE"]
+    "include": [
+      "src",
+      "examples",
+      "extras",
+      "library.properties",
+      "library.json",
+      "README.md",
+      "LICENSE"
+    ]
   }
 }

@@ -24,7 +24,18 @@ client-side.
 
 ## Install & use
 
-**Python** (CLI + library; voices download on first use):
+| Platform | Install | Then |
+| --- | --- | --- |
+| Python | `pip install sanotts` | `sanotts say "Hello" --voice amy -o hello.wav` |
+| Web (npm) | `npm install sanotts-web` | `const tts = await SanoTTS.load(); await tts.synthesize('Hello', {voice:'amy'})` |
+| Web (no build) | copy `dist/` + `voices/` | see [Deploy on your own site](#deploy-on-your-own-site) |
+| Arduino / PlatformIO | zip-install or `lib_deps = https://github.com/Ampixa/sanoTTS.git` | [`arduino/README.md`](arduino/README.md) |
+| Hugging Face | [`huggingface.co/ampixa/sanoTTS`](https://huggingface.co/ampixa/sanoTTS) | voice packages + samples |
+| Browser | nothing | [ampixa.github.io/sanoTTS](https://ampixa.github.io/sanoTTS/) |
+
+### Python
+
+CLI + library; voices download on first use:
 
 ```bash
 pip install sanotts
@@ -42,9 +53,10 @@ Voices: `amy`, `amy-1p1m`, `amy-1p8m`, `kristin`, `hfc`, `vi`, `id` — fetched
 from the [voices-v1 release](https://github.com/Ampixa/sanoTTS/releases/tag/voices-v1)
 into `~/.cache/sanotts/`. Pure numpy inference, no torch, no onnxruntime.
 
-**Arduino / PlatformIO** — the `SanoTTS` library lives in
-[`arduino/`](arduino/): add it to the Arduino IDE as a .zip library, or in
-`platformio.ini`:
+### Arduino / PlatformIO
+
+The `SanoTTS` library lives in [`arduino/`](arduino/): add it to the Arduino
+IDE as a .zip library, or in `platformio.ini`:
 
 ```ini
 lib_deps = https://github.com/Ampixa/sanoTTS.git
@@ -54,10 +66,14 @@ See [`arduino/README.md`](arduino/README.md) for board support (ESP32-S3 ✓),
 memory guidance, and flashing the model blobs
 ([mcu-kristin-745k-q8.tar.gz](https://github.com/Ampixa/sanoTTS/releases/tag/voices-v1)).
 
-**Hugging Face** — the voice packages are mirrored at
+### Hugging Face
+
+The voice packages — including audio samples — are mirrored at
 [huggingface.co/ampixa/sanoTTS](https://huggingface.co/ampixa/sanoTTS).
 
-**Browser** — nothing to install: [ampixa.github.io/sanoTTS](https://ampixa.github.io/sanoTTS/).
+### Browser
+
+Nothing to install: [ampixa.github.io/sanoTTS](https://ampixa.github.io/sanoTTS/).
 
 ### Deploy on your own site
 

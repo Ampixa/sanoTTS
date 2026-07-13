@@ -15,8 +15,9 @@ weights are fetched lazily at runtime (see [Voices](#voices) below).
 npm install sanotts-web
 ```
 
-> Not yet published to the npm registry — see [Deploy on your own site](#deploy-on-your-own-site)
-> for a no-install way to use it today.
+> Published on npm as [`sanotts-web`](https://www.npmjs.com/package/sanotts-web).
+> See [Deploy on your own site](#deploy-on-your-own-site) for a no-install way
+> to use it too.
 
 ## Usage
 
@@ -95,7 +96,7 @@ format (roughly 4x smaller) is planned but not yet shipped.
 
 ## Deploy on your own site
 
-### Option A — npm install (pending publish)
+### Option A — npm install
 
 ```js
 import { SanoTTS, playAudio } from 'sanotts-web';
