@@ -75,6 +75,12 @@
   #log { white-space:pre-wrap; font-size:13px; color:var(--faint); margin-top:10px; }
   .note { color:var(--muted2); font-size:14px; }
 
+  .cta { display:inline-block; margin:6px 0 2px; padding:14px 26px; background:var(--accent);
+      color:#fff; font-weight:bold; font-size:18px; border:2px solid var(--accent);
+      text-decoration:none; }
+  .cta:hover { background:var(--bg); color:var(--accent); text-decoration:none; }
+  .cta-wrap { text-align:center; margin:18px 0 4px; }
+
   /* hero highlights */
   .hl { list-style:none; padding:0; margin:22px auto 30px; max-width:600px; text-align:left; }
   .hl li { position:relative; padding-left:26px; margin:10px 0; font-size:16.5px; }
@@ -158,6 +164,8 @@
   and it plays right here, live, in your browser.</p>
   <p class="lead" style="text-align:center">a full neural stack &mdash; duration &rarr; acoustic &rarr; decoder &mdash;
   quantized to int8, phonemizer and all. Below: hear every released voice, then synthesize live on this page.</p>
+
+  <div class="cta-wrap"><a class="cta" href="#live">▶ Synthesize live — type anything, pick a voice</a></div>
 
   <ul class="hl">
     <li>smallest neural TTS family known &mdash; <b>745k to 1.8M parameters</b></li>
@@ -349,7 +357,7 @@
 
   <hr>
 
-  <h2>Synthesize live in your browser</h2>
+  <h2 id="live">Synthesize live in your browser</h2>
   <p class="note">Type anything. The text is phonemized by <b>espeak-ng compiled to
   WebAssembly</b> (the same 275&nbsp;KB port that runs on the chip) and spoken by that
   voice's own neural stack &mdash; all client-side, no server. Pick a voice:</p>
