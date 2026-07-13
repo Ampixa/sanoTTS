@@ -65,9 +65,7 @@ sanoTTS's browser demo runs entirely client-side — WebAssembly, no server —
 so "deploying" it just means hosting a handful of static files. Two ways to
 do it:
 
-**Option A — `npm install sanotts-web`** *(package built, not yet published
-to the npm registry — see [npmpkg/](npmpkg/) in this repo for now, or
-`npm pack` it yourself)*
+**Option A — `npm install sanotts-web`** ([on npm](https://www.npmjs.com/package/sanotts-web))
 
 ```js
 import { SanoTTS, playAudio } from 'sanotts-web';
