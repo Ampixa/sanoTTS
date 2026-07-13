@@ -59,6 +59,66 @@ memory guidance, and flashing the model blobs
 
 **Browser** — nothing to install: [ampixa.github.io/sanoTTS](https://ampixa.github.io/sanoTTS/).
 
+### Deploy on your own site
+
+sanoTTS's browser demo runs entirely client-side — WebAssembly, no server —
+so "deploying" it just means hosting a handful of static files. Two ways to
+do it:
+
+**Option A — `npm install sanotts-web`** *(package built, not yet published
+to the npm registry — see [npmpkg/](npmpkg/) in this repo for now, or
+`npm pack` it yourself)*
+
+```js
+import { SanoTTS, playAudio } from 'sanotts-web';
+
+const tts = await SanoTTS.load({
+  assetBase: 'https://your-cdn.example.com/sanotts/',   // where you copied dist/
+});
+const result = await tts.synthesize('Hello from my own server.', {
+  voice: 'amy',
+  voiceBase: 'https://your-cdn.example.com/sanotts/',   // where you copied voices/
+});
+playAudio(result);
+```
+
+Copy the package's `dist/` (the wasm runtime) and this repo's `web/voices/`
+directory to your own static host, then point `assetBase`/`voiceBase` at it.
+Everything else — phonemization, synthesis, playback — happens in the
+visitor's browser.
+
+**Option B — no build, no npm**
+
+Copy `web/snt_g2p.js`, `web/snt_g2p.wasm`, `web/snt_g2p.data`,
+`web/snt_voice.js`, `web/snt_voice.wasm`, and `web/voices/` from this repo
+(or scrape them straight from `ampixa.github.io/sanoTTS`) onto your static
+host, and load them the same way `web/index.html` does:
+
+```html
+<script src="/sanotts/snt_g2p.js"></script>
+<script src="/sanotts/snt_voice.js"></script>
+<script type="module">
+  const [G2P, Voice] = await Promise.all([SaanoG2P(), SaanoVoice()]);
+  G2P._snt_g2p_init();
+  // ...set voice, phonemize, synthesize — see web/index.html for the full sequence.
+</script>
+```
+
+**Sizes to plan around:**
+
+- wasm runtime: ~700 KB total gzipped over the wire (espeak-ng G2P
+  ships ~2.5 MB uncompressed including its phoneme-table `.data`, ~700 KB
+  gzipped; the acoustic/decoder wasm adds another ~40 KB)
+- per-voice weights: 4–7 MB, fp32 (`front_f32.bin` + `dec_f32.bin`), fetched
+  lazily on first use of that voice, not bundled with the runtime — int8
+  quantized voices (~4x smaller) are planned but not yet shipped
+
+**CSP note:** the wasm runtime needs `'wasm-unsafe-eval'` (or
+`'unsafe-eval'` on older browsers) in your `script-src` Content-Security-Policy,
+for `WebAssembly.instantiate`/`instantiateStreaming`. Nothing else needs
+relaxing — the runtime never `eval()`s JavaScript. Most default/modern CSPs
+(including having no explicit `script-src`) already allow this.
+
 ## How it stacks up
 
 Open small-scale TTS on an honest gate — a diverse 24-sentence set scored with the

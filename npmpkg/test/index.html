@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>sanotts-web smoke test</title>
+</head>
+<body>
+<h1>sanotts-web smoke test</h1>
+<p id="status">running…</p>
+<script type="module">
+  // Imports the package SOURCE (not dist/) so the test exercises exactly
+  // what ships in src/index.js. Served from the repo root via
+  // `python3 -m http.server` so this resolves against the sibling
+  // ../web/voices/ directory (self-hosted assets, not the live Pages demo) —
+  // proves the assetBase/voiceBase override path works, not just the
+  // hard-coded default.
+  import { SanoTTS, playAudio } from '../src/index.js';
+
+  const statusEl = document.getElementById('status');
+  const ASSET_BASE = '../../web/';   // repo-root-relative: npmpkg/test/ -> web/
+
+  async function run() {
+    const tts = await SanoTTS.load({ assetBase: ASSET_BASE });
+    const result = await tts.synthesize('Hello! I am a tiny voice living in your browser.', {
+      voice: 'amy',
+      voiceBase: ASSET_BASE,
+    });
+
+    const ok = result.samples instanceof Float32Array
+      && result.samples.length > 22050
+      && Array.from(result.samples.subarray(0, 2000)).every(Number.isFinite);
+
+    window.__testResult = {
+      ok,
+      sampleRate: result.sampleRate,
+      numSamples: result.samples.length,
+      phonemeCount: result.phonemeCount,
+      elapsedMs: result.elapsedMs,
+    };
+    statusEl.textContent = ok
+      ? `OK — ${result.samples.length} samples @ ${result.sampleRate} Hz`
+      : `FAIL — see window.__testResult`;
+
+    // Not part of pass/fail, but exercises playAudio() too (harmless if
+    // autoplay is blocked headlessly — playback failure shouldn't fail the test).
+    try { playAudio(result); } catch (e) { /* autoplay policies vary; ignored by design */ }
+  }
+
+  run().catch((e) => {
+    window.__testResult = { ok: false, error: String(e && e.stack || e) };
+    statusEl.textContent = 'ERROR — ' + (e && e.message || e);
+  });
+</script>
+</body>
+</html>

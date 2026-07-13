@@ -1,0 +1,38 @@
+{
+  "name": "sanotts-web",
+  "version": "0.1.0",
+  "description": "Browser-native neural text-to-speech, WebAssembly, no server. Wraps the saanoTTS espeak-ng G2P + acoustic/decoder runtime used at https://ampixa.github.io/sanoTTS/.",
+  "license": "GPL-3.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "tts",
+    "text-to-speech",
+    "wasm",
+    "webassembly",
+    "speech-synthesis",
+    "espeak",
+    "offline"
+  ],
+  "homepage": "https://github.com/Ampixa/sanoTTS",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ampixa/sanoTTS.git",
+    "directory": "npmpkg"
+  },
+  "bugs": {
+    "url": "https://github.com/Ampixa/sanoTTS/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}
