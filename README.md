@@ -27,7 +27,7 @@ client-side.
 **Python** (CLI + library; voices download on first use):
 
 ```bash
-pip install "sanotts @ git+https://github.com/Ampixa/sanoTTS@master#subdirectory=pypkg"
+pip install sanotts
 
 sanotts say "Hello from a two megabyte voice." --voice amy -o hello.wav
 sanotts say "Xin chào!" --voice vi -o xinchao.wav
