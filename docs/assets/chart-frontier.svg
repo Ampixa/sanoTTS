@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 260" width="640" height="260"
+     font-family="Lucida Console, Monaco, monospace" font-size="11"
+     role="img" aria-label="Line chart: five sanoTTS amy voice builds from 1.09M to 1.84M parameters, SCOREQ rising from 3.70 to 4.16 as decoder capacity increases, at fixed voice identity.">
+  <title>The size-quality frontier we traced</title>
+  <rect x="0" y="0" width="640" height="260" fill="#ffffff"/>
+  <line x1="55" y1="20" x2="55" y2="220" stroke="#ccc" stroke-width="1"/>
+  <line x1="55" y1="153.3" x2="620" y2="153.3" stroke="#eee" stroke-width="1"/>
+  <line x1="55" y1="86.7"  x2="620" y2="86.7"  stroke="#eee" stroke-width="1"/>
+  <line x1="55" y1="20"    x2="620" y2="20"    stroke="#eee" stroke-width="1"/>
+  <line x1="55" y1="220" x2="620" y2="220" stroke="#ccc" stroke-width="1"/>
+  <text x="48" y="223"   text-anchor="end" fill="#666">3.6</text>
+  <text x="48" y="156.3" text-anchor="end" fill="#666">3.8</text>
+  <text x="48" y="89.7"  text-anchor="end" fill="#666">4.0</text>
+  <text x="48" y="23"    text-anchor="end" fill="#666">4.2</text>
+  <text x="111.5" y="238" text-anchor="middle" fill="#666" font-size="10">1.09M</text>
+  <text x="274.7" y="238" text-anchor="middle" fill="#666" font-size="10">1.35M</text>
+  <text x="582.3" y="238" text-anchor="middle" fill="#666" font-size="10">1.84M</text>
+  <polyline points="111.5,186.7 174.3,176.7 274.7,60.0 343.8,43.3 582.3,33.3"
+            fill="none" stroke="#DC143C" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="111.5" cy="186.7" r="4" fill="#DC143C" stroke="#fff" stroke-width="2"><title>1.09M params, SCOREQ 3.70</title></circle>
+  <circle cx="174.3" cy="176.7" r="4" fill="#DC143C" stroke="#fff" stroke-width="2"><title>1.19M params, SCOREQ 3.73</title></circle>
+  <circle cx="274.7" cy="60.0"  r="4" fill="#DC143C" stroke="#fff" stroke-width="2"><title>1.35M params, SCOREQ 4.08</title></circle>
+  <circle cx="343.8" cy="43.3"  r="4" fill="#DC143C" stroke="#fff" stroke-width="2"><title>1.46M params, SCOREQ 4.13</title></circle>
+  <circle cx="582.3" cy="33.3"  r="4" fill="#DC143C" stroke="#fff" stroke-width="2"><title>1.84M params, SCOREQ 4.16</title></circle>
+  <text x="111.5" y="176" fill="#111" font-size="10">3.70</text>
+  <text x="582.3" y="24" fill="#111" font-size="10" text-anchor="end">4.16</text>
+</svg>

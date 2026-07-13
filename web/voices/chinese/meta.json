@@ -1,0 +1,49 @@
+{
+ "key": "chinese",
+ "espeak_voice": "cmn",
+ "g2p_voice_slot": 7,
+ "length_scale": 1.0,
+ "sample_rate": 22050,
+ "front_bytes": 3438220,
+ "dec_bytes": 2560816,
+ "front_dims": {
+  "d_vocab": 143,
+  "d_hidden": 64,
+  "d_depth": 3,
+  "d_kernel": 5,
+  "d_max_tokens": 393,
+  "d_max_duration": 80,
+  "a_vocab": 143,
+  "a_hidden": 96,
+  "a_token_depth": 3,
+  "a_depth": 4,
+  "a_kernel": 5,
+  "a_out_channels": 192,
+  "adapter_mode": 4,
+  "adapter_kernel": 5,
+  "adapter_rank": 60,
+  "weight_floats": 859399,
+  "meta_bytes": 624,
+  "n_tensors": 69
+ },
+ "dec_dims": {
+  "in_ch": 192,
+  "c0": 148,
+  "c1": 74,
+  "c2": 37,
+  "c3": 18,
+  "pf_channels": 8,
+  "pf_layers": 1,
+  "pf_kernel": 9,
+  "pf_scale": 0.1,
+  "hop": 256,
+  "weight_floats": 640082,
+  "meta_bytes": 488,
+  "n_tensors": 55
+ },
+ "checkpoints": {
+  "duration": "artifacts/frozen-four-restore/saanotts-preserved-six-checkpoints-20260702/chinese-huayan-a5-a22-a102/checkpoints/duration.pt",
+  "acoustic": "artifacts/frozen-four-restore/saanotts-preserved-six-checkpoints-20260702/chinese-huayan-a5-a22-a102/checkpoints/acoustic.pt",
+  "decoder": "artifacts/frozen-four-restore/saanotts-preserved-six-checkpoints-20260702/chinese-huayan-a5-a22-a102/checkpoints/decoder.pt"
+ }
+}

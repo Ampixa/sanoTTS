@@ -42,8 +42,20 @@ web/assets/
 !web/snt_tts.wasm
 !web/assets/
 !web/assets/*.bin
+!web/assets/mascots/
+!web/assets/mascots/*.png
 !web/samples/
 !web/samples/*.mp3
+!web/samples-release/
+!web/samples-release/*.mp3
+!web/samples-release/*.json
+!web/snt_g2p.js
+!web/snt_g2p.wasm
+!web/snt_g2p.data
+!web/snt_voice.js
+!web/snt_voice.wasm
+!web/voices/
+!web/voices/**
 
 # Scratch/runtime folders.
 .venv/

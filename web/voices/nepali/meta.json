@@ -1,0 +1,49 @@
+{
+ "key": "nepali",
+ "espeak_voice": "ne",
+ "g2p_voice_slot": 5,
+ "length_scale": 1.0,
+ "sample_rate": 22050,
+ "front_bytes": 3341540,
+ "dec_bytes": 2558528,
+ "front_dims": {
+  "d_vocab": 146,
+  "d_hidden": 64,
+  "d_depth": 3,
+  "d_kernel": 5,
+  "d_max_tokens": 533,
+  "d_max_duration": 80,
+  "a_vocab": 146,
+  "a_hidden": 96,
+  "a_token_depth": 3,
+  "a_depth": 4,
+  "a_kernel": 5,
+  "a_out_channels": 192,
+  "adapter_mode": 0,
+  "adapter_kernel": 0,
+  "adapter_rank": 0,
+  "weight_floats": 835243,
+  "meta_bytes": 568,
+  "n_tensors": 62
+ },
+ "dec_dims": {
+  "in_ch": 192,
+  "c0": 148,
+  "c1": 74,
+  "c2": 37,
+  "c3": 18,
+  "pf_channels": 0,
+  "pf_layers": 0,
+  "pf_kernel": 9,
+  "pf_scale": 0.25,
+  "hop": 256,
+  "weight_floats": 639528,
+  "meta_bytes": 416,
+  "n_tensors": 46
+ },
+ "checkpoints": {
+  "duration": "artifacts/frozen-four-restore/saanotts-preserved-six-checkpoints-20260702/nepali-chitwan-a5-a16-a91/checkpoints/duration.pt",
+  "acoustic": "artifacts/frozen-four-restore/saanotts-preserved-six-checkpoints-20260702/nepali-chitwan-a5-a16-a91/checkpoints/acoustic.pt",
+  "decoder": "artifacts/frozen-four-restore/saanotts-preserved-six-checkpoints-20260702/nepali-chitwan-a5-a16-a91/checkpoints/decoder.pt"
+ }
+}

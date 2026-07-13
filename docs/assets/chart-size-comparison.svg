@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 270" width="640" height="270"
+     font-family="Lucida Console, Monaco, monospace" font-size="11"
+     role="img" aria-label="Horizontal bar chart of parameter count on a linear axis from 0 to 85 million. The sanoTTS family, 0.75 to 1.8 million parameters across 9 voices, and TinyTTS at 1.62 million are tiny slivers; Inflect Nano at 4.63 million is a short bar; Kokoro at 82 million fills nearly the whole axis. sanoTTS is highlighted in crimson.">
+  <title>Size comparison (parameters)</title>
+  <rect x="0" y="0" width="640" height="270" fill="#ffffff"/>
+  <!-- gridlines: linear axis 0 to 85M, plot x 145..620 -->
+  <line x1="145"   y1="20" x2="145"   y2="228" stroke="#ccc" stroke-width="1"/>
+  <line x1="256.8" y1="20" x2="256.8" y2="228" stroke="#eee" stroke-width="1"/>
+  <line x1="368.5" y1="20" x2="368.5" y2="228" stroke="#eee" stroke-width="1"/>
+  <line x1="480.3" y1="20" x2="480.3" y2="228" stroke="#eee" stroke-width="1"/>
+  <line x1="592.1" y1="20" x2="592.1" y2="228" stroke="#eee" stroke-width="1"/>
+  <line x1="145" y1="228" x2="620" y2="228" stroke="#ccc" stroke-width="1"/>
+  <text x="145"   y="245" text-anchor="middle" fill="#666" font-size="10">0</text>
+  <text x="256.8" y="245" text-anchor="middle" fill="#666" font-size="10">20M</text>
+  <text x="368.5" y="245" text-anchor="middle" fill="#666" font-size="10">40M</text>
+  <text x="480.3" y="245" text-anchor="middle" fill="#666" font-size="10">60M</text>
+  <text x="592.1" y="245" text-anchor="middle" fill="#666" font-size="10">80M</text>
+  <text x="382" y="263" text-anchor="middle" fill="#888" font-size="10">parameters &#8212; linear axis, so the sliver IS the point</text>
+
+  <!-- sanoTTS family: darker crimson 0..0.75M (smallest voice), crimson to 1.8M (largest) -->
+  <text x="135" y="39" text-anchor="end" fill="#111" font-weight="bold" font-size="12">sanoTTS (9 voices)</text>
+  <text x="135" y="53" text-anchor="end" fill="#666" font-size="10">0.75M&#8211;1.8M params</text>
+  <rect x="145" y="30" width="10.3" height="20" fill="#DC143C"><title>sanoTTS family: largest voice hfc, 1.83M params</title></rect>
+  <rect x="145" y="30" width="4.2" height="20" fill="#8B0A26"><title>sanoTTS family: smallest voice, 745k params (the on-device model)</title></rect>
+  <text x="161" y="44" fill="#DC143C" font-weight="bold">0.75M&#8211;1.8M</text>
+
+  <!-- TinyTTS 1.62M -->
+  <text x="135" y="92" text-anchor="end" fill="#111" font-weight="bold" font-size="13">TinyTTS</text>
+  <text x="135" y="106" text-anchor="end" fill="#666" font-size="10">1.62M params</text>
+  <rect x="145" y="83" width="9.1" height="20" fill="#bbb"><title>TinyTTS: 1.62M params, ships 3.5 MB fp16 (verified from their Hugging Face repo)</title></rect>
+  <text x="160" y="97" fill="#666">1.62M</text>
+
+  <!-- Inflect Nano 4.63M -->
+  <text x="135" y="145" text-anchor="end" fill="#111" font-weight="bold" font-size="13">Inflect Nano</text>
+  <text x="135" y="159" text-anchor="end" fill="#666" font-size="10">4.63M params</text>
+  <rect x="145" y="136" width="25.9" height="20" fill="#bbb"><title>Inflect Nano: 4.63M params</title></rect>
+  <text x="177" y="150" fill="#666">4.63M</text>
+
+  <!-- Kokoro 82M -->
+  <text x="135" y="198" text-anchor="end" fill="#111" font-weight="bold" font-size="13">Kokoro</text>
+  <text x="135" y="212" text-anchor="end" fill="#666" font-size="10">82M params</text>
+  <rect x="145" y="189" width="458.2" height="20" fill="#bbb"><title>Kokoro: 82M params, ~330 MB fp32 (widely cited public figure)</title></rect>
+  <text x="609" y="203" fill="#666">82M</text>
+</svg>

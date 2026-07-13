@@ -1,0 +1,49 @@
+{
+ "key": "amy",
+ "espeak_voice": "en-us",
+ "g2p_voice_slot": 1,
+ "length_scale": 1.08,
+ "sample_rate": 22050,
+ "front_bytes": 1816420,
+ "dec_bytes": 4001700,
+ "front_dims": {
+  "d_vocab": 129,
+  "d_hidden": 64,
+  "d_depth": 3,
+  "d_kernel": 5,
+  "d_max_tokens": 265,
+  "d_max_duration": 80,
+  "a_vocab": 145,
+  "a_hidden": 64,
+  "a_token_depth": 3,
+  "a_depth": 4,
+  "a_kernel": 5,
+  "a_out_channels": 192,
+  "adapter_mode": 0,
+  "adapter_kernel": 0,
+  "adapter_rank": 0,
+  "weight_floats": 453963,
+  "meta_bytes": 568,
+  "n_tensors": 62
+ },
+ "dec_dims": {
+  "in_ch": 192,
+  "c0": 192,
+  "c1": 96,
+  "c2": 48,
+  "c3": 24,
+  "pf_channels": 0,
+  "pf_layers": 0,
+  "pf_kernel": 9,
+  "pf_scale": 0.25,
+  "hop": 256,
+  "weight_floats": 1000321,
+  "meta_bytes": 416,
+  "n_tensors": 46
+ },
+ "checkpoints": {
+  "duration": "artifacts/sub10m-search/root-a-piper-vits/en_US-amy-medium-retrain-20260712/a5-duration/duration-student.pt",
+  "acoustic": "artifacts/sub10m-search/root-a-piper-vits/en_US-amy-medium-retrain-20260712/e2-wide192-ac64-joint/latent-student.pt",
+  "decoder": "artifacts/sub10m-search/root-a-piper-vits/en_US-amy-medium-retrain-20260712/e2-wide192-ac64-joint/decoder-student.pt"
+ }
+}

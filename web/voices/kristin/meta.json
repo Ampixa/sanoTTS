@@ -1,0 +1,49 @@
+{
+ "key": "kristin",
+ "espeak_voice": "en",
+ "g2p_voice_slot": 0,
+ "length_scale": 1.08,
+ "sample_rate": 22050,
+ "front_bytes": 1581712,
+ "dec_bytes": 4003988,
+ "front_dims": {
+  "d_vocab": 127,
+  "d_hidden": 32,
+  "d_depth": 3,
+  "d_kernel": 5,
+  "d_max_tokens": 269,
+  "d_max_duration": 80,
+  "a_vocab": 145,
+  "a_hidden": 64,
+  "a_token_depth": 3,
+  "a_depth": 5,
+  "a_kernel": 5,
+  "a_out_channels": 192,
+  "adapter_mode": 0,
+  "adapter_kernel": 0,
+  "adapter_rank": 0,
+  "weight_floats": 395276,
+  "meta_bytes": 608,
+  "n_tensors": 67
+ },
+ "dec_dims": {
+  "in_ch": 192,
+  "c0": 192,
+  "c1": 96,
+  "c2": 48,
+  "c3": 24,
+  "pf_channels": 8,
+  "pf_layers": 1,
+  "pf_kernel": 9,
+  "pf_scale": 0.1,
+  "hop": 256,
+  "weight_floats": 1000875,
+  "meta_bytes": 488,
+  "n_tensors": 55
+ },
+ "checkpoints": {
+  "duration": "releases/kristin-20260707/web/duration-student-36k.pt",
+  "acoustic": "releases/kristin-20260707/web/acoustic-latent-student-359k.pt",
+  "decoder": "releases/kristin-20260707/web/decoder-student-1p0m-demetalB.pt"
+ }
+}

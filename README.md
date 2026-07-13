@@ -7,10 +7,20 @@ the browser via WASM.
 
 ![text in → ESP32 → speech out](docs/assets/saanotts-mcu-hero.png)
 
-It's a full neural stack — duration → acoustic → iSTFT decoder — distilled from the
-teacher, not a lookup of pre-rendered clips. The on-device variant shrinks to
-**~745k int8 params**, runs **faster than real time on the ESP32-S3**, and stays
-intelligible on-chip (Whisper WER ~18% with on-chip espeak G2P).
+- smallest neural TTS family known — **745k to 1.8M parameters**
+- runs **real-time** on a **$3 microcontroller** (ESP32-S3)
+- runs right in your browser — **WebAssembly**, no server
+- under **4 MB** per voice, zero dependencies (espeak-ng phonemizer included)
+- **9 voices** across **6 languages** — English, Nepali (नेपाली), Hindi (हिन्दी),
+  Vietnamese (Tiếng Việt), Indonesian (Bahasa), Chinese (中文)
+- open source, **GPL-3.0**
+
+## Live demo
+
+**[ampixa.github.io/sanoTTS](https://ampixa.github.io/sanoTTS/)** — every voice
+synthesizes your text live in the browser. No server, no upload: text goes
+through an espeak-ng-in-WASM phonemizer and that voice's own neural stack, all
+client-side.
 
 ## How it stacks up
 
@@ -18,6 +28,13 @@ Open small-scale TTS on an honest gate — a diverse 24-sentence set scored with
 **same** no-reference suite (SCOREQ / UTMOS are naturalness predictors, DNSMOS-SIG
 is signal quality; higher is better). Parameter counts are inference-time and
 exclude the shared external G2P.
+
+![Size comparison: sanoTTS 0.75M-1.8M params vs TinyTTS 1.62M vs Inflect Nano 4.63M vs Kokoro 82M, linear axis](docs/assets/chart-size-comparison.svg)
+
+Kokoro is 45x larger than our largest voice, and 110x larger than our smallest.
+Shipped-file sizes: sanoTTS amy 2.8 MB fp16 and TinyTTS 3.5 MB fp16, both
+verified from the released files; Kokoro's ~330 MB fp32 is its widely cited
+public figure.
 
 | System | Params | SCOREQ | UTMOS | DNS-SIG |
 | --- | ---: | :---: | :---: | :---: |
@@ -29,21 +46,50 @@ exclude the shared external G2P.
 | _Kokoro_ | _82 M_ | _4.89_ | _4.52_ | _3.69_ |
 
 sanoTTS is the **smallest** model here and the **best on naturalness (SCOREQ and
-UTMOS) among everything up to 15M params** — beating TinyTTS while being smaller,
-and effectively tying its signal cleanliness (DNS-SIG within noise). It's the only
-one that runs a full neural stack on a $3 MCU. Parameter count isn't destiny at
-this scale: Kitten TTS at 10× the size scores a full SCOREQ point lower. The
-frontier only pulls ahead at the teacher (~15M) and Kokoro (82M, 60× larger) — a
-gap we don't claim to close. Reproduce it with `tools/eval_mos_all.py` +
-`tools/eval_scorecard.py`.
+UTMOS) among everything up to 15M params** — beating TinyTTS while being smaller.
+On DNSMOS-SIG, TinyTTS edges us by 0.01 — no single metric tells the whole story.
+It's the only one that runs a full neural stack on a $3 MCU. Parameter count
+isn't destiny at this scale: Kitten TTS at 10x the size scores a full SCOREQ
+point lower. The frontier only pulls ahead at the teacher (~15M) and Kokoro (82M,
+60x larger) — a gap we don't claim to close. Reproduce it with
+`tools/eval_mos_all.py` + `tools/eval_scorecard.py`.
+
+![The size-quality frontier: SCOREQ rising from 3.70 to 4.16 as decoder size grows from 1.09M to 1.84M params, same voice](docs/assets/chart-frontier.svg)
+
+Same voice (amy), same duration/acoustic recipe — only decoder size changes.
+Quality lives in the decoder: doubling it from 1.09M to 1.84M params moves
+SCOREQ from 3.70 to 4.16.
+
+## The voices
+
+| Language | Voice | Params | SCOREQ |
+| --- | --- | ---: | :---: |
+| English 🇺🇸 | amy | 1.46 M | 4.13 |
+| | kristin | 1.40 M | 4.09 |
+| | hfc | 1.83 M | 3.94 |
+| | amy-small | 1.08 M | 3.70 |
+| | robot (on-device, int8) | 745 k | — |
+| Nepali नेपाली | Nepali | 1.47 M | — |
+| Hindi हिन्दी | Hindi | 1.50 M | — |
+| Vietnamese Tiếng Việt | Vietnamese | 1.46 M | — |
+| Indonesian Bahasa | Indonesian | 1.46 M | — |
+| Chinese 中文 | Chinese | 1.50 M | — |
+
+The "robot" row is the same 745k-parameter model that runs on the ESP32-S3 —
+bit-exact with the chip's own output. SCOREQ is only reported for the English
+voices, which share a common eval set; the other languages haven't been scored
+against a comparable reference yet.
 
 ## How it works
 
 ![text → duration → acoustic → decoder → audio](docs/assets/saanotts-signal-path.png)
 
-Piper provides phoneme IDs; a duration student predicts timing; an acoustic student
-predicts the generator latents; a compact decoder student renders 22 kHz audio via
-an iSTFT head. All three are distilled from the teacher and quantized to int8.
+Piper provides phoneme IDs; a duration student predicts timing; an acoustic
+student predicts the generator latents; a decoder student renders 22 kHz audio.
+The web voices (amy, kristin, hfc, and the other languages) use a compact
+"piperlite" decoder running in fp32 WASM; the 745k on-device model instead uses
+a quantized int8 iSTFT decoder, sized to fit and run in real time on the
+ESP32-S3. All students are distilled from the teacher.
 
 ## Distill your own voice
 
@@ -62,8 +108,8 @@ pip install -e .
 - **ESP32-S3 talking device** — a standalone WiFi dashboard: type text, the board
   phonemizes (on-chip espeak-ng) and speaks. See
   [`mcu/ports/esp32s3/`](mcu/ports/esp32s3/).
-- **Browser** — the full stack in WASM, no server. **[▶ Hear all four voices and
-  run it live](https://ampixa.github.io/sanoTTS/)** (GitHub Pages); source in
+- **Browser** — the full stack in WASM, no server. **[▶ Hear and synthesize all 9
+  voices live](https://ampixa.github.io/sanoTTS/)** (GitHub Pages); source in
   [`web/`](web/).
 - **Other MCUs** — which chips can run it and how well:
   [`docs/mcu-classes-and-porting.md`](docs/mcu-classes-and-porting.md).

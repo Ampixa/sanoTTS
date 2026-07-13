@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sanotts"
+version = "0.1.0"
+description = "Self-contained, numpy-only inference runtime for saanoTTS voice packages."
+readme = { text = "sanotts: pip-installable inference for saanoTTS raw-fp16 voice packages (duration + acoustic + piperlite decoder, numpy-only). Voices are downloaded on demand or loaded from a local directory produced by tools/export_roota_self_contained_package.py.", content-type = "text/plain" }
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24",
+  "phonemizer-fork>=3.3,<4",
+  "espeakng-loader>=0.2,<1",
+]
+
+[project.scripts]
+sanotts = "sanotts.cli:main"
+
+# This directory is not (yet) committed to the parent repo's git tree, so we
+# cannot rely on hatchling's default VCS-tracked-files file selection --
+# without this, `sanotts/tables/*.json` (untracked) would silently be
+# dropped from the wheel. Explicit include instead.
+[tool.hatch.build]
+include = [
+  "sanotts/**/*.py",
+  "sanotts/tables/*.json",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["sanotts"]

@@ -75,6 +75,65 @@
   #log { white-space:pre-wrap; font-size:13px; color:var(--faint); margin-top:10px; }
   .note { color:var(--muted2); font-size:14px; }
 
+  /* hero highlights */
+  .hl { list-style:none; padding:0; margin:22px auto 30px; max-width:600px; text-align:left; }
+  .hl li { position:relative; padding-left:26px; margin:10px 0; font-size:16.5px; }
+  .hl li::before { content:"\25B8"; color:var(--accent); position:absolute; left:2px; font-weight:bold; }
+  .hl b { color:var(--accent); }
+
+  /* voices table */
+  table.vtable { border-collapse:collapse; width:100%; margin:16px 0 8px; }
+  table.vtable thead th { text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase;
+      color:var(--muted2); font-weight:normal; padding:0 12px 10px 0; border-bottom:2px solid var(--ink); }
+  table.vtable td { padding:12px 14px 12px 0; border-bottom:1px solid var(--rule); vertical-align:top; }
+  td.lang-cell { font-weight:bold; font-size:18px; white-space:nowrap; width:1%; }
+  td.lang-cell .native { display:block; font-weight:normal; font-size:13px; color:var(--muted2);
+      margin-top:4px; white-space:normal; max-width:160px; }
+  td.voices-cell .vrow { margin-bottom:11px; }
+  td.voices-cell .vrow:last-child { margin-bottom:0; }
+  td.voices-cell .vname { font-weight:bold; }
+  td.voices-cell .vparams { color:var(--muted2); font-size:13px; margin-left:6px; }
+  td.voices-cell .vnote { display:block; color:var(--muted2); font-size:13px; margin-top:2px; }
+  td.listen-cell { min-width:260px; width:300px; }
+  td.listen-cell audio { display:block; width:100%; min-width:240px; max-width:340px; height:32px; margin-bottom:11px; }
+  td.listen-cell audio:last-child { margin-bottom:0; }
+
+  /* metrics table (three metrics, head to head) */
+  table.mtable { border-collapse:collapse; width:100%; max-width:640px; margin:16px auto 8px; }
+  table.mtable th { text-align:right; font-size:13px; font-weight:bold; color:var(--ink);
+      padding:0 0 10px 18px; border-bottom:2px solid var(--ink); vertical-align:bottom; }
+  table.mtable th:first-child { padding-left:0; }
+  table.mtable th .sub { display:block; font-weight:normal; font-size:11px; color:var(--muted2);
+      margin-top:2px; }
+  table.mtable td { text-align:right; padding:10px 0 10px 18px; border-bottom:1px solid var(--rule);
+      font-size:17px; }
+  table.mtable td:first-child { text-align:left; color:var(--muted2); font-size:13px; padding-left:0; }
+  table.mtable td.best { color:var(--accent); font-weight:bold; }
+
+  @media (max-width:720px) {
+    table.mtable th { font-size:11px; }
+    table.mtable th .sub { font-size:10px; }
+    table.mtable td { font-size:15px; }
+    table.vtable thead { display:none; }
+    table.vtable, table.vtable tbody, table.vtable tr, table.vtable td { display:block; width:100%; }
+    table.vtable td { border-bottom:none; padding:5px 0; }
+    table.vtable tr { border-top:1px solid var(--rule); padding:9px 0; }
+    table.vtable tr:first-child { border-top:none; }
+    table.vtable tr.lang-first { border-top:2px solid var(--ink); padding-top:16px; margin-top:8px; }
+    table.vtable tbody tr.lang-first:first-child { margin-top:0; }
+    td.lang-cell { margin-bottom:6px; }
+    td.lang-cell .native { max-width:none; }
+    td.listen-cell audio { max-width:100%; }
+  }
+
+  .mascots { display:flex; gap:14px; flex-wrap:wrap; margin:14px 0; }
+  .mascots button.m { display:flex; flex-direction:column; align-items:center; gap:4px;
+      padding:10px 12px; border:2px solid var(--rule); background:var(--bg); cursor:pointer;
+      font-family:inherit; font-size:12px; color:var(--muted2); font-weight:normal; }
+  .mascots button.m img, .mascots button.m .emj { width:56px; height:56px; font-size:44px;
+      line-height:56px; image-rendering:pixelated; }
+  .mascots button.m .params { font-size:11px; color:var(--faint); }
+  .mascots button.m.sel { border-color:var(--accent); color:var(--ink); font-weight:bold; }
   .copyright { text-align:center; color:var(--faint); font-size:14px; margin-top:8px; }
 
   @media (max-width:720px) {
@@ -95,121 +154,229 @@
 
   <hr>
 
-  <p class="statement">A full neural TTS in <b>~1.4M parameters</b>. No cloud, no NPU.
-  Real-time on a <b>$3 microcontroller</b> — or right here in your browser.</p>
-  <p class="lead" style="text-align:center">duration → acoustic → iSTFT decoder, distilled
-  from a Piper/VITS teacher and quantized to int8. Below: hear all six voices, and run the
-  English runtime live on this page.</p>
+  <p class="statement">The smallest neural text-to-speech family we know of &mdash;
+  and it plays right here, live, in your browser.</p>
+  <p class="lead" style="text-align:center">a full neural stack &mdash; duration &rarr; acoustic &rarr; decoder &mdash;
+  quantized to int8, phonemizer and all. Below: hear every released voice, then synthesize live on this page.</p>
+
+  <ul class="hl">
+    <li>smallest neural TTS family known &mdash; <b>745k to 1.8M parameters</b></li>
+    <li>runs <b>real-time</b> on a <b>$3 microcontroller</b> (ESP32-S3)</li>
+    <li>runs right in your browser &mdash; <b>WebAssembly</b>, no server</li>
+    <li>under <b>4&nbsp;MB</b> per voice, zero dependencies (espeak-ng phonemizer included)</li>
+    <li><b>9 voices</b> across <b>6 languages</b> &mdash; English, Nepali (नेपाली), Hindi (हिन्दी),
+      Vietnamese (Tiếng Việt), Indonesian (Bahasa), Chinese (中文) &mdash; all synthesizing live on this page</li>
+    <li>open source, <b>GPL-3.0</b></li>
+  </ul>
 
   <hr>
 
   <h2>Hear the voices</h2>
-  <p class="note">One evaluation sentence per language: <b>sanoTTS</b> is our tiny student;
-  <b>Piper teacher</b> is the ~15M model it was distilled from. Trust your ear.</p>
+  <p class="note">One fresh sentence per voice, rendered by the models themselves.
+  <b>745k to 1.8M parameters</b> — every voice fits in a few megabytes.</p>
 
-  <div class="voice">
-    <div class="head"><span class="lang">Nepali 🇳🇵</span>
-      <span class="meta">teacher <code>chitwan-medium</code> · 1,474,771 params</span></div>
-    <p class="quote" lang="ne" dir="auto">देश भनेको अथवा देशको इतिहास भनेको फगत संख्या मात्रै होइन नि राजनीतिशाास्त्रको कोरा परिभाषामा चाै देश भनेको हामी चार वटा</p>
-    <table class="lanes">
-      <tr><td class="who"><span class="flag">▸</span> sanoTTS</td><td><audio controls preload="none" src="samples/nepali-row01-student.mp3"></audio></td></tr>
-      <tr><td class="who">Piper teacher</td><td><audio controls preload="none" src="samples/nepali-row01-teacher.mp3"></audio></td></tr>
-    </table>
-  </div>
-
-  <div class="voice">
-    <div class="head"><span class="lang">English 🇺🇸</span>
-      <span class="meta">teacher <code>en_US-amy-medium</code> · 1,455,180 params</span>
-      <span class="pill">best · SCOREQ 4.13</span></div>
-    <p class="quote" lang="en">Even the Caslon type when enlarged shows great shortcomings in this respect:</p>
-    <table class="lanes">
-      <tr><td class="who"><span class="flag">▸</span> sanoTTS</td><td><audio controls preload="none" src="samples/english-amy-student.mp3"></audio></td></tr>
-      <tr><td class="who">Piper teacher</td><td><audio controls preload="none" src="samples/english-amy-teacher.mp3"></audio></td></tr>
-    </table>
-    <p class="note">SCOREQ 4.13 / UTMOS 4.10 at 1.46M params — beats open TinyTTS (3.94 / 3.65,
-    1.6M) on naturalness at a smaller size, and ties its signal cleanliness.</p>
-  </div>
-
-  <div class="voice">
-    <div class="head"><span class="lang">Hindi 🇮🇳</span>
-      <span class="meta">teacher <code>hi_IN-pratham-medium</code> · 1,499,407 params</span></div>
-    <p class="quote" lang="hi" dir="auto">कृपया वस्तु 1 को शांत विराम के साथ पढ़ो, फिर अगला वाक्य बोलो। Variant 3.</p>
-    <table class="lanes">
-      <tr><td class="who"><span class="flag">▸</span> sanoTTS</td><td><audio controls preload="none" src="samples/hindi-row01-student.mp3"></audio></td></tr>
-      <tr><td class="who">Piper teacher</td><td><audio controls preload="none" src="samples/hindi-row01-teacher.mp3"></audio></td></tr>
-    </table>
-  </div>
-
-  <div class="voice">
-    <div class="head"><span class="lang">Chinese 🇨🇳</span>
-      <span class="meta">teacher <code>zh_CN-huayan-medium</code> · 1,499,481 params</span></div>
-    <p class="quote" lang="zh">请用平稳的停顿朗读第1项，然后继续下一句话。 Variant 3.</p>
-    <table class="lanes">
-      <tr><td class="who"><span class="flag">▸</span> sanoTTS</td><td><audio controls preload="none" src="samples/chinese-row01-student.mp3"></audio></td></tr>
-      <tr><td class="who">Piper teacher</td><td><audio controls preload="none" src="samples/chinese-row01-teacher.mp3"></audio></td></tr>
-    </table>
-  </div>
+  <table class="vtable">
+    <thead><tr><th>Language</th><th>Voice</th><th>Listen</th></tr></thead>
+    <tbody>
+      <tr class="lang-first">
+        <td class="lang-cell" rowspan="5">English 🇺🇸</td>
+        <td class="voices-cell"><div class="vrow"><span class="vname">amy</span><span class="vparams">1.46M params</span> <span class="pill">SCOREQ 4.13</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-amy-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
+      </tr>
+      <tr>
+        <td class="voices-cell"><div class="vrow"><span class="vname">kristin</span><span class="vparams">1.40M params</span> <span class="pill">SCOREQ 4.09</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-kristin-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
+      </tr>
+      <tr>
+        <td class="voices-cell"><div class="vrow"><span class="vname">hfc</span><span class="vparams">1.83M params</span> <span class="pill">SCOREQ 3.94</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-hfc-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
+      </tr>
+      <tr>
+        <td class="voices-cell"><div class="vrow"><span class="vname">amy-small</span><span class="vparams">1.08M params</span> <span class="pill">SCOREQ 3.70</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-amy-small-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
+      </tr>
+      <tr>
+        <td class="voices-cell"><div class="vrow"><span class="vname">robot (on-device)</span><span class="vparams">745k params</span> <span class="pill mute">int8 · on-chip</span>
+          <span class="vnote">the model that runs faster than real time on a $3 ESP32-S3 — same weights, same phonemizer</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/mcu-745k.mp3" title="This clip is the on-device model's own output, bit-exact with the chip."></audio></td>
+      </tr>
+      <tr class="lang-first">
+        <td class="lang-cell">Nepali 🇳🇵<span class="native">नमस्ते! तपाईंलाई भेटेर खुशी लाग्यो।</span></td>
+        <td class="voices-cell"><div class="vrow"><span class="vname">Nepali</span><span class="vparams">1.47M params</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/nepali-1.mp3" title="नमस्ते! तपाईंलाई भेटेर खुशी लाग्यो।"></audio></td>
+      </tr>
+      <tr class="lang-first">
+        <td class="lang-cell">Hindi 🇮🇳<span class="native">नमस्ते! आपसे मिलकर बहुत खुशी हुई।</span></td>
+        <td class="voices-cell"><div class="vrow"><span class="vname">Hindi</span><span class="vparams">1.50M params</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/hindi-1.mp3" title="नमस्ते! आपसे मिलकर बहुत खुशी हुई।"></audio></td>
+      </tr>
+      <tr class="lang-first">
+        <td class="lang-cell">Vietnamese 🇻🇳<span class="native">Xin chào! Rất vui được gặp bạn hôm nay.</span></td>
+        <td class="voices-cell"><div class="vrow"><span class="vname">Vietnamese</span><span class="vparams">1.46M params</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/vietnamese-1.mp3" title="Xin chào! Rất vui được gặp bạn hôm nay."></audio></td>
+      </tr>
+      <tr class="lang-first">
+        <td class="lang-cell">Indonesian 🇮🇩<span class="native">Halo! Senang bertemu dengan Anda hari ini.</span></td>
+        <td class="voices-cell"><div class="vrow"><span class="vname">Indonesian</span><span class="vparams">1.46M params</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/indonesian-1.mp3" title="Halo! Senang bertemu dengan Anda hari ini."></audio></td>
+      </tr>
+      <tr class="lang-first">
+        <td class="lang-cell">Chinese 🇨🇳<span class="native">你好！很高兴今天见到你。</span></td>
+        <td class="voices-cell"><div class="vrow"><span class="vname">Chinese</span><span class="vparams">1.50M params</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/chinese-1.mp3" title="你好！很高兴今天见到你。"></audio></td>
+      </tr>
+    </tbody>
+  </table>
 
   <hr>
 
-  <h2>Run the runtime live</h2>
-  <p class="note">This synthesizes a fixed English sentence with the <i>identical bit-exact
-  C99 runtime</i> that runs on the ESP32 — compiled to WebAssembly, executed client-side.
-  No server, no network after load. It verifies its own output against the PyTorch reference
-  in your browser.</p>
+  <h2>How it compares</h2>
+  <p class="note">Measured with our no-reference harness (SCOREQ / UTMOS / DNSMOS-SIG) on the
+  same 24-sentence diverse set, run identically across every model below.</p>
+
+  <p class="lead" style="margin:20px 0 10px;text-align:center;letter-spacing:2.5px;font-size:13px;
+     text-transform:uppercase"><b>Size comparison (parameters)</b></p>
+  <svg viewBox="0 0 640 270" font-family="Lucida Console, Monaco, monospace" font-size="11"
+       style="width:100%;max-width:640px;height:auto;display:block;margin:0 auto"
+       role="img" aria-label="Horizontal bar chart of parameter count on a linear axis from 0 to 85 million. The sanoTTS family, 0.75 to 1.8 million parameters across 9 voices, and TinyTTS at 1.62 million are tiny slivers; Inflect Nano at 4.63 million is a short bar; Kokoro at 82 million fills nearly the whole axis. sanoTTS is highlighted in crimson.">
+    <title>Size comparison (parameters)</title>
+    <!-- gridlines: linear axis 0 to 85M, plot x 145..620 -->
+    <line x1="145"   y1="20" x2="145"   y2="228" stroke="#ccc" stroke-width="1"/>
+    <line x1="256.8" y1="20" x2="256.8" y2="228" stroke="#eee" stroke-width="1"/>
+    <line x1="368.5" y1="20" x2="368.5" y2="228" stroke="#eee" stroke-width="1"/>
+    <line x1="480.3" y1="20" x2="480.3" y2="228" stroke="#eee" stroke-width="1"/>
+    <line x1="592.1" y1="20" x2="592.1" y2="228" stroke="#eee" stroke-width="1"/>
+    <line x1="145" y1="228" x2="620" y2="228" stroke="#ccc" stroke-width="1"/>
+    <text x="145"   y="245" text-anchor="middle" fill="#666" font-size="10">0</text>
+    <text x="256.8" y="245" text-anchor="middle" fill="#666" font-size="10">20M</text>
+    <text x="368.5" y="245" text-anchor="middle" fill="#666" font-size="10">40M</text>
+    <text x="480.3" y="245" text-anchor="middle" fill="#666" font-size="10">60M</text>
+    <text x="592.1" y="245" text-anchor="middle" fill="#666" font-size="10">80M</text>
+    <text x="382" y="263" text-anchor="middle" fill="#888" font-size="10">parameters &#8212; linear axis, so the sliver IS the point</text>
+
+    <!-- sanoTTS family: darker crimson 0..0.75M (smallest voice), crimson to 1.8M (largest) -->
+    <text x="135" y="39" text-anchor="end" fill="#111" font-weight="bold" font-size="12">sanoTTS (9 voices)</text>
+    <text x="135" y="53" text-anchor="end" fill="#666" font-size="10">0.75M&#8211;1.8M params</text>
+    <rect x="145" y="30" width="10.3" height="20" fill="#DC143C"><title>sanoTTS family: largest voice hfc, 1.83M params</title></rect>
+    <rect x="145" y="30" width="4.2" height="20" fill="#8B0A26"><title>sanoTTS family: smallest voice, 745k params (the on-device model)</title></rect>
+    <text x="161" y="44" fill="#DC143C" font-weight="bold">0.75M&#8211;1.8M</text>
+
+    <!-- TinyTTS 1.62M -->
+    <text x="135" y="92" text-anchor="end" fill="#111" font-weight="bold" font-size="13">TinyTTS</text>
+    <text x="135" y="106" text-anchor="end" fill="#666" font-size="10">1.62M params</text>
+    <rect x="145" y="83" width="9.1" height="20" fill="#bbb"><title>TinyTTS: 1.62M params, ships 3.5 MB fp16 (verified from their Hugging Face repo)</title></rect>
+    <text x="160" y="97" fill="#666">1.62M</text>
+
+    <!-- Inflect Nano 4.63M -->
+    <text x="135" y="145" text-anchor="end" fill="#111" font-weight="bold" font-size="13">Inflect Nano</text>
+    <text x="135" y="159" text-anchor="end" fill="#666" font-size="10">4.63M params</text>
+    <rect x="145" y="136" width="25.9" height="20" fill="#bbb"><title>Inflect Nano: 4.63M params</title></rect>
+    <text x="177" y="150" fill="#666">4.63M</text>
+
+    <!-- Kokoro 82M -->
+    <text x="135" y="198" text-anchor="end" fill="#111" font-weight="bold" font-size="13">Kokoro</text>
+    <text x="135" y="212" text-anchor="end" fill="#666" font-size="10">82M params</text>
+    <rect x="145" y="189" width="458.2" height="20" fill="#bbb"><title>Kokoro: 82M params, ~330 MB fp32 (widely cited public figure)</title></rect>
+    <text x="609" y="203" fill="#666">82M</text>
+  </svg>
+  <p style="text-align:center;margin:14px 0 6px">Kokoro is
+    <span style="color:var(--accent);font-weight:bold;font-size:30px;vertical-align:-2px">45&times;</span>
+    larger than our largest voice &mdash; and
+    <span style="color:var(--accent);font-weight:bold;font-size:30px;vertical-align:-2px">110&times;</span>
+    larger than our smallest.</p>
+  <p class="note" style="text-align:center">Shipped-file sizes: sanoTTS amy 2.8&nbsp;MB fp16 and TinyTTS
+  3.5&nbsp;MB fp16, both verified from the released files; Kokoro's ~330&nbsp;MB fp32 is its widely cited
+  public figure.</p>
+
+  <p class="lead" style="margin:32px 0 6px"><b>Three metrics, head to head</b></p>
+  <table class="mtable">
+    <thead>
+      <tr>
+        <th></th>
+        <th>sanoTTS amy<span class="sub">1.46M params</span></th>
+        <th>TinyTTS<span class="sub">1.62M params</span></th>
+        <th>Inflect Nano<span class="sub">4.63M params</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>SCOREQ</td>
+        <td class="best">4.13</td><td>3.94</td><td>3.81</td>
+      </tr>
+      <tr>
+        <td>UTMOS</td>
+        <td class="best">4.10</td><td>3.65</td><td>3.65</td>
+      </tr>
+      <tr>
+        <td>DNSMOS-SIG</td>
+        <td>3.61</td><td class="best">3.62</td><td>3.58</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note">Same 24-sentence set, three independent no-reference metrics; best value per row in
+  crimson. sanoTTS leads on SCOREQ and UTMOS; on DNSMOS-SIG TinyTTS edges us by 0.01 &mdash; no single
+  metric tells the whole story.</p>
+
+  <p class="lead" style="margin:32px 0 6px"><b>The size-quality frontier we traced</b></p>
+  <svg viewBox="0 0 640 260" font-family="Lucida Console, Monaco, monospace" font-size="11"
+       style="width:100%;max-width:640px;height:auto;display:block;margin:0 auto"
+       role="img" aria-label="Line chart: five sanoTTS amy voice builds from 1.09M to 1.84M parameters, SCOREQ rising from 3.70 to 4.16 as decoder capacity increases, at fixed voice identity.">
+    <title>The size-quality frontier we traced</title>
+    <line x1="55" y1="20" x2="55" y2="220" stroke="#ccc" stroke-width="1"/>
+    <line x1="55" y1="153.3" x2="620" y2="153.3" stroke="#eee" stroke-width="1"/>
+    <line x1="55" y1="86.7"  x2="620" y2="86.7"  stroke="#eee" stroke-width="1"/>
+    <line x1="55" y1="20"    x2="620" y2="20"    stroke="#eee" stroke-width="1"/>
+    <line x1="55" y1="220" x2="620" y2="220" stroke="#ccc" stroke-width="1"/>
+    <text x="48" y="223"   text-anchor="end" fill="#666">3.6</text>
+    <text x="48" y="156.3" text-anchor="end" fill="#666">3.8</text>
+    <text x="48" y="89.7"  text-anchor="end" fill="#666">4.0</text>
+    <text x="48" y="23"    text-anchor="end" fill="#666">4.2</text>
+    <text x="111.5" y="238" text-anchor="middle" fill="#666" font-size="10">1.09M</text>
+    <text x="274.7" y="238" text-anchor="middle" fill="#666" font-size="10">1.35M</text>
+    <text x="582.3" y="238" text-anchor="middle" fill="#666" font-size="10">1.84M</text>
+    <polyline points="111.5,186.7 174.3,176.7 274.7,60.0 343.8,43.3 582.3,33.3"
+              fill="none" stroke="#DC143C" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="111.5" cy="186.7" r="4" fill="#DC143C" stroke="#fff" stroke-width="2"><title>1.09M params, SCOREQ 3.70</title></circle>
+    <circle cx="174.3" cy="176.7" r="4" fill="#DC143C" stroke="#fff" stroke-width="2"><title>1.19M params, SCOREQ 3.73</title></circle>
+    <circle cx="274.7" cy="60.0"  r="4" fill="#DC143C" stroke="#fff" stroke-width="2"><title>1.35M params, SCOREQ 4.08</title></circle>
+    <circle cx="343.8" cy="43.3"  r="4" fill="#DC143C" stroke="#fff" stroke-width="2"><title>1.46M params, SCOREQ 4.13</title></circle>
+    <circle cx="582.3" cy="33.3"  r="4" fill="#DC143C" stroke="#fff" stroke-width="2"><title>1.84M params, SCOREQ 4.16</title></circle>
+    <text x="111.5" y="176" fill="#111" font-size="10">3.70</text>
+    <text x="582.3" y="24" fill="#111" font-size="10" text-anchor="end">4.16</text>
+  </svg>
+  <p class="note">Same voice (amy), same duration/acoustic recipe &mdash; only decoder size changes.
+  Quality lives in the decoder: doubling it from 1.09M to 1.84M params moves SCOREQ from 3.70 to 4.16.</p>
+
+  <hr>
+
+  <h2>Synthesize live in your browser</h2>
+  <p class="note">Type anything. The text is phonemized by <b>espeak-ng compiled to
+  WebAssembly</b> (the same 275&nbsp;KB port that runs on the chip) and spoken by that
+  voice's own neural stack &mdash; all client-side, no server. Pick a voice:</p>
+
+  <div class="mascots" id="mascots"></div>
 
   <div class="row" style="margin-top:16px">
-    <button id="go" disabled>Synthesize &amp; play</button>
-    <button id="play" class="sec" disabled>▶ Play again</button>
-    <span id="state" class="note">loading runtime…</span>
+    <textarea id="text" maxlength="300" rows="4"
+           style="flex:1;min-width:300px;width:100%;font:inherit;font-size:18px;line-height:1.5;
+           padding:18px 20px;border:2px solid var(--ink);background:var(--bg);color:var(--ink);
+           resize:vertical">Hello! I am a tiny voice living in your browser.</textarea>
   </div>
-  <label class="toggle">
-    <input type="checkbox" id="predict"> use the model's own duration head (unvalidated length)
-  </label>
-  <table class="stat" id="stats" hidden>
-    <tr><td>Verification</td><td id="corr">—</td></tr>
-    <tr><td>Audio produced</td><td id="dur">—</td></tr>
-    <tr><td>Compute time (this CPU)</td><td id="time">—</td></tr>
-    <tr><td>Speed on this machine</td><td id="rtf">—</td></tr>
+  <div class="row" style="margin-top:10px">
+    <button id="go" disabled>Synthesize &amp; play</button>
+    <button id="play" class="sec" disabled>&#9654; Play again</button>
+    <span id="state" class="note">loading runtime&hellip;</span>
+  </div>
+  <table class="stat" id="stats">
+    <tr><td>Phonemes</td><td id="phon">&mdash;</td></tr>
+    <tr><td>Audio produced</td><td id="dur">&mdash;</td></tr>
+    <tr><td>Compute time (this CPU)</td><td id="time">&mdash;</td></tr>
+    <tr><td>Speed on this machine</td><td id="rtf">&mdash;</td></tr>
   </table>
   <div id="log"></div>
-  <p class="note" style="margin-top:16px">The speed shown is <b>this browser on your CPU</b>,
-  not a microcontroller — a laptop runs this far faster than real time. The per-device MCU
-  numbers (ESP32-S3 at 0.22× real time) live in the
-  <a href="https://github.com/Ampixa/sanoTTS">repo</a>.</p>
-
-  <hr>
-
-  <div class="voice">
-    <div class="head"><span class="lang">Vietnamese 🇻🇳</span>
-      <span class="meta">teacher <code>vi_VN-vais1000-medium</code> · 1,464,812 params</span></div>
-    <p class="quote" lang="vi" dir="auto">Vui lòng đọc mục 1 với khoảng dừng bình tĩnh, rồi tiếp tục câu tiếp theo. Variant 3.</p>
-    <table class="lanes">
-      <tr><td class="who"><span class="flag">▸</span> sanoTTS</td><td><audio controls preload="none" src="samples/vietnamese-student.mp3"></audio></td></tr>
-      <tr><td class="who">Piper teacher</td><td><audio controls preload="none" src="samples/vietnamese-teacher.mp3"></audio></td></tr>
-    </table>
-  </div>
-
-  <div class="voice">
-    <div class="head"><span class="lang">Indonesian 🇮🇩</span>
-      <span class="meta">teacher <code>id_ID-news_tts-medium</code> · 1,462,796 params</span></div>
-    <p class="quote" lang="id" dir="auto">Tolong baca butir 1 dengan jeda yang tenang, lalu lanjutkan ke kalimat berikutnya. Variant 3.</p>
-    <table class="lanes">
-      <tr><td class="who"><span class="flag">▸</span> sanoTTS</td><td><audio controls preload="none" src="samples/indonesian-student.mp3"></audio></td></tr>
-      <tr><td class="who">Piper teacher</td><td><audio controls preload="none" src="samples/indonesian-teacher.mp3"></audio></td></tr>
-    </table>
-  </div>
-
-  <hr>
-
-  <h2>Expanding</h2>
-  <p class="note">Vietnamese and Indonesian graduated from this section — their first stacks
-  composed badly (full-stack cosine 0.53 / 0.43), and a retrained pipeline (de-smoothed
-  acoustic + decoder adapted to predicted latents) fixed the composition. One remains:</p>
-  <table class="lanes">
-    <tr><td class="who">Telugu</td><td><span class="pill mute">cosine 0.56</span>
-      <span class="note">full-student speech not yet usable — different failure lane, needs its own diagnosis</span></td></tr>
-  </table>
+  <p class="note" style="margin-top:16px">The speed shown is <b>this browser on your CPU</b> &mdash;
+  the on-device English voice runs at 0.22&times; real time on an ESP32-S3. Every mascot above
+  (marked &#9679;) synthesizes your typed text live, right here, with no server involved.</p>
 
   <hr>
 
@@ -220,128 +387,198 @@
   <p class="copyright">© 2026 Ampixa</p>
 
 <script src="snt_tts.js"></script>
+<script src="snt_g2p.js"></script>
+<script src="snt_voice.js"></script>
 <script>
-const SR = 22050;
-const ARENA = 320 * 1024;
-const OUT_CAP = 400000;
-const ASSET = "assets/";
-
+const SR = 22050, ARENA = 320*1024, OUT_CAP = 400000, ASSET = "assets/", VOICE_OUT_CAP = 22050*20;
 const $ = id => document.getElementById(id);
-const logEl = $("log");
-const log = m => { logEl.textContent += m + "\n"; };
+const log = m => { $("log").textContent += m + "\n"; };
 
-let Mod = null, audioCtx = null, lastPcm = null;
+// The 745k on-device "mcu" voice keeps its own int8 runtime (snt_tts.js,
+// SaanoTTS module) and default en-us+kristin G2P table (slot 0) -- it
+// predates the multi-voice front+decoder chain below and is bit-exact with
+// the ESP32-S3 firmware, so it is left untouched. Every other voice runs
+// through snt_voice.js (SaanoVoice), chaining the fp32 front half (duration
+// + acoustic) into the piperlite decoder, fed by web/voices/<key>/*.bin
+// (tools/export_voice_bundle.py) and phonemized by the SAME espeak-ng wasm
+// module (snt_g2p.js), switched per voice via snt_g2p_set_voice.
+const VOICES = [
+  {key:"amy",      label:"amy",        params:"1.46M", flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83D\uDC26"},
+  {key:"kristin",  label:"kristin",    params:"1.40M", flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83E\uDD8A"},
+  {key:"hfc",      label:"hfc",        params:"1.83M", flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83E\uDD89"},
+  {key:"vietnamese",label:"Vietnamese",params:"1.46M", flag:"\uD83C\uDDFB\uD83C\uDDF3", live:true, emj:"\uD83D\uDC03"},
+  {key:"indonesian",label:"Indonesian",params:"1.46M", flag:"\uD83C\uDDEE\uD83C\uDDE9", live:true, emj:"\uD83E\uDDA7"},
+  {key:"nepali",   label:"Nepali",     params:"1.47M", flag:"\uD83C\uDDF3\uD83C\uDDF5", live:true, emj:"\uD83E\uDD9D"},
+  {key:"hindi",    label:"Hindi",      params:"1.50M", flag:"\uD83C\uDDEE\uD83C\uDDF3", live:true, emj:"\uD83E\uDD9A"},
+  {key:"chinese",  label:"Chinese",    params:"1.50M", flag:"\uD83C\uDDE8\uD83C\uDDF3", live:true, emj:"\uD83D\uDC3C"},
+  {key:"mcu",      label:"English",    params:"745k",  flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83E\uDD16",
+    espeakVoice:"en-us", g2pSlot:0, lengthScale:1.0},
+];
+let voice = VOICES[0];
+// Native default sentence per voice, swapped into the textarea on every mascot
+// switch (always replaces whatever the user typed, by design). Keyed by
+// voice.key; the four English voices share one sentence.
+const DEFAULT_TEXT = {
+  mcu:     "Hello! I am a tiny voice living in your browser.",
+  amy:     "Hello! I am a tiny voice living in your browser.",
+  kristin: "Hello! I am a tiny voice living in your browser.",
+  hfc:     "Hello! I am a tiny voice living in your browser.",
+  vietnamese: "Xin chào! Tôi là một giọng nói nhỏ sống trong trình duyệt của bạn.",
+  indonesian: "Halo! Saya suara kecil yang tinggal di peramban Anda.",
+  nepali:  "नमस्ते! म तपाईंको ब्राउजरमा बस्ने सानो आवाज हुँ।",
+  hindi:   "नमस्ते! मैं आपके ब्राउज़र में रहने वाली छोटी आवाज़ हूँ।",
+  chinese: "你好！我是住在你浏览器里的小声音。",
+};
 
-async function fetchBytes(name) {
-  const r = await fetch(ASSET + name);
-  if (!r.ok) throw new Error(`fetch ${name}: ${r.status}`);
-  return new Uint8Array(await r.arrayBuffer());
-}
-function toHeap(bytes) {
-  const p = Mod._malloc(bytes.length);
-  Mod.HEAPU8.set(bytes, p);
-  return p;
-}
-function pearson(a, b) {
-  const n = Math.min(a.length, b.length);
-  let sa=0, sb=0, saa=0, sbb=0, sab=0;
-  for (let i=0;i<n;i++){ const x=a[i],y=b[i];
-    sa+=x; sb+=y; saa+=x*x; sbb+=y*y; sab+=x*y; }
-  const cov = sab - sa*sb/n;
-  return cov / Math.sqrt((saa - sa*sa/n)*(sbb - sb*sb/n) + 1e-30);
-}
-
-let assets = null;
-async function loadAssets() {
-  if (assets) return assets;
-  const [front, dec, ids, durs, gold] = await Promise.all(
-    ["front_q8.bin","model_q8.bin","e2e_ids.bin","e2e_durs.bin","e2e_audio.bin"]
-      .map(fetchBytes));
-  assets = { front, dec, ids, durs,
-             gold: new Float32Array(gold.buffer, gold.byteOffset, gold.byteLength/4) };
-  return assets;
-}
-
-function play(pcm) {
-  audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-  const buf = audioCtx.createBuffer(1, pcm.length, SR);
-  buf.getChannelData(0).set(pcm);
-  const src = audioCtx.createBufferSource();
-  src.buffer = buf; src.connect(audioCtx.destination); src.start();
-}
-
-async function synth() {
-  $("go").disabled = true;
-  $("state").textContent = "synthesizing…";
-  logEl.textContent = "";
-  try {
-    const a = await loadAssets();
-    const usePredicted = $("predict").checked;
-
-    const frontP = toHeap(a.front);
-    const decP   = toHeap(a.dec);
-    const idsP   = toHeap(a.ids);
-    const nIds   = a.ids.byteLength / 4;
-    const dursP  = usePredicted ? 0 : toHeap(a.durs);
-    const arenaP = Mod._malloc(ARENA);
-    const outP   = Mod._malloc(OUT_CAP * 4);
-
-    const t0 = performance.now();
-    const n = Mod._snt_web_synthesize(
-      frontP, decP, idsP, nIds, dursP, arenaP, ARENA, outP, OUT_CAP);
-    const t1 = performance.now();
-
-    if (n < 0) throw new Error(`synth returned ${n} (arena/OOM or bad input)`);
-
-    const pcm = new Float32Array(n);
-    pcm.set(Mod.HEAPF32.subarray(outP>>2, (outP>>2)+n));
-    lastPcm = pcm;
-
-    Mod._free(frontP); Mod._free(decP); Mod._free(idsP);
-    if (dursP) Mod._free(dursP);
-    Mod._free(arenaP); Mod._free(outP);
-
-    const secs = n / SR;
-    const wall = (t1 - t0) / 1000;
-    const rtf  = wall / secs;
-    $("dur").textContent  = `${n.toLocaleString()} samples · ${secs.toFixed(2)} s @ ${SR/1000} kHz`;
-    $("time").textContent = `${wall.toFixed(3)} s`;
-    $("rtf").textContent  = rtf < 1
-        ? `${(1/rtf).toFixed(1)}× faster than real time`
-        : `${rtf.toFixed(2)}× real time (slower)`;
-
-    if (usePredicted) {
-      $("corr").innerHTML = `<span class="note">predicted durations — not length-matched to reference</span>`;
-    } else {
-      const c = pearson(pcm, a.gold);
-      const pass = c > 0.98;
-      $("corr").innerHTML =
-        `<span class="badge ${pass?'ok':'err'}">corr ${c.toFixed(4)}</span> ` +
-        `<span class="note">vs PyTorch reference${pass?' — matches':''}</span>`;
-    }
-    $("stats").hidden = false;
-    $("state").textContent = "done.";
-    $("play").disabled = false;
-    play(pcm);
-    log(`ids=${nIds} durations=${usePredicted?'predicted':'reference'} samples=${n}`);
-  } catch (e) {
-    $("state").innerHTML = `<span class="badge err">error</span>`;
-    log(String(e && e.message || e));
-  } finally {
-    $("go").disabled = false;
+function renderMascots() {
+  const box = $("mascots");
+  box.innerHTML = "";
+  for (const v of VOICES) {
+    const b = document.createElement("button");
+    b.className = "m" + (v === voice ? " sel" : "");
+    const img = document.createElement("img");
+    img.src = "assets/mascots/" + (v.key==="mcu"?"mcu":v.key) + ".png";
+    img.alt = v.label;
+    img.onerror = () => { const d=document.createElement("div"); d.className="emj";
+                          d.textContent=v.emj; img.replaceWith(d); };
+    b.appendChild(img);
+    const lab = document.createElement("span");
+    lab.textContent = v.flag + " " + v.label + (v.live ? " \u25CF" : "");
+    b.appendChild(lab);
+    const pp = document.createElement("span");
+    pp.className = "params"; pp.textContent = v.params + " params";
+    b.appendChild(pp);
+    b.title = "synthesizes your text live";
+    b.onclick = () => {
+      voice = v; renderMascots(); updateUI();
+      if (DEFAULT_TEXT[v.key] !== undefined) $("text").value = DEFAULT_TEXT[v.key];
+      // Lazy-fetch this voice's blobs on select so the first click of
+      // "Synthesize" doesn't pay the network round-trip; synth() awaits the
+      // same cached promise if the prefetch hasn't resolved yet.
+      if (v.key !== "mcu") loadVoiceBundle(v.key).catch(e => log("prefetch " + v.key + ": " + (e && e.message || e)));
+    };
+    box.appendChild(b);
   }
 }
+function updateUI() {
+  $("text").disabled = false;
+  $("go").textContent = "Synthesize & play";
+}
 
-SaanoTTS().then(m => {
-  Mod = m;
-  $("state").textContent = "ready.";
-  $("go").disabled = false;
-  $("go").addEventListener("click", synth);
-  $("play").addEventListener("click", () => lastPcm && play(lastPcm));
-}).catch(e => {
-  $("state").innerHTML = `<span class="badge err">runtime failed to load</span>`;
-  log(String(e && e.message || e));
-});
+let Mod=null, G2P=null, Voice=null, audioCtx=null, lastPcm=null, mcuAssets=null;
+const voiceBundles = new Map(); // key -> Promise<{meta,front,dec}>
+
+async function fetchBytes(url){ const r=await fetch(url);
+  if(!r.ok) throw new Error("fetch "+url+": "+r.status); return new Uint8Array(await r.arrayBuffer()); }
+async function fetchJson(url){ const r=await fetch(url);
+  if(!r.ok) throw new Error("fetch "+url+": "+r.status); return r.json(); }
+function toHeap(mod, bytes){ const p=mod._malloc(bytes.length); mod.HEAPU8.set(bytes,p); return p; }
+
+async function loadMcuAssets(){
+  if(mcuAssets) return mcuAssets;
+  const [front,dec]=await Promise.all(["front_q8.bin","model_q8.bin"].map(f=>fetchBytes(ASSET+f)));
+  mcuAssets={front,dec}; return mcuAssets;
+}
+function loadVoiceBundle(key){
+  if(!voiceBundles.has(key)){
+    const dir = "voices/" + key + "/";
+    voiceBundles.set(key, (async () => {
+      const [meta, front, dec] = await Promise.all([
+        fetchJson(dir + "meta.json"),
+        fetchBytes(dir + "front_f32.bin"),
+        fetchBytes(dir + "dec_f32.bin"),
+      ]);
+      return {meta, front, dec};
+    })());
+  }
+  return voiceBundles.get(key);
+}
+
+function play(pcm, sr){
+  audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+  const buf=audioCtx.createBuffer(1,pcm.length,sr||SR);
+  buf.getChannelData(0).set(pcm);
+  const src=audioCtx.createBufferSource();
+  src.buffer=buf; src.connect(audioCtx.destination); src.start();
+}
+let _setVoiceFn = null;
+function setG2PVoice(espeakVoice, slot){
+  if(!_setVoiceFn) _setVoiceFn = G2P.cwrap("snt_g2p_set_voice","number",["string","number"]);
+  const rc = _setVoiceFn(espeakVoice, slot);
+  if(rc !== 0) throw new Error("snt_g2p_set_voice(\""+espeakVoice+"\", "+slot+") failed rc="+rc);
+}
+function g2pIds(text){
+  const MAXIDS=1024;
+  const tp=G2P._malloc(G2P.lengthBytesUTF8(text)+1);
+  G2P.stringToUTF8(text,tp,G2P.lengthBytesUTF8(text)+1);
+  const op=G2P._malloc(MAXIDS*4);
+  const n=G2P._snt_g2p_text_to_ids(tp,op,MAXIDS);
+  let ids=null;
+  if(n>0) ids=new Int32Array(G2P.HEAP32.buffer,op,n).slice();
+  G2P._free(tp); G2P._free(op);
+  if(n<=0) throw new Error("phonemizer returned "+n);
+  return ids;
+}
+
+async function synthMcu(text){
+  const a = await loadMcuAssets();
+  setG2PVoice(voice.espeakVoice, voice.g2pSlot);
+  const ids = g2pIds(text);
+  const frontP=toHeap(Mod,a.front), decP=toHeap(Mod,a.dec);
+  const idsP=toHeap(Mod,new Uint8Array(ids.buffer,0,ids.length*4));
+  const arenaP=Mod._malloc(ARENA), outP=Mod._malloc(OUT_CAP*4);
+  const t0=performance.now();
+  const n=Mod._snt_web_synthesize(frontP,decP,idsP,ids.length,0,arenaP,ARENA,outP,OUT_CAP);
+  const wall=(performance.now()-t0)/1000;
+  let pcm=null;
+  if(n>=0){ pcm=new Float32Array(n); pcm.set(Mod.HEAPF32.subarray(outP>>2,(outP>>2)+n)); }
+  [frontP,decP,idsP,arenaP,outP].forEach(p=>Mod._free(p));
+  if(n<0) throw new Error("synth returned "+n);
+  return {pcm, ids, wall, sr:SR};
+}
+async function synthVoice(key, text){
+  const bundle = await loadVoiceBundle(key);
+  setG2PVoice(bundle.meta.espeak_voice, bundle.meta.g2p_voice_slot);
+  const ids = g2pIds(text);
+  const frontP=toHeap(Voice,bundle.front), decP=toHeap(Voice,bundle.dec);
+  const idsP=toHeap(Voice,new Uint8Array(ids.buffer,0,ids.length*4));
+  const outP=Voice._malloc(VOICE_OUT_CAP*4);
+  const t0=performance.now();
+  const n=Voice._snt_voice_synthesize(frontP,decP,idsP,ids.length,bundle.meta.length_scale,outP,VOICE_OUT_CAP);
+  const wall=(performance.now()-t0)/1000;
+  let pcm=null;
+  if(n>=0){ pcm=new Float32Array(n); pcm.set(Voice.HEAPF32.subarray(outP>>2,(outP>>2)+n)); }
+  [frontP,decP,idsP,outP].forEach(p=>Voice._free(p));
+  if(n<0) throw new Error("snt_voice_synthesize returned "+n);
+  return {pcm, ids, wall, sr:bundle.meta.sample_rate||SR};
+}
+async function synth(){
+  $("go").disabled=true; $("state").textContent="synthesizing\u2026"; $("log").textContent="";
+  try{
+    const text = $("text").value || "Hello.";
+    const r = voice.key==="mcu" ? await synthMcu(text) : await synthVoice(voice.key, text);
+    lastPcm = r.pcm; lastSr = r.sr;
+    const secs=r.pcm.length/r.sr, rtf=r.wall/secs;
+    $("phon").textContent=r.ids.length+" ids (espeak-ng wasm)";
+    $("dur").textContent=secs.toFixed(2)+" s @ "+(r.sr/1000).toFixed(2)+" kHz";
+    $("time").textContent=r.wall.toFixed(3)+" s";
+    $("rtf").textContent=rtf<1?(1/rtf).toFixed(1)+"\u00D7 faster than real time":rtf.toFixed(2)+"\u00D7 real time";
+    $("state").textContent="done.";
+    $("play").disabled=false;
+    play(r.pcm, r.sr);
+  }catch(e){ $("state").innerHTML='<span class="badge err">error</span>'; log(String(e&&e.message||e)); }
+  finally{ $("go").disabled=false; }
+}
+let lastSr = SR;
+renderMascots(); updateUI();
+Promise.all([SaanoTTS(), SaanoG2P(), SaanoVoice()]).then(([m,g,v])=>{
+  Mod=m; G2P=g; Voice=v;
+  const rc=G2P._snt_g2p_init ? G2P._snt_g2p_init() : 0;
+  $("state").textContent="ready.";
+  $("go").disabled=false;
+  $("go").addEventListener("click",synth);
+  $("play").addEventListener("click",()=>lastPcm&&play(lastPcm,lastSr));
+}).catch(e=>{ $("state").innerHTML='<span class="badge err">runtime failed to load</span>'; log(String(e&&e.message||e)); });
 </script>
 </body>
 </html>

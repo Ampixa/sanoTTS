@@ -1,0 +1,98 @@
+{
+ "english-amy": [
+  {
+   "n": 1,
+   "text": "Welcome! This entire voice runs in under four megabytes, with no cloud at all.",
+   "mp3": "english-amy-1.mp3"
+  },
+  {
+   "n": 2,
+   "text": "It's a bright, clear morning. A perfect day to build something small and useful.",
+   "mp3": "english-amy-2.mp3"
+  }
+ ],
+ "english-kristin": [
+  {
+   "n": 1,
+   "text": "Welcome! This entire voice runs in under four megabytes, with no cloud at all.",
+   "mp3": "english-kristin-1.mp3"
+  },
+  {
+   "n": 2,
+   "text": "It's a bright, clear morning. A perfect day to build something small and useful.",
+   "mp3": "english-kristin-2.mp3"
+  }
+ ],
+ "english-hfc": [
+  {
+   "n": 1,
+   "text": "Welcome! This entire voice runs in under four megabytes, with no cloud at all.",
+   "mp3": "english-hfc-1.mp3"
+  },
+  {
+   "n": 2,
+   "text": "It's a bright, clear morning. A perfect day to build something small and useful.",
+   "mp3": "english-hfc-2.mp3"
+  }
+ ],
+ "vietnamese": [
+  {
+   "n": 1,
+   "text": "Xin chào! Rất vui được gặp bạn hôm nay.",
+   "mp3": "vietnamese-1.mp3"
+  },
+  {
+   "n": 2,
+   "text": "Sáng nay trời đẹp, chúng ta cùng bắt đầu ngày mới nhé.",
+   "mp3": "vietnamese-2.mp3"
+  }
+ ],
+ "indonesian": [
+  {
+   "n": 1,
+   "text": "Halo! Senang bertemu dengan Anda hari ini.",
+   "mp3": "indonesian-1.mp3"
+  },
+  {
+   "n": 2,
+   "text": "Pagi ini cuaca cerah, mari kita mulai hari dengan semangat.",
+   "mp3": "indonesian-2.mp3"
+  }
+ ],
+ "nepali": [
+  {
+   "n": 1,
+   "text": "नमस्ते! तपाईंलाई भेटेर खुशी लाग्यो।",
+   "mp3": "nepali-1.mp3"
+  },
+  {
+   "n": 2,
+   "text": "आज बिहान मौसम राम्रो छ, नयाँ दिन सुरु गरौं।",
+   "mp3": "nepali-2.mp3"
+  }
+ ],
+ "hindi": [
+  {
+   "n": 1,
+   "text": "नमस्ते! आपसे मिलकर बहुत खुशी हुई।",
+   "mp3": "hindi-1.mp3"
+  },
+  {
+   "n": 2,
+   "text": "आज सुबह मौसम बहुत सुहावना है, चलिए दिन की शुरुआत करते हैं।",
+   "mp3": "hindi-2.mp3"
+  }
+ ],
+ "chinese": [
+  {
+   "n": 1,
+   "text": "你好！很高兴今天见到你。",
+   "mp3": "chinese-1.mp3"
+  },
+  {
+   "n": 2,
+   "text": "今天早上天气很好，我们开始新的一天吧。",
+   "mp3": "chinese-2.mp3"
+  }
+ ]
+}
