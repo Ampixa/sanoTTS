@@ -22,6 +22,43 @@ synthesizes your text live in the browser. No server, no upload: text goes
 through an espeak-ng-in-WASM phonemizer and that voice's own neural stack, all
 client-side.
 
+## Install & use
+
+**Python** (CLI + library; voices download on first use):
+
+```bash
+pip install "sanotts @ git+https://github.com/Ampixa/sanoTTS@master#subdirectory=pypkg"
+
+sanotts say "Hello from a two megabyte voice." --voice amy -o hello.wav
+sanotts say "Xin chào!" --voice vi -o xinchao.wav
+```
+
+```python
+import sanotts
+result = sanotts.synthesize("Hello world", voice="amy")   # numpy audio @ 22.05 kHz
+```
+
+Voices: `amy`, `amy-1p1m`, `amy-1p8m`, `kristin`, `hfc`, `vi`, `id` — fetched
+from the [voices-v1 release](https://github.com/Ampixa/sanoTTS/releases/tag/voices-v1)
+into `~/.cache/sanotts/`. Pure numpy inference, no torch, no onnxruntime.
+
+**Arduino / PlatformIO** — the `SanoTTS` library lives in
+[`arduino/`](arduino/): add it to the Arduino IDE as a .zip library, or in
+`platformio.ini`:
+
+```ini
+lib_deps = https://github.com/Ampixa/sanoTTS.git
+```
+
+See [`arduino/README.md`](arduino/README.md) for board support (ESP32-S3 ✓),
+memory guidance, and flashing the model blobs
+([mcu-kristin-745k-q8.tar.gz](https://github.com/Ampixa/sanoTTS/releases/tag/voices-v1)).
+
+**Hugging Face** — the voice packages are mirrored at
+[huggingface.co/ampixa/sanoTTS](https://huggingface.co/ampixa/sanoTTS).
+
+**Browser** — nothing to install: [ampixa.github.io/sanoTTS](https://ampixa.github.io/sanoTTS/).
+
 ## How it stacks up
 
 Open small-scale TTS on an honest gate — a diverse 24-sentence set scored with the
