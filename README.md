@@ -1,11 +1,11 @@
 # sanoTTS — a tiny neural voice that runs anywhere
 
-***sano*** (सानो) — Nepali for **"small."** A small neural TTS: distill a Piper/VITS
-teacher voice into a **~1.4M-parameter** model that runs with **no cloud and no
-NPU** — real-time on a ~$3 ESP32-S3 (out a GPIO into an LM386 and a speaker), or in
-the browser via WASM.
+***sano*** (सानो) — Nepali for **"small."** A family of tiny neural text-to-speech
+voices — **745k to 1.8M parameters** — that run with **no cloud and no NPU**:
+real-time on a ~$3 ESP32-S3 (out a GPIO into an LM386 and a speaker), or live
+in the browser via WASM.
 
-![text in → ESP32 → speech out](docs/assets/saanotts-mcu-hero.png)
+![sanoTTS — nine tiny voices, six languages, browser + $3 chip](docs/assets/saanotts-hero-v2.png)
 
 - smallest neural TTS family known — **745k to 1.8M parameters**
 - runs **real-time** on a **$3 microcontroller** (ESP32-S3)
@@ -42,7 +42,7 @@ public figure.
 | TinyTTS | 1.62 M | 3.94 | 3.65 | **3.62** |
 | Inflect Nano | 4.63 M | 3.81 | 3.65 | 3.58 |
 | Kitten TTS nano | 15 M | 3.02 | 3.58 | 3.43 |
-| _Piper (teacher)_ | _~15 M_ | _4.71_ | _4.47_ | _3.65_ |
+| _reference (~15 M)_ | _~15 M_ | _4.71_ | _4.47_ | _3.65_ |
 | _Kokoro_ | _82 M_ | _4.89_ | _4.52_ | _3.69_ |
 
 sanoTTS is the **smallest** model here and the **best on naturalness (SCOREQ and
@@ -50,7 +50,7 @@ UTMOS) among everything up to 15M params** — beating TinyTTS while being small
 On DNSMOS-SIG, TinyTTS edges us by 0.01 — no single metric tells the whole story.
 It's the only one that runs a full neural stack on a $3 MCU. Parameter count
 isn't destiny at this scale: Kitten TTS at 10x the size scores a full SCOREQ
-point lower. The frontier only pulls ahead at the teacher (~15M) and Kokoro (82M,
+point lower. The frontier only pulls ahead at ~15M-class models and Kokoro (82M,
 60x larger) — a gap we don't claim to close. Reproduce it with
 `tools/eval_mos_all.py` + `tools/eval_scorecard.py`.
 
@@ -84,23 +84,23 @@ against a comparable reference yet.
 
 ![text → duration → acoustic → decoder → audio](docs/assets/saanotts-signal-path.png)
 
-Piper provides phoneme IDs; a duration student predicts timing; an acoustic
-student predicts the generator latents; a decoder student renders 22 kHz audio.
+espeak-ng provides phoneme IDs; a duration model predicts timing; an acoustic
+model predicts generator latents; a decoder renders 22 kHz audio.
 The web voices (amy, kristin, hfc, and the other languages) use a compact
-"piperlite" decoder running in fp32 WASM; the 745k on-device model instead uses
+time-domain decoder running in fp32 WASM; the 745k on-device model instead uses
 a quantized int8 iSTFT decoder, sized to fit and run in real time on the
-ESP32-S3. All students are distilled from the teacher.
+ESP32-S3.
 
-## Distill your own voice
+## Train your own voice
 
-The end-to-end recipe is [`docs/distillation-recipe.md`](docs/distillation-recipe.md):
-build a probe pack from a Piper teacher → train the duration, acoustic-latent, and
-decoder students → joint finetune → export int8. New-language porting is
+The end-to-end recipe is [in the docs](docs/distillation-recipe.md):
+build a probe pack → train the duration, acoustic-latent, and decoder models →
+joint finetune → export int8. New-language porting is
 [`docs/roota-language-porting-recipe.md`](docs/roota-language-porting-recipe.md).
 
 ```bash
 pip install -e .
-# then follow docs/distillation-recipe.md against any en_US Piper voice
+# then follow the training recipe in docs/ to make a new voice
 ```
 
 ## Deploy
@@ -129,9 +129,8 @@ ports), `web/` (browser demo), `configs/` + `data/textsets/` (contracts).
 
 ## License
 
-GPLv3 — see [`LICENSE`](LICENSE). The distillation + G2P path builds on
-[piper](https://github.com/OHF-Voice/piper1-gpl) and
-[espeak-ng](https://github.com/espeak-ng/espeak-ng), both GPLv3, so the project as a
-whole is GPLv3.
+GPLv3 — see [`LICENSE`](LICENSE). The pipeline builds on GPLv3 components
+(notably [espeak-ng](https://github.com/espeak-ng/espeak-ng) for G2P), so the
+project as a whole is GPLv3.
 
 Copyright (C) 2026 Ampixa.
