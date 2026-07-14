@@ -126,11 +126,24 @@ int snt_voice_synthesize(const uint8_t *front_blob, const uint8_t *dec_blob,
 
     {
         size_t dur_arena_n = snt_front_duration_arena_floats(&fm, n_ids);
+        int32_t *dur_ids;
+        int i;
         dur_arena = (float *)malloc((dur_arena_n ? dur_arena_n : 1) * sizeof(float));
         durations = (int32_t *)malloc((size_t)n_ids * sizeof(int32_t));
-        if (!dur_arena || !durations) { ret = -4; goto done; }
-        frames = snt_front_durations(&fm, ids, n_ids, length_scale, durations,
+        dur_ids = (int32_t *)malloc((size_t)n_ids * sizeof(int32_t));
+        if (!dur_arena || !durations || !dur_ids) { free(dur_ids); ret = -4; goto done; }
+        /* The duration student's vocab can be smaller than the acoustic/G2P
+         * map (e.g. 127 vs 157: 'ᵻ'=144 is valid for SOUND but OOB for
+         * TIMING). Same convention as the esp32s3 firmware (fsd_e2e.c):
+         * remap OOB ids to schwa(59) for the duration pass only; the
+         * acoustic pass below still sees the exact ids. */
+        for (i = 0; i < n_ids; i++)
+            dur_ids[i] = (ids[i] >= 0 && ids[i] < fm.d_vocab)
+                             ? ids[i]
+                             : (59 < fm.d_vocab ? 59 : 0);
+        frames = snt_front_durations(&fm, dur_ids, n_ids, length_scale, durations,
                                      dur_arena, dur_arena_n);
+        free(dur_ids);
         free(dur_arena); dur_arena = NULL;
         if (frames <= 0) { ret = -5; goto done; }
     }
@@ -138,11 +151,24 @@ int snt_voice_synthesize(const uint8_t *front_blob, const uint8_t *dec_blob,
     {
         size_t lat_arena_n = snt_front_latent_arena_floats(&fm, n_ids, frames);
         size_t latent_n = (size_t)fm.a_out * (size_t)frames;
+        int32_t *ac_ids;
+        int i;
         lat_arena = (float *)malloc((lat_arena_n ? lat_arena_n : 1) * sizeof(float));
         latent = (float *)malloc((latent_n ? latent_n : 1) * sizeof(float));
-        if (!lat_arena || !latent) { ret = -6; goto done; }
-        rc = snt_front_latent(&fm, ids, durations, n_ids, frames, latent,
+        ac_ids = (int32_t *)malloc((size_t)n_ids * sizeof(int32_t));
+        if (!lat_arena || !latent || !ac_ids) { free(ac_ids); ret = -6; goto done; }
+        /* G2P tables span the union phoneme space; text in a language the
+         * voice wasn't trained for can emit ids beyond this voice's acoustic
+         * vocab (e.g. English through the Indonesian table). Those phonemes
+         * are unpronounceable for this voice either way -- degrade to
+         * schwa(59) instead of failing the whole utterance. */
+        for (i = 0; i < n_ids; i++)
+            ac_ids[i] = (ids[i] >= 0 && ids[i] < fm.a_vocab)
+                            ? ids[i]
+                            : (59 < fm.a_vocab ? 59 : 0);
+        rc = snt_front_latent(&fm, ac_ids, durations, n_ids, frames, latent,
                               lat_arena, lat_arena_n);
+        free(ac_ids);
         free(lat_arena); lat_arena = NULL;
         free(durations); durations = NULL;
         if (rc != 0) { ret = -7; goto done; }

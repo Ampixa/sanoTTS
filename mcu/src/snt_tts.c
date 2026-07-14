@@ -808,7 +808,13 @@ int snt_synthesize(const snt_config *cfg,
     const signed char *r_dout = res_copy(FQ(FOFF_DUR_OUT_W8),
         (size_t)FRONT_DUR_OUT_N16, (signed char *)aa_try((size_t)FRONT_DUR_OUT_N16 + 16));
     for (int t = 0; t < n_tokens; t++) {
-        for (int h = 0; h < H; h++) S->gather[h] = demb[(size_t)ids[t] * H + h];
+        /* The duration embedding has FRONT_DUR_VOCAB(127) rows but the
+         * acoustic student + G2P map span FRONT_AC_VOCAB(157) (e.g. 'ᵻ'=128,
+         * the common reduced vowel). Ids >=127 are valid for SOUND but OOB
+         * for TIMING -- fall back to schwa(59), same convention as the
+         * esp32s3 firmware (fsd_e2e.c). Acoustic gather below stays exact. */
+        int did = ids[t] < FRONT_DUR_VOCAB ? ids[t] : 59;
+        for (int h = 0; h < H; h++) S->gather[h] = demb[(size_t)did * H + h];
         S->gather[H] = (n_tokens > 1) ? (float)t / (float)(n_tokens - 1) : 0.0f;
         S->gather[H + 1] = log1pf((float)n_tokens) / log1pf((float)FRONT_DUR_MAX_TOKENS);
         S->gather[H + 2] = 1.0f;

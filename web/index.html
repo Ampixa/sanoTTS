@@ -394,11 +394,13 @@
   <a href="https://github.com/Ampixa/sanoTTS">github.com/Ampixa/sanoTTS</a>.</p>
   <p class="copyright">© 2026 Ampixa</p>
 
-<script src="snt_tts.js"></script>
-<script src="snt_g2p.js"></script>
-<script src="snt_voice.js"></script>
+<script src="snt_tts.js?v=20260714"></script>
+<script src="snt_g2p.js?v=20260714"></script>
+<script src="snt_voice.js?v=20260714"></script>
 <script>
-const SR = 22050, ARENA = 320*1024, OUT_CAP = 400000, ASSET = "assets/", VOICE_OUT_CAP = 22050*20;
+// ARENA: the esp32 build lives inside 320KB SRAM, but the browser has no such
+// budget -- 2MB covers paragraph-length chunks (320KB OOMs past ~100 ids).
+const SR = 22050, ARENA = 2*1024*1024, OUT_CAP = 400000, ASSET = "assets/", VOICE_OUT_CAP = 22050*20;
 const $ = id => document.getElementById(id);
 const log = m => { $("log").textContent += m + "\n"; };
 
@@ -487,28 +489,86 @@ async function loadMcuAssets(){
   const [front,dec]=await Promise.all(["front_q8.bin","model_q8.bin"].map(f=>fetchBytes(ASSET+f)));
   mcuAssets={front,dec}; return mcuAssets;
 }
-function loadVoiceBundle(key){
+function loadVoiceBundle(key, onProgress){
   if(!voiceBundles.has(key)){
     const dir = "voices/" + key + "/";
     voiceBundles.set(key, (async () => {
+      if(onProgress) onProgress("downloading " + key + " voice model…");
+      const t0 = performance.now();
       const [meta, front, dec] = await Promise.all([
         fetchJson(dir + "meta.json"),
         fetchBytes(dir + "front_f32.bin"),
         fetchBytes(dir + "dec_f32.bin"),
       ]);
+      const mb = ((front.length + dec.length) / 1048576).toFixed(1);
+      if(onProgress) onProgress("model loaded: " + mb + " MB in " +
+        ((performance.now() - t0) / 1000).toFixed(2) + " s");
       return {meta, front, dec};
     })());
   }
   return voiceBundles.get(key);
 }
 
+// Split text into per-sentence chunks so playback can start after the first
+// sentence instead of after the whole paragraph (and so no single synth call
+// can overflow the output cap). Sentences longer than ~220 chars are split
+// again at clause punctuation.
+function splitChunks(text){
+  const MAX = 120, MIN = 40;
+  const sents = text.match(/[^.!?।。！？]+[.!?।。！？]*\s*/g) || [text];
+  const chunks = [];
+  for (let s of sents){
+    s = s.trim();
+    if (!s) continue;
+    while (s.length > MAX){
+      let cut = -1;
+      for (const m of s.matchAll(/[,;:、，；：]\s*/g)){   // prefer clause breaks
+        const end = m.index + m[0].length;
+        if (end >= MIN && end <= MAX) cut = end;
+      }
+      if (cut < 0){                                       // else last word break
+        const sp = s.lastIndexOf(" ", MAX);
+        cut = sp > MIN ? sp + 1 : MAX;
+      }
+      chunks.push(s.slice(0, cut).trim());
+      s = s.slice(cut).trim();
+    }
+    if (s) chunks.push(s);
+  }
+  return chunks.length ? chunks : [text];
+}
+
 function play(pcm, sr){
   audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==="suspended") audioCtx.resume();
   const buf=audioCtx.createBuffer(1,pcm.length,sr||SR);
   buf.getChannelData(0).set(pcm);
   const src=audioCtx.createBufferSource();
   src.buffer=buf; src.connect(audioCtx.destination); src.start();
 }
+// Gapless streaming queue: each chunk is scheduled on the AudioContext
+// timeline right behind the previous one, so audio starts with chunk 1
+// while later chunks are still synthesizing.
+function makeStreamPlayer(sr){
+  audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==="suspended") audioCtx.resume();
+  let nextAt = 0;
+  return {
+    push(pcm){
+      const buf=audioCtx.createBuffer(1,pcm.length,sr);
+      buf.getChannelData(0).set(pcm);
+      const src=audioCtx.createBufferSource();
+      src.buffer=buf; src.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      if (nextAt < now + 0.03) nextAt = now + 0.03;
+      src.start(nextAt);
+      nextAt += pcm.length / sr;
+    }
+  };
+}
+// Lets the browser paint a status update before the next synchronous
+// (main-thread-blocking) wasm synth call.
+const uiBreath = () => new Promise(r => setTimeout(r, 0));
 let _setVoiceFn = null;
 function setG2PVoice(espeakVoice, slot){
   if(!_setVoiceFn) _setVoiceFn = G2P.cwrap("snt_g2p_set_voice","number",["string","number"]);
@@ -561,19 +621,47 @@ async function synthVoice(key, text){
   return {pcm, ids, wall, sr:bundle.meta.sample_rate||SR};
 }
 async function synth(){
-  $("go").disabled=true; $("state").textContent="synthesizing\u2026"; $("log").textContent="";
+  $("go").disabled=true; $("log").textContent="";
+  const setState = m => { $("state").textContent = m; };
   try{
     const text = $("text").value || "Hello.";
-    const r = voice.key==="mcu" ? await synthMcu(text) : await synthVoice(voice.key, text);
-    lastPcm = r.pcm; lastSr = r.sr;
-    const secs=r.pcm.length/r.sr, rtf=r.wall/secs;
-    $("phon").textContent=r.ids.length+" ids (espeak-ng wasm)";
-    $("dur").textContent=secs.toFixed(2)+" s @ "+(r.sr/1000).toFixed(2)+" kHz";
-    $("time").textContent=r.wall.toFixed(3)+" s";
-    $("rtf").textContent=rtf<1?(1/rtf).toFixed(1)+"\u00D7 faster than real time":rtf.toFixed(2)+"\u00D7 real time";
-    $("state").textContent="done.";
-    $("play").disabled=false;
-    play(r.pcm, r.sr);
+    const tStart = performance.now();
+    setState("preparing\u2026"); await uiBreath();
+
+    // model download/load feedback (cached bundles resolve instantly)
+    if (voice.key === "mcu") { setState("loading model\u2026"); await uiBreath(); await loadMcuAssets(); }
+    else await loadVoiceBundle(voice.key, m => { setState(m); log(m); });
+    await uiBreath();
+
+    const chunks = splitChunks(text);
+    const doChunk = t => voice.key==="mcu" ? synthMcu(t) : synthVoice(voice.key, t);
+    let player=null, ttfu=null, totalIds=0, totalWall=0;
+    const pcms=[];
+    for (let i = 0; i < chunks.length; i++){
+      setState("synthesizing " + (i+1) + "/" + chunks.length + "\u2026"); await uiBreath();
+      const r = await doChunk(chunks[i]);
+      totalIds += r.ids.length; totalWall += r.wall; pcms.push(r.pcm); lastSr = r.sr;
+      if (!player){                       // first audio: start playing NOW
+        player = makeStreamPlayer(r.sr);
+        ttfu = (performance.now() - tStart) / 1000;
+        $("time").textContent = ttfu.toFixed(2) + " s to first audio";
+        log("first audio after " + ttfu.toFixed(2) + " s");
+      }
+      player.push(r.pcm);
+      log("sentence " + (i+1) + "/" + chunks.length + ": " +
+          (r.pcm.length/r.sr).toFixed(2) + " s audio in " + r.wall.toFixed(2) + " s");
+    }
+    // concatenate for the replay button + final stats
+    const total = pcms.reduce((a,p)=>a+p.length, 0);
+    lastPcm = new Float32Array(total);
+    let off = 0; for (const p of pcms){ lastPcm.set(p, off); off += p.length; }
+    const secs = total/lastSr, rtf = totalWall/secs;
+    $("phon").textContent = totalIds + " ids (espeak-ng wasm)";
+    $("dur").textContent = secs.toFixed(2) + " s @ " + (lastSr/1000).toFixed(2) + " kHz";
+    $("time").textContent = ttfu.toFixed(2) + " s to first audio \u00B7 " + totalWall.toFixed(2) + " s total";
+    $("rtf").textContent = rtf<1 ? (1/rtf).toFixed(1)+"\u00D7 faster than real time" : rtf.toFixed(2)+"\u00D7 real time";
+    setState("done \u2014 " + chunks.length + (chunks.length>1?" sentences":" sentence") + ".");
+    $("play").disabled = false;
   }catch(e){ $("state").innerHTML='<span class="badge err">error</span>'; log(String(e&&e.message||e)); }
   finally{ $("go").disabled=false; }
 }
