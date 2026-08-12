@@ -30,7 +30,7 @@ repeat a number this library itself hasn't verified.
 ```ini
 ; platformio.ini
 lib_deps =
-    https://github.com/Ampixa/saanotts.git#master  ; whole-monorepo checkout
+    https://github.com/Ampixa/sanotts.git#master  ; whole-monorepo checkout
 ```
 
 PlatformIO's dependency finder walks a git URL looking for
