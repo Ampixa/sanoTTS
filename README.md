@@ -210,27 +210,60 @@ SCOREQ from 3.70 to 4.16.
 
 ## The voices
 
-| Language | Voice | Params | SCOREQ |
-| --- | --- | ---: | :---: |
-| English 🇺🇸 | amy | 1.46 M | 4.13 |
-| | kristin | 1.40 M | 4.09 |
-| | hfc | 1.83 M | 3.94 |
-| | amy-small | 1.08 M | 3.70 |
-| | heart (24 kHz) | 2.27 M | 3.48 |
-| | heart-nano (int8, 24 kHz) | 294 k | 2.29 |
-| | robot (on-device, int8) | 567 k | — |
-| Nepali नेपाली | Nepali | 1.47 M | — |
-| Hindi हिन्दी | Hindi | 1.50 M | — |
-| Vietnamese Tiếng Việt | Vietnamese | 1.46 M | — |
-| Indonesian Bahasa | Indonesian | 1.46 M | — |
-| Chinese 中文 | Chinese | 1.50 M | — |
+| Language | Voice | Params | SCOREQ | WER |
+| --- | --- | ---: | :---: | :---: |
+| English 🇺🇸 | amy | 1.45 M | 4.13 | — |
+| | kristin | 1.40 M | 4.09 | — |
+| | hfc | 1.83 M | 3.94 | — |
+| | amy-small | 1.08 M | 3.70 | — |
+| | heart (24 kHz) | 2.27 M | 3.48 | — |
+| | heart-nano (int8, 24 kHz) | 294 k | 2.29 | — |
+| | robot (on-device, int8) | 567 k | — | — |
+| German 🇩🇪 | German | 1.57 M | — | 0.099 |
+| | German small | 512 k | — | 0.145 |
+| Turkish 🇹🇷 | Turkish | 1.56 M | — | 0.303 |
+| | Turkish small | 510 k | — | — |
+| Russian 🇷🇺 | Russian | 1.57 M | — | 0.120 |
+| | Russian small | 512 k | — | — |
+| French 🇫🇷 | French | 1.57 M | — | 0.221 |
+| Spanish 🇪🇸 | Spanish | 1.56 M | — | 0.147 |
+| | Spanish small | 510 k | — | — |
+| Italian 🇮🇹 | Italian | 1.57 M | — | 0.080 |
+| | Italian small | 512 k | — | — |
+| Portuguese 🇧🇷 | Portuguese | 1.57 M | — | 0.038 |
+| | Portuguese small | 512 k | — | — |
+| Romanian 🇷🇴 | Romanian | 1.57 M | — | 0.392 |
+| | Romanian small | 512 k | — | — |
+| Czech 🇨🇿 | Czech | 1.57 M | — | 0.351 |
+| | Czech small | 513 k | — | — |
+| Arabic 🇯🇴 | Arabic | 1.57 M | — | 0.274 |
+| Nepali नेपाली | Nepali | 1.47 M | — | — |
+| Hindi हिन्दी | Hindi | 1.50 M | — | — |
+| Vietnamese Tiếng Việt | Vietnamese | 1.57 M | 1.53 | 0.468 |
+| Indonesian Bahasa | Indonesian | 1.56 M | 1.71 | 0.256 |
+| Chinese 中文 | Chinese | 1.50 M | — | — |
+
+**Two different questions, and neither column answers the other.** SCOREQ is a
+no-reference quality predictor — how it sounds. WER is Whisper word error rate —
+whether the words arrive. A voice can score well on one and badly on the other,
+and on the two voices where we have both, the second number is much less
+flattering: Indonesian reads 0.256 word error, so the words do arrive, and
+still scores 1.71 against amy's 4.13.
+
+An empty cell means unmeasured, not zero. The English SCOREQ figures share one
+eval set; the Indonesian and Vietnamese ones come from a different set (24
+held-out Tatoeba sentences each), so the column ranks within a language rather
+than across them — SCOREQ is a predictor trained largely on English and
+comparing it across languages is not an established use of it. WER for the
+ten languages added on 2026-09-08 comes from 16 held-out Tatoeba sentences each,
+out of domain from the corpus they were distilled on — directional, not precise.
+Nepali, Hindi and Chinese predate that harness and have neither number.
+**No listening test has been run on any non-English voice.**
 
 The "robot" row is the same 567,008-parameter model that runs on the ESP32-S3 —
 bit-exact with the chip's own output. (Some older packaging, including the
 `mcu-kristin-745k-q8.tar.gz` filename, carries a "745k" label; that was a
-directory name, never a parameter count for these binaries.) SCOREQ is only reported for the English
-voices, which share a common eval set; the other languages haven't been scored
-against a comparable reference yet.
+directory name, never a parameter count for these binaries.)
 
 `heart` and `heart-nano` are a second recipe: a 100-band mel interface between
 the acoustic model and a noise-shaping ConvNeXt + iSTFT decoder, at 24 kHz.
