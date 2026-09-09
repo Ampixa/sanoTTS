@@ -272,12 +272,12 @@ def build() -> Image.Image:
         draw.rectangle((x, 86 - height // 2, x + 7, 85 + height // 2), fill=CRIMSON)
 
     # A concise voice-count badge balances the wordmark.
-    draw.rectangle((1280, 47, 1532, 101), fill=OUTLINE)
-    draw.rectangle((1284, 51, 1528, 97), fill=BG)
-    draw.rectangle((1284, 51, 1291, 97), fill=CRIMSON)
-    draw_pixel_text(image, (1310, 65), "9 TINY VOICES", OUTLINE, scale=3)
+    draw.rectangle((1258, 47, 1532, 101), fill=OUTLINE)
+    draw.rectangle((1262, 51, 1528, 97), fill=BG)
+    draw.rectangle((1262, 51, 1269, 97), fill=CRIMSON)
+    draw_pixel_text(image, (1276, 65), "30 TINY VOICES", OUTLINE, scale=3)
 
-    subtitle = "745k-1.8M params · 6 languages · browser + $3 chip"
+    subtitle = "294k-2.3M params · 16 languages · browser + $3 chip"
     draw_pixel_text(image, (70, 148), subtitle, INK, scale=3)
     draw.rectangle((70, 183, 1111, 187), fill=SHADOW)
     draw.rectangle((70, 183, 332, 187), fill=CRIMSON)
@@ -287,36 +287,36 @@ def build() -> Image.Image:
     supplemental = Path("/System/Library/Fonts/Supplemental")
     paste_label(
         image,
-        "Xin chào",
-        center_x=706,
+        "Привет",
+        center_x=722,
         y=244,
         fonts=(supplemental / "Arial Unicode.ttf", supplemental / "Arial.ttf"),
     )
     paste_label(
         image,
-        "नमस्ते",
-        center_x=1020,
+        "你好",
+        center_x=1022,
         y=214,
-        fonts=(supplemental / "Devanagari Sangam MN.ttc", supplemental / "Arial Unicode.ttf"),
+        fonts=(Path("/System/Library/Fonts/PingFang.ttc"), supplemental / "Arial Unicode.ttf"),
     )
     paste_label(
         image,
-        "你好",
-        center_x=1308,
+        "Xin chào",
+        center_x=1322,
         y=252,
-        fonts=(supplemental / "Arial Unicode.ttf", Path("/System/Library/Fonts/PingFang.ttc")),
+        fonts=(supplemental / "Arial Unicode.ttf", supplemental / "Arial.ttf"),
     )
 
     mascot_names = (
-        "amy-small.png",
         "amy.png",
-        "kristin.png",
-        "hfc.png",
-        "vietnamese.png",
-        "indonesian.png",
-        "nepali.png",
-        "hindi.png",
+        "german.png",
+        "french.png",
+        "spanish.png",
+        "russian.png",
+        "arabic.png",
         "chinese.png",
+        "hindi.png",
+        "vietnamese.png",
         "mcu.png",
     )
     slot_x = tuple(58 + index * 150 for index in range(len(mascot_names)))

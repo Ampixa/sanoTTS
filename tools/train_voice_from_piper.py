@@ -24,9 +24,12 @@ THREE THINGS THIS ADDS over running the stages by hand:
    from the teacher's own graph and refuses to continue if the five keys the
    trainer needs are not all present.
 
-2. eSpeak-ng support is checked before any compute. The whole front end is
-   eSpeak: if it cannot speak the teacher's language there is no voice to
-   build, and finding that out after the packs have rendered is a wasted hour.
+2. The teacher's front end is exercised before any compute. Whatever it is --
+   eSpeak, pinyin/g2pW, Hebrew niqqud -- if it cannot phonemize the first row
+   of the corpus there is no voice to build, and finding that out after the
+   packs have rendered is a wasted hour. The students are also sized against
+   the teacher's phoneme_id_map rather than against the ids the corpus happens
+   to contain, so the embedding covers every id the front end may later emit.
 
 3. The export stage exists. The campaign script stopped at the joint finetune
    and the package was built by hand afterwards.
@@ -49,6 +52,7 @@ import json
 import os
 import platform
 import re
+import resource
 import shutil
 import subprocess
 import sys
@@ -220,6 +224,77 @@ def espeak_can_speak(voice: str) -> tuple[bool, str]:
     return ok, f"system espeak-ng at {binary}"
 
 
+def teacher_vocab_size(config: dict[str, Any], config_path: Path) -> int:
+    """Embedding rows the students need to cover every id this teacher can emit.
+
+    Both students size their phoneme embedding from the ids they OBSERVE in the
+    packs unless told otherwise, and a corpus never exercises the whole
+    inventory. The ten voices shipped on 2026-09-08 are all built this way and
+    all of them are short: de_DE has 142 rows against a 152-symbol teacher,
+    it_IT 143 against 157. Nothing in training notices -- the missing ids are
+    the rare ones -- but at inference the front end is free to emit any id in
+    the map, and pypkg's embedding lookup then indexes past the end of the
+    table and raises. The voice is one unusual sentence away from crashing.
+
+    The teacher's phoneme_id_map is the authority on that range, so read it
+    here and force both students to it. Sizing from the map instead of the data
+    costs (max_id + 1 - observed) rows: about 10 embedding rows, ~1.6k
+    parameters at the standard width. It is not a tuning choice.
+
+    This is also the assumption that a non-eSpeak teacher breaks loudly rather
+    than quietly: zh_CN-xiao_ya-medium's pinyin inventory is 85 symbols over 73
+    distinct ids, half of eSpeak's 152, so anything that assumed the eSpeak
+    range would size the embedding at twice what the teacher can address.
+    """
+    id_map = config.get("phoneme_id_map") or {}
+    ids = [int(i) for seq in id_map.values() for i in seq]
+    if not ids:
+        die(f"{config_path} has no phoneme_id_map; the students cannot be sized "
+            "against the teacher's phoneme inventory.")
+    if min(ids) < 0:
+        die(f"{config_path}: phoneme_id_map contains a negative id ({min(ids)}).")
+    return max(ids) + 1
+
+
+def probe_front_end(teacher: Path, config_path: Path, sample_text: str,
+                    vocab_size: int) -> dict[str, Any]:
+    """Drive the teacher's OWN front end on real corpus text, before any compute.
+
+    espeak_can_speak() answers this question for eSpeak teachers only, and the
+    driver had nothing at all for the other front ends -- a pinyin teacher with
+    g2pW missing, or a Hebrew one without its niqqud model, got a log line
+    saying "training works" and then failed an hour later in the first pack.
+    This runs the exact call the pack builder makes (PiperVoice.phonemize ->
+    phonemes_to_ids), so whatever the front end needs is either present now or
+    the run stops here.
+
+    It also confirms the ids land inside the embedding the students are about
+    to be built with, which is the contract teacher_vocab_size() is asserting.
+    """
+    from piper import PiperVoice  # noqa: PLC0415
+
+    sys.path.insert(0, str(ROOT / "tools"))
+    from piper_frontend_workers import disable_g2p_dataloader_workers  # noqa: PLC0415
+
+    voice_obj = PiperVoice.load(str(teacher), config_path=str(config_path))
+    disable_g2p_dataloader_workers(voice_obj)
+    chunks = voice_obj.phonemize(sample_text)
+    phonemes = [p for chunk in chunks for p in chunk]
+    if not phonemes:
+        die(f"the teacher's front end produced no phonemes for the first corpus "
+            f"row ({sample_text[:40]!r}). There is no voice to distil.")
+    ids = voice_obj.phonemes_to_ids(phonemes)
+    if not ids:
+        die(f"the teacher's front end produced {len(phonemes)} phonemes but no "
+            "phoneme ids; the phoneme_id_map does not match its own front end.")
+    if max(ids) >= vocab_size:
+        die(f"the front end emitted phoneme id {max(ids)} but the teacher's "
+            f"phoneme_id_map only reaches {vocab_size - 1}. The students would "
+            "be built with an embedding that cannot address it.")
+    return {"phonemes": len(phonemes), "ids": len(ids), "max_id": max(ids),
+            "sample": phonemes[:12]}
+
+
 def preflight(config_path: Path) -> dict[str, Any]:
     """Read the teacher config and refuse anything this pipeline cannot distil."""
     config = json.loads(config_path.read_text())
@@ -287,6 +362,8 @@ def preflight(config_path: Path) -> dict[str, Any]:
         except ImportError:
             pass
 
+    vocab_size = teacher_vocab_size(config, config_path)
+
     speakers = int(config.get("num_speakers") or 1)
     if speakers != 1:
         die(f"teacher has {speakers} speakers. The students have no speaker "
@@ -299,11 +376,13 @@ def preflight(config_path: Path) -> dict[str, Any]:
 
     inference = config.get("inference") or {}
     return {
+        "phoneme_type": phoneme_type,
         "espeak_voice": espeak_voice,
         "sample_rate": sample_rate,
         "language": ((config.get("language") or {}).get("code")
                      or config.get("dataset") or "und"),
         "phoneme_id_map_size": len(config.get("phoneme_id_map") or {}),
+        "vocab_size": vocab_size,
         "length_scale": float(inference.get("length_scale") or 1.0),
     }
 
@@ -399,6 +478,31 @@ def count_rows(path: Path) -> int:
 # --------------------------------------------------------------------------
 # stage runner
 # --------------------------------------------------------------------------
+
+def raise_open_file_limit(target: int = 16384) -> None:
+    """Lift the descriptor limit the stages inherit from this process.
+
+    macOS ships a 256 soft limit. That is fine for a trainer and not fine for a
+    pack: the Chinese front end used to leak descriptors per sentence and died
+    at row 200 of 1781 with "Too many open files". That leak is fixed at source
+    in tools/piper_frontend_workers.py, but 256 is a low ceiling for any stage
+    that opens a file per row, and subprocesses inherit whatever this process
+    has, so raise it once here rather than in each tool.
+    """
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    if soft >= target:
+        return
+    ceiling = target if hard == resource.RLIM_INFINITY else min(target, hard)
+    try:
+        resource.setrlimit(resource.RLIMIT_NOFILE, (ceiling, hard))
+    except (OSError, ValueError) as exc:
+        # kern.maxfilesperproc can be below the target; not fatal, so say so
+        # and carry on with whatever the kernel allowed.
+        log(f"  WARNING: could not raise the open-file limit from {soft} "
+            f"to {ceiling}: {exc}")
+        return
+    log(f"  file limit   {soft} -> {ceiling} descriptors (inherited by stages)")
+
 
 def free_gb() -> float:
     """Best-effort free memory, so a long run can wait rather than swap."""
@@ -547,6 +651,8 @@ def main() -> int:
 
     profile = PROFILES[args.profile]
     size = SIZES[args.size]
+    if not args.dry_run:
+        raise_open_file_limit()
 
     # ---- teacher -------------------------------------------------------
     log("preflight")
@@ -564,9 +670,11 @@ def main() -> int:
 
     facts = preflight(config_path)
     log(f"  voice        {voice}")
-    log(f"  espeak voice {facts['espeak_voice']}  (supported)")
+    log(f"  front end    {facts['phoneme_type']}"
+        + (f" ({facts['espeak_voice']}, supported)" if facts["espeak_voice"] else ""))
     log(f"  sample rate  {facts['sample_rate']} Hz")
-    log(f"  phoneme ids  {facts['phoneme_id_map_size']}")
+    log(f"  phoneme ids  {facts['phoneme_id_map_size']} symbols -> "
+        f"{facts['vocab_size']} embedding rows")
 
     run_dir = args.out_dir or (ROOT / "artifacts" / "voices" / voice)
     log_dir = run_dir / "logs"
@@ -587,6 +695,19 @@ def main() -> int:
         log(f"  WARNING: {acoustic_rows} training rows. id/vi shipped on 1908 and "
             "the recipe calls the acoustic data-limited; expect a weaker voice.")
     log(f"  corpus       {corpus} ({rows} rows -> {acoustic_rows} training)")
+
+    # The front end is checked against a row of the corpus it will actually be
+    # asked to phonemize, not a hardcoded probe string, so a corpus in the
+    # wrong script fails here too.
+    if not args.dry_run:
+        with corpus.open(encoding="utf-8") as handle:
+            first = next((json.loads(line) for line in handle if line.strip()), {})
+        sample_text = str(first.get("text") or first.get("target_text") or "").strip()
+        if not sample_text:
+            die(f"{corpus}: the first row has no 'text' field.")
+        probe = probe_front_end(teacher, config_path, sample_text, facts["vocab_size"])
+        log(f"  front end ok {probe['phonemes']} phonemes -> {probe['ids']} ids "
+            f"(max id {probe['max_id']} < {facts['vocab_size']}): {probe['sample']}")
 
     runner = Runner(run_dir, log_dir, args.python_bin, args.dry_run, args.min_free_gb)
 
@@ -634,6 +755,13 @@ def main() -> int:
                   "--out-dir", str(run_dir / "duration"),
                   "--hidden", str(size.duration_hidden), "--depth", "3",
                   "--kernel-size", "5",
+                  # Sized from the teacher's phoneme_id_map, not from the ids the
+                  # corpus happens to contain. See teacher_vocab_size().
+                  "--duration-vocab-size", str(facts["vocab_size"]),
+                  # Unreachable while the vocabulary covers the whole map; id 0
+                  # is Piper's pad in every inventory, so it is a valid fallback
+                  # for any teacher, which the default (59) is not.
+                  "--duration-oov-id", "0",
                   "--steps", str(profile.duration_steps), "--device", args.device])
 
     # ---- S4: acoustic student, de-smoothed ------------------------------
@@ -647,6 +775,8 @@ def main() -> int:
                   "--architecture", "token_context",
                   "--hidden", str(size.acoustic_hidden), "--token-depth", "3",
                   "--depth", str(size.acoustic_depth), "--kernel-size", "5",
+                  # Same contract as the duration student above.
+                  "--vocab-size", str(facts["vocab_size"]),
                   "--norm-l1-weight", "0.25", "--delta-l1-weight", "0.10",
                   "--channel-stat-weight", "0.05",
                   "--latent-adv-weight", "0.1", "--latent-adv-start-step", "1500",

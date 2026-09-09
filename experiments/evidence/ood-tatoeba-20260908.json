@@ -1,0 +1,1581 @@
+{
+ "generated": "2026-09-08",
+ "subject": "Do the ten new voices work on text unlike what they were trained on?",
+ "why": "Every earlier number came from FLORES, which is also the corpus these voices were distilled on. Held-out FLORES rows are held out by row, not by domain, so they cannot answer whether a voice generalises. This repeats the measurement on Tatoeba: short user-contributed conversational sentences, a different domain and register, sampled with a fixed seed from 25k-830k candidates per language.",
+ "method": "16 sentences per voice, rendered by the numpy runtime, transcribed by Whisper small, CER against the source.",
+ "headline": "They generalise. Seven of eleven packages score BETTER on unseen conversational text than on the corpus they were trained on, and none collapses. The worst domain shift is Czech at +0.037.",
+ "results": [
+  {
+   "package": "artifacts/voices/pt_BR/package",
+   "voice": "pt_BR-cadu-medium",
+   "language": "pt",
+   "parameters": 1565324,
+   "rows": 16,
+   "student_cer": 0.014166148535589614,
+   "teacher_cer": null,
+   "retention": null,
+   "per_row": [
+    {
+     "i": 0,
+     "text": "Ele tinha um futuro brilhante pela frente.",
+     "heard": "Ele tinha um futuro brilhante pela frente.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.6586848072562357
+    },
+    {
+     "i": 1,
+     "text": "Depois da chuva o jardim ficou devastado.",
+     "heard": "Depois da chuva, o jardim ficou devastado.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 3.1463038548752835
+    },
+    {
+     "i": 2,
+     "text": "A ideia de surpreendê-la subitamente passou pela minha cabeça.",
+     "heard": "A ideia de surpreender ela subitamente passou pela minha cabeça.",
+     "cer": 0.04918032786885246,
+     "wer": 0.2,
+     "seconds": 3.8545124716553287
+    },
+    {
+     "i": 3,
+     "text": "O ancião, com uma voz que raramente se elevava acima do uivar do vento sobre a terra estéril abandonada, cantava-lhes uma canção de Natal.",
+     "heard": "O ancião, com uma voz que raramente se levava acima do vai do vento sob a terra estéreo abandonada, cantava-lhes uma canção de natal.",
+     "cer": 0.05925925925925926,
+     "wer": 0.16,
+     "seconds": 8.010884353741497
+    },
+    {
+     "i": 4,
+     "text": "Elas gostaram de aprender inglês?",
+     "heard": "Elas gostaram de aprender inglês.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.647074829931973
+    },
+    {
+     "i": 5,
+     "text": "Em latim, os substantivos da primeira declinação têm o genitivo terminando em \"ae\", para o singular, e em \"arum\", para o plural.",
+     "heard": "Em latim, os substantivos da primeira declinação têm o genitivo terminando em AE, para o singular, em arum, para o plural.",
+     "cer": 0.01680672268907563,
+     "wer": 0.045454545454545456,
+     "seconds": 7.743854875283446
+    },
+    {
+     "i": 6,
+     "text": "Sou colecionador de livros.",
+     "heard": "Sou colecionador de livros.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.3568253968253967
+    },
+    {
+     "i": 7,
+     "text": "Quero te ver agora mesmo.",
+     "heard": "Quero te ver agora mesmo.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.9504761904761905
+    },
+    {
+     "i": 8,
+     "text": "Não acredito que Tom conseguiu construir a casa dele por menos de três mil dólares.",
+     "heard": "Não acredito que Tom conseguiu construir a casa dele por menos de 3 mil dólares.",
+     "cer": 0.04878048780487805,
+     "wer": 0.06666666666666667,
+     "seconds": 5.073560090702948
+    },
+    {
+     "i": 9,
+     "text": "Não perca seu senso de humor.",
+     "heard": "Não perca seu senso de humor.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.3103854875283445
+    },
+    {
+     "i": 10,
+     "text": "Nós nunca falamos com ela.",
+     "heard": "Nós nunca falamos com ela.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.3103854875283445
+    },
+    {
+     "i": 11,
+     "text": "Eu moro em um condomínio de frente para a praia.",
+     "heard": "Eu moro em um condomínio de frente para a praia.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.8212244897959184
+    },
+    {
+     "i": 12,
+     "text": "Tom é um eletricista licenciado.",
+     "heard": "Tom é um eletricista licenciado.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.589024943310658
+    },
+    {
+     "i": 13,
+     "text": "Eu não sabia que você tinha vindo.",
+     "heard": "Eu não sabia que você tinha vindo.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.36843537414966
+    },
+    {
+     "i": 14,
+     "text": "Eu normalmente tomo café da manhã aqui.",
+     "heard": "Eu normalmente tomo o café da manhã aqui.",
+     "cer": 0.05263157894736842,
+     "wer": 0.14285714285714285,
+     "seconds": 2.728344671201814
+    },
+    {
+     "i": 15,
+     "text": "Aquilo tinha o mesmo significado que uma clara recusa.",
+     "heard": "Aquilo tinha o mesmo significado que uma clara recusa.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 3.633922902494331
+    }
+   ],
+   "flores_cer": 0.05683439524011863,
+   "tatoeba_cer": 0.014166148535589614
+  },
+  {
+   "package": "artifacts/voices/it_IT/package",
+   "voice": "it_IT-serena-medium",
+   "language": "it",
+   "parameters": 1565484,
+   "rows": 16,
+   "student_cer": 0.026233300879640393,
+   "teacher_cer": null,
+   "retention": null,
+   "per_row": [
+    {
+     "i": 0,
+     "text": "S'è imbarcato in un percorso di autoscoperta.",
+     "heard": "si è imbarcato in un percorso di autoscoperta.",
+     "cer": 0.022727272727272728,
+     "wer": 0.125,
+     "seconds": 2.2407256235827666
+    },
+    {
+     "i": 1,
+     "text": "Sono una persona positiva ed efficiente.",
+     "heard": "sono una persona positiva ed efficiente.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.2523356009070294
+    },
+    {
+     "i": 2,
+     "text": "Mary è molto claustrofobica, vero?",
+     "heard": "Mary è molto claustrofobica, vero?",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.36843537414966
+    },
+    {
+     "i": 3,
+     "text": "Lascia la macchina lì e vai con la metro.",
+     "heard": "Lascia la macchina lì e vai con la metro.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.9853061224489796
+    },
+    {
+     "i": 4,
+     "text": "Finire questo lavoro entro martedì sarà facile.",
+     "heard": "Finire questo lavoro entro Marte di Sarafacile.",
+     "cer": 0.08695652173913043,
+     "wer": 0.42857142857142855,
+     "seconds": 2.4729251700680273
+    },
+    {
+     "i": 5,
+     "text": "Va a costruire sinagoghe in Svezia?",
+     "heard": "Va a costruire sinagogins via?",
+     "cer": 0.20588235294117646,
+     "wer": 0.5,
+     "seconds": 1.9040362811791383
+    },
+    {
+     "i": 6,
+     "text": "Non stavo scherzando a riguardo.",
+     "heard": "Non stavo scherzando a riguardo.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.6486167800453515
+    },
+    {
+     "i": 7,
+     "text": "Non andate a costruire università in Brasile?",
+     "heard": "Non andate a costruire università in Brasile?",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.159455782312925
+    },
+    {
+     "i": 8,
+     "text": "Avete visto il modo in cui Tom Vi stava guardando?",
+     "heard": "Avete visto il modo in cui Tom vi stava guardando?",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.3336054421768706
+    },
+    {
+     "i": 9,
+     "text": "Mary è brava a questo gioco, vero?",
+     "heard": "Mary è brava a questo gioco, vero?",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.089795918367347
+    },
+    {
+     "i": 10,
+     "text": "Gestisci il tuo tempo con saggezza.",
+     "heard": "Gestisci il tuo tempo con saggezza.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.8924263038548752
+    },
+    {
+     "i": 11,
+     "text": "Hai comprato una casa nuova.",
+     "heard": "Hai comprato una casa nuova.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.509297052154195
+    },
+    {
+     "i": 12,
+     "text": "Non vedevo altra alternativa che pensare di farla finita.",
+     "heard": "Non vedevo altra alternativa che pensare di farla finita.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.8792743764172335
+    },
+    {
+     "i": 13,
+     "text": "Va bene parlare con lui prima?",
+     "heard": "Va bene parlare con lui prima.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.555736961451247
+    },
+    {
+     "i": 14,
+     "text": "Per fare una bomba non ci vuole un genio.",
+     "heard": "Per fare una bomba non ci vuole un genio.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.8575963718820863
+    },
+    {
+     "i": 15,
+     "text": "Questo albergo può ospitare fino a 1.000 persone.",
+     "heard": "Questo albergo può ospitare fino a mille persone.",
+     "cer": 0.10416666666666667,
+     "wer": 0.2222222222222222,
+     "seconds": 2.391655328798186
+    }
+   ],
+   "flores_cer": 0.041238617898505775,
+   "tatoeba_cer": 0.026233300879640393
+  },
+  {
+   "package": "artifacts/voices/ru_RU/package",
+   "voice": "ru_RU-irina-medium",
+   "language": "ru",
+   "parameters": 1566764,
+   "rows": 16,
+   "student_cer": 0.031420353102927,
+   "teacher_cer": null,
+   "retention": null,
+   "per_row": [
+    {
+     "i": 0,
+     "text": "Ты идёшь налево, а я направо.",
+     "heard": "Ты идешь налево, а я направо.",
+     "cer": 0.037037037037037035,
+     "wer": 0.16666666666666666,
+     "seconds": 2.8560544217687074
+    },
+    {
+     "i": 1,
+     "text": "Я хочу увеличить свой словарный запас.",
+     "heard": "Я хочу увеличить свой словарный запас.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.461315192743764
+    },
+    {
+     "i": 2,
+     "text": "Они удочерили новорождённую девочку.",
+     "heard": "Они удочерили новорожденную девочку.",
+     "cer": 0.02857142857142857,
+     "wer": 0.25,
+     "seconds": 2.2175056689342405
+    },
+    {
+     "i": 3,
+     "text": "Так чем ты хочешь завтра заняться?",
+     "heard": "Так чем ты хочешь завтра заняться.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.3568253968253967
+    },
+    {
+     "i": 4,
+     "text": "Не вклинивайся в нашу беседу.",
+     "heard": "Не вклинивайся в нашу беседу.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.8459863945578232
+    },
+    {
+     "i": 5,
+     "text": "Моё тело содрогнулось, когда я почувствовала этот поцелуй.",
+     "heard": "Мое тело содрогнулось, когда я почувствовала этот поцелуй.",
+     "cer": 0.017857142857142856,
+     "wer": 0.125,
+     "seconds": 3.924172335600907
+    },
+    {
+     "i": 6,
+     "text": "Это особенности нашего слуха.",
+     "heard": "Это особенности нашего слуха.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.0085260770975055
+    },
+    {
+     "i": 7,
+     "text": "Когда нам надо это сделать?",
+     "heard": "когда нам надо это сделать.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.6370068027210884
+    },
+    {
+     "i": 8,
+     "text": "Думаю, ты на правильном пути.",
+     "heard": "Думаю, ты на правильном пути.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.391655328798186
+    },
+    {
+     "i": 9,
+     "text": "Подход к дому, отходящий от тротуара, обозначается в OSM какими-то отдельными тегами или просто как пешеходная дорожка?",
+     "heard": "подход к дому, отходящей от тротуара, обозначается в ВАЛСМ какими-то отдельными тегами или просто как пешеходная дорожка.",
+     "cer": 0.05172413793103448,
+     "wer": 0.1111111111111111,
+     "seconds": 8.846802721088435
+    },
+    {
+     "i": 10,
+     "text": "Хочешь доесть мой бутерброд?",
+     "heard": "хочешь да есть мой бутерброд.",
+     "cer": 0.07407407407407407,
+     "wer": 0.5,
+     "seconds": 1.6834467120181407
+    },
+    {
+     "i": 11,
+     "text": "Дети должны уважать старших.",
+     "heard": "Дети должны уважать в старших.",
+     "cer": 0.07407407407407407,
+     "wer": 0.25,
+     "seconds": 2.0085260770975055
+    },
+    {
+     "i": 12,
+     "text": "Я слышал, что Том хочет развестись.",
+     "heard": "Я слышал, что Том хочет развестись.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.5774149659863945
+    },
+    {
+     "i": 13,
+     "text": "Нам нужно сказать им об этом.",
+     "heard": "Нам нужно сказать ему при этом.",
+     "cer": 0.17857142857142858,
+     "wer": 0.3333333333333333,
+     "seconds": 1.811156462585034
+    },
+    {
+     "i": 14,
+     "text": "Я всё ещё жду, что Том покажет мне, как это сделать.",
+     "heard": "Я все еще жду, что Том покажет мне, как это сделать.",
+     "cer": 0.04081632653061224,
+     "wer": 0.18181818181818182,
+     "seconds": 3.5526530612244898
+    },
+    {
+     "i": 15,
+     "text": "Что-то сегодня происходит.",
+     "heard": "что то сегодня происходит.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.474467120181406
+    }
+   ],
+   "flores_cer": 0.063,
+   "tatoeba_cer": 0.031420353102927
+  },
+  {
+   "package": "artifacts/voices/de_DE/package",
+   "voice": "de_DE-thorsten-medium",
+   "language": "de",
+   "parameters": 1565324,
+   "rows": 16,
+   "student_cer": 0.03213194167907834,
+   "teacher_cer": null,
+   "retention": null,
+   "per_row": [
+    {
+     "i": 0,
+     "text": "Ich kann nicht glauben, dass Tom einen solchen Fehler gemacht hat.",
+     "heard": "Ich kann nicht glauben, dass Tom einen solchen Fehler gemacht hat.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.8444444444444446
+    },
+    {
+     "i": 1,
+     "text": "Der Wolf heult den Mond an.",
+     "heard": "Der Wolf freut den Mund an.",
+     "cer": 0.15384615384615385,
+     "wer": 0.3333333333333333,
+     "seconds": 1.3467573696145125
+    },
+    {
+     "i": 2,
+     "text": "Der Gründer starb vor zwei Monaten.",
+     "heard": "Der Kründer starb vor zwei Monaten.",
+     "cer": 0.029411764705882353,
+     "wer": 0.16666666666666666,
+     "seconds": 1.6718367346938776
+    },
+    {
+     "i": 3,
+     "text": "Wer war sonst noch hier drin?",
+     "heard": "Wer war sonst noch hier drin?",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.3235374149659864
+    },
+    {
+     "i": 4,
+     "text": "In unserer Kindheit waren unsere Träume größer als unsere Ängste.",
+     "heard": "In unserer Kindheit waren unsere Träume größer als unsere Ängste.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 3.4133333333333336
+    },
+    {
+     "i": 5,
+     "text": "Was war zuerst da: die Henne oder das Ei?",
+     "heard": "Was war zuerst da? Die Hände wurde das Ei.",
+     "cer": 0.15384615384615385,
+     "wer": 0.2222222222222222,
+     "seconds": 2.2755555555555556
+    },
+    {
+     "i": 6,
+     "text": "Toms Haus ist leicht zu finden.",
+     "heard": "Tom's Haus ist leicht zu finden.",
+     "cer": 0.03333333333333333,
+     "wer": 0.3333333333333333,
+     "seconds": 1.7066666666666668
+    },
+    {
+     "i": 7,
+     "text": "Tom hat einen Kuchen gegessen.",
+     "heard": "Tom hat einen Kuchen gegessen.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.4512471655328798
+    },
+    {
+     "i": 8,
+     "text": "Promovierte Chemiker gibt es auf dem Arbeitsmarkt genügend. Da gibt es keinen Fachkräftemangel.",
+     "heard": "Promovierte Scheniker gibt es auf dem Arbeitsmarkt genügend, da gibt es keinen Fachkräftemangel.",
+     "cer": 0.021505376344086023,
+     "wer": 0.07692307692307693,
+     "seconds": 4.040272108843538
+    },
+    {
+     "i": 9,
+     "text": "„Ich mag keinen Kuchen.“ – „Aber Schokoladenkuchen magst du doch.“ – „Nein, den ganz besonders nicht.“",
+     "heard": "Ich mag keinen Kuchen, aber Schokoladenkuchen magst du doch, nein, den ganz besonders nicht.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 4.191201814058957
+    },
+    {
+     "i": 10,
+     "text": "Maria war die Nacht über bei einer Freundin.",
+     "heard": "Maria war die Nacht über bei einer Freundin.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.0317460317460316
+    },
+    {
+     "i": 11,
+     "text": "Selbstvertrauen ist die Quelle des Vertrauens zu anderen.",
+     "heard": "Selbstvertrauen ist die Quelle des Vertrauens zu anderen.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.589024943310658
+    },
+    {
+     "i": 12,
+     "text": "Sie wandte die ökonomischen Theorien von Karl Marx auf die Phänomene der imperialistischen Phase des Kapitalismus an.",
+     "heard": "Sie wandte die ökonomischen Theorien von Karl Marx auf die Phänomene der imperialistischen Phase des Kapitalismus an.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 5.259319727891157
+    },
+    {
+     "i": 13,
+     "text": "Ich versuchte, es zu reparieren.",
+     "heard": "Ich versuchte es zu reparieren.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.7763265306122449
+    },
+    {
+     "i": 14,
+     "text": "Die neue ABC-Fibel steht nun in einem großen Bücherschrank, in dem viele wissenschaftliche Bücher stehen.",
+     "heard": "Die neue ABC-Fiele steht nun in einem großen Bücherschrank, in dem vier wissenschaftliche Bücher stehen.",
+     "cer": 0.038834951456310676,
+     "wer": 0.125,
+     "seconds": 4.85297052154195
+    },
+    {
+     "i": 15,
+     "text": "In den Alpen herrscht solche Kälte, dass der Schnee dort niemals schmilzt.",
+     "heard": "In den alten Herrsch solche Kälte, dass der Schmidort niemals schmilzt.",
+     "cer": 0.08333333333333333,
+     "wer": 0.3333333333333333,
+     "seconds": 3.274013605442177
+    }
+   ],
+   "flores_cer": 0.097,
+   "tatoeba_cer": 0.03213194167907834
+  },
+  {
+   "package": "artifacts/voices/de_DE-tiny/package",
+   "voice": "de_DE-thorsten-medium",
+   "language": "de",
+   "parameters": 511611,
+   "rows": 16,
+   "student_cer": 0.04456968965007502,
+   "teacher_cer": null,
+   "retention": null,
+   "per_row": [
+    {
+     "i": 0,
+     "text": "Ich kann nicht glauben, dass Tom einen solchen Fehler gemacht hat.",
+     "heard": "Ich kann nicht glauben, dass Tom einen solchen Fehler gemacht hat.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.914104308390023
+    },
+    {
+     "i": 1,
+     "text": "Der Wolf heult den Mond an.",
+     "heard": "der Wolf freut den Mund an.",
+     "cer": 0.15384615384615385,
+     "wer": 0.3333333333333333,
+     "seconds": 1.4164172335600906
+    },
+    {
+     "i": 2,
+     "text": "Der Gründer starb vor zwei Monaten.",
+     "heard": "Der Gründestart vor zwei Monaten.",
+     "cer": 0.08823529411764706,
+     "wer": 0.3333333333333333,
+     "seconds": 1.787936507936508
+    },
+    {
+     "i": 3,
+     "text": "Wer war sonst noch hier drin?",
+     "heard": "Wir war sonst noch hier drin.",
+     "cer": 0.03571428571428571,
+     "wer": 0.16666666666666666,
+     "seconds": 1.3467573696145125
+    },
+    {
+     "i": 4,
+     "text": "In unserer Kindheit waren unsere Träume größer als unsere Ängste.",
+     "heard": "In unserer Kindheit waren unsere Träume größer als unsere Änste.",
+     "cer": 0.015625,
+     "wer": 0.1,
+     "seconds": 3.4713832199546486
+    },
+    {
+     "i": 5,
+     "text": "Was war zuerst da: die Henne oder das Ei?",
+     "heard": "Was war zuerst da? Die Hände oder das Alp?",
+     "cer": 0.1282051282051282,
+     "wer": 0.2222222222222222,
+     "seconds": 2.2987755102040817
+    },
+    {
+     "i": 6,
+     "text": "Toms Haus ist leicht zu finden.",
+     "heard": "Toms Haus ist leicht zu finden.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.7414965986394557
+    },
+    {
+     "i": 7,
+     "text": "Tom hat einen Kuchen gegessen.",
+     "heard": "Tom hat einen Kuchen gegessen.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.5325170068027212
+    },
+    {
+     "i": 8,
+     "text": "Promovierte Chemiker gibt es auf dem Arbeitsmarkt genügend. Da gibt es keinen Fachkräftemangel.",
+     "heard": "Promovie durch Chemiker gibt es auf dem Arbeitsmarkt genügend, da gibt es keinen Fachkräftemangel.",
+     "cer": 0.053763440860215055,
+     "wer": 0.15384615384615385,
+     "seconds": 4.249251700680272
+    },
+    {
+     "i": 9,
+     "text": "„Ich mag keinen Kuchen.“ – „Aber Schokoladenkuchen magst du doch.“ – „Nein, den ganz besonders nicht.“",
+     "heard": "Ich mag keinen Kuchen, aber Schokoladenkuchen magst du auch nein, den ganz besonders nicht.",
+     "cer": 0.022727272727272728,
+     "wer": 0.07142857142857142,
+     "seconds": 4.249251700680272
+    },
+    {
+     "i": 10,
+     "text": "Maria war die Nacht über bei einer Freundin.",
+     "heard": "Maria war die Nacht über bei einer Freundin.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.0085260770975055
+    },
+    {
+     "i": 11,
+     "text": "Selbstvertrauen ist die Quelle des Vertrauens zu anderen.",
+     "heard": "Selbst Vertrauen ist die Quelle des Vertrauens zu anderen.",
+     "cer": 0.017857142857142856,
+     "wer": 0.25,
+     "seconds": 2.6006349206349206
+    },
+    {
+     "i": 12,
+     "text": "Sie wandte die ökonomischen Theorien von Karl Marx auf die Phänomene der imperialistischen Phase des Kapitalismus an.",
+     "heard": "Sie wandte die ökonomischen Theorien von Karl Marx auf die Phänomene der imperialistischen Phase des Kapitalismus an.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 5.340589569160998
+    },
+    {
+     "i": 13,
+     "text": "Ich versuchte, es zu reparieren.",
+     "heard": "Ich versuchte es zu reparieren.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.799546485260771
+    },
+    {
+     "i": 14,
+     "text": "Die neue ABC-Fibel steht nun in einem großen Bücherschrank, in dem viele wissenschaftliche Bücher stehen.",
+     "heard": "die neue ABC-Fiebel stitten in einem großen Bücherschrank, in dem viele wissenschaftliche Bücher stehen.",
+     "cer": 0.05825242718446602,
+     "wer": 0.1875,
+     "seconds": 4.829750566893424
+    },
+    {
+     "i": 15,
+     "text": "In den Alpen herrscht solche Kälte, dass der Schnee dort niemals schmilzt.",
+     "heard": "In den alten Herrschzolle Kälte, das der Schmiedort niemals schmilzt.",
+     "cer": 0.1388888888888889,
+     "wer": 0.5,
+     "seconds": 3.355283446712018
+    }
+   ],
+   "flores_cer": 0.10307741094283733,
+   "tatoeba_cer": 0.04456968965007502
+  },
+  {
+   "package": "artifacts/voices/es_ES/package",
+   "voice": "es_ES-davefx-medium",
+   "language": "es",
+   "parameters": 1562924,
+   "rows": 16,
+   "student_cer": 0.049626935074691014,
+   "teacher_cer": null,
+   "retention": null,
+   "per_row": [
+    {
+     "i": 0,
+     "text": "Todo el mundo conoce el monte Fuji.",
+     "heard": "Todo el mundo conoce el monte Fuji.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.6950566893424037
+    },
+    {
+     "i": 1,
+     "text": "Ahora ya no te interesan las mismas cosas que antaño.",
+     "heard": "Ahora ya no te interesan las mismas cosas que antaño.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.7631746031746034
+    },
+    {
+     "i": 2,
+     "text": "Tienes que masticar la comida antes de tragarla.",
+     "heard": "tienes que masticar la comida antes de tragarla.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.391655328798186
+    },
+    {
+     "i": 3,
+     "text": "Tengo pensado quedarme una semana allí.",
+     "heard": "tengo pensado quedarme una semana allí.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.9388662131519274
+    },
+    {
+     "i": 4,
+     "text": "Dicen que María estuvo enferma la semana pasada, pero ahora tiene buen aspecto.",
+     "heard": "dicen que María estuvo enferma la semana pasada, pero ahora tiene buen aspecto.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 4.2260317460317465
+    },
+    {
+     "i": 5,
+     "text": "Tom definitivamente necesita ser un poco más sociable.",
+     "heard": "donde definitivamente necesita ser un poco más sociable.",
+     "cer": 0.07547169811320754,
+     "wer": 0.125,
+     "seconds": 2.8792743764172335
+    },
+    {
+     "i": 6,
+     "text": "El chef japonés era especialista en elaborar sushi.",
+     "heard": "el chef japonés era especialista en elaborar Susi.",
+     "cer": 0.02,
+     "wer": 0.125,
+     "seconds": 2.6586848072562357
+    },
+    {
+     "i": 7,
+     "text": "Ella estaba completamente arrebatada por su sonrisa.",
+     "heard": "ella estaba completamente arrebatada por su sonrisa.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.6354648526077096
+    },
+    {
+     "i": 8,
+     "text": "Quiero instalar paneles solares.",
+     "heard": "que tiene que ir a instalar paneles solares.",
+     "cer": 0.41935483870967744,
+     "wer": 1.25,
+     "seconds": 1.7647165532879818
+    },
+    {
+     "i": 9,
+     "text": "Hay que admitir que esta oración simplemente está mal formada.",
+     "heard": "que admitir que esta ocasión simplemente está mal formada.",
+     "cer": 0.09836065573770492,
+     "wer": 0.2,
+     "seconds": 2.8792743764172335
+    },
+    {
+     "i": 10,
+     "text": "No confundas cometas con asteroides.",
+     "heard": "no confundas cometas con asteroides.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.10140589569161
+    },
+    {
+     "i": 11,
+     "text": "Dafne tenía la repisa de la chimenea llena de retratos de familia.",
+     "heard": "La Fnetenía la repisa de la chimenea llena de retratos de familia.",
+     "cer": 0.046153846153846156,
+     "wer": 0.16666666666666666,
+     "seconds": 3.4946031746031747
+    },
+    {
+     "i": 12,
+     "text": "¡No te preocupes, sé feliz!",
+     "heard": "No te preocupes, ¿se feliz?",
+     "cer": 0.041666666666666664,
+     "wer": 0.2,
+     "seconds": 1.7531065759637188
+    },
+    {
+     "i": 13,
+     "text": "Acabo de recibir vuestro mensaje.",
+     "heard": "acabo de recibir vuestro mensaje.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.799546485260771
+    },
+    {
+     "i": 14,
+     "text": "Mary se preguntaba si para Tom ella era una simple palabra o una auténtica persona.",
+     "heard": "Mary se preguntaba si para Tom ella era una simple palabra o una auténtica persona.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 4.237641723356009
+    },
+    {
+     "i": 15,
+     "text": "¿Quién es el actor estadounidense más famoso?",
+     "heard": "¿Tienes el actor estadounidense más famoso?",
+     "cer": 0.09302325581395349,
+     "wer": 0.2857142857142857,
+     "seconds": 2.3219954648526078
+    }
+   ],
+   "flores_cer": 0.04406326418533527,
+   "tatoeba_cer": 0.049626935074691014
+  },
+  {
+   "package": "artifacts/voices/tr_TR/package",
+   "voice": "tr_TR-dfki-medium",
+   "language": "tr",
+   "parameters": 1562284,
+   "rows": 16,
+   "student_cer": 0.059339756978982514,
+   "teacher_cer": null,
+   "retention": null,
+   "per_row": [
+    {
+     "i": 0,
+     "text": "Duygularını incitmemi hak etmiyor.",
+     "heard": "Duygularına incitmeni hak etmiyor.",
+     "cer": 0.06060606060606061,
+     "wer": 0.5,
+     "seconds": 2.136235827664399
+    },
+    {
+     "i": 1,
+     "text": "Patronum beni ofisine çağırdı.",
+     "heard": "patronun beni ofisine çöldü.",
+     "cer": 0.20689655172413793,
+     "wer": 0.5,
+     "seconds": 2.0085260770975055
+    },
+    {
+     "i": 2,
+     "text": "Bana işi vereceklerini düşünüyor musun?",
+     "heard": "bana işçi vereceklerini düşünüyor musun?",
+     "cer": 0.02631578947368421,
+     "wer": 0.2,
+     "seconds": 2.449705215419501
+    },
+    {
+     "i": 3,
+     "text": "O kesinlikle sana yürüyor.",
+     "heard": "O kesinlikle sana yürüyor.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.7414965986394557
+    },
+    {
+     "i": 4,
+     "text": "Tom'un toplantıya katılması pek olası değil.",
+     "heard": "Tomun toplantıya katılması pek olası değil.",
+     "cer": 0.023255813953488372,
+     "wer": 0.2857142857142857,
+     "seconds": 2.670294784580499
+    },
+    {
+     "i": 5,
+     "text": "Bırak da en azından sana masada yardımcı olayım.",
+     "heard": "Bırak da en azından sana masada yardımcı olayım.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.8792743764172335
+    },
+    {
+     "i": 6,
+     "text": "Öyleyse vazgeçiyorsun, doğru mu?",
+     "heard": "Gayle ise vazgeçiyorsun, doğru mu?",
+     "cer": 0.13333333333333333,
+     "wer": 0.5,
+     "seconds": 2.0549659863945577
+    },
+    {
+     "i": 7,
+     "text": "Kabiliye'ye gitmeni engelleyemem.",
+     "heard": "kabiliyeye gitmene engel deyemem.",
+     "cer": 0.125,
+     "wer": 1.0,
+     "seconds": 1.9736961451247166
+    },
+    {
+     "i": 8,
+     "text": "Onun hakkında bildiğin her şeyi bana söylemeni istiyorum.",
+     "heard": "onun hakkında bildiğin her şeyi bana söylemeni istiyorum.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 3.2856235827664397
+    },
+    {
+     "i": 9,
+     "text": "Savaşın bir sonucu olarak, çok sayıda mağdur kaldı.",
+     "heard": "Savaşın bir sonucu olarak çok sayıda mağdur kaldı.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 3.1579138321995464
+    },
+    {
+     "i": 10,
+     "text": "Bunu yapabileceğimi sana söyledim.",
+     "heard": "Bunu yapabileceğini sana söyledi.",
+     "cer": 0.06060606060606061,
+     "wer": 0.5,
+     "seconds": 2.0317460317460316
+    },
+    {
+     "i": 11,
+     "text": "Sen muhtemelen hatalıydın.",
+     "heard": "sen muhtemelen hatalıydın.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.8575963718820863
+    },
+    {
+     "i": 12,
+     "text": "Sami Kahire'de deve satar.",
+     "heard": "Samik Ahirede Deve Satar",
+     "cer": 0.12,
+     "wer": 0.6,
+     "seconds": 1.8692063492063493
+    },
+    {
+     "i": 13,
+     "text": "Tom'a iyi şanslar dilerim.",
+     "heard": "Toma iyi şanslar dilerim.",
+     "cer": 0.04,
+     "wer": 0.4,
+     "seconds": 1.6137868480725623
+    },
+    {
+     "i": 14,
+     "text": "İki yakamız bir araya gelmiyor.",
+     "heard": "2 yakamız bir araya gelmiyor.",
+     "cer": 0.12903225806451613,
+     "wer": 0.2,
+     "seconds": 2.089795918367347
+    },
+    {
+     "i": 15,
+     "text": "Onun yokluğunda Jim hakkında kötü konuşma.",
+     "heard": "onun yokluğunda cim hakkında kötü konuşma.",
+     "cer": 0.024390243902439025,
+     "wer": 0.16666666666666666,
+     "seconds": 2.6354648526077096
+    }
+   ],
+   "flores_cer": 0.055,
+   "tatoeba_cer": 0.059339756978982514
+  },
+  {
+   "package": "artifacts/voices/ar_JO/package",
+   "voice": "ar_JO-kareem-medium",
+   "language": "ar",
+   "parameters": 1566124,
+   "rows": 16,
+   "student_cer": 0.07417212417212415,
+   "teacher_cer": null,
+   "retention": null,
+   "per_row": [
+    {
+     "i": 0,
+     "text": "كان فاضل يمارس أعمالا مؤقّتة.",
+     "heard": "كان فاضل يمارس أعمالاً مؤقتةً",
+     "cer": 0.10714285714285714,
+     "wer": 0.4,
+     "seconds": 3.7035827664399092
+    },
+    {
+     "i": 1,
+     "text": "أخذ سامي ليلى إلى العيادة.",
+     "heard": "أخذ سامي ليلى إلى العيادة",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.8676643990929707
+    },
+    {
+     "i": 2,
+     "text": "اطمأن والدا توم عندما سمعا بأنه بخير.",
+     "heard": "إتمأن والدى توم عندما سمعا بأنه بخير",
+     "cer": 0.08333333333333333,
+     "wer": 0.2857142857142857,
+     "seconds": 4.458231292517007
+    },
+    {
+     "i": 3,
+     "text": "الأمازيغية أسهل بالنسبة لي.",
+     "heard": "الأمازيرية أسهل بالنسبة لي",
+     "cer": 0.038461538461538464,
+     "wer": 0.25,
+     "seconds": 3.239183673469388
+    },
+    {
+     "i": 4,
+     "text": "لم يتمكّن فاضل من الاتّصال بليلى.",
+     "heard": "لم يتمكن فاضل من الاقتصال بليلة",
+     "cer": 0.125,
+     "wer": 0.5,
+     "seconds": 3.8545124716553287
+    },
+    {
+     "i": 5,
+     "text": "لا أحد مسؤول عما يحدث له.",
+     "heard": "لا أحد مسئول عن ما يحدث له",
+     "cer": 0.125,
+     "wer": 0.5,
+     "seconds": 3.2043537414965986
+    },
+    {
+     "i": 6,
+     "text": "لقد أُتُهم بسرقة عظام الديناصورات.",
+     "heard": "لقد أطهم بسرقة عظام الدينى صورات",
+     "cer": 0.15151515151515152,
+     "wer": 0.6,
+     "seconds": 3.81968253968254
+    },
+    {
+     "i": 7,
+     "text": "يمكنه التحدث باللغة الفرنسية.",
+     "heard": "يمكنه التحدث باللغة الفرنسية",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 3.599092970521542
+    },
+    {
+     "i": 8,
+     "text": "ما تريده المرأة، يريده الإله.",
+     "heard": "ما تريده المرأة يريده الإله",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 3.7500226757369615
+    },
+    {
+     "i": 9,
+     "text": "رمى توم هاتف ماري في المسبح.",
+     "heard": "رما توم هاتف ماري في المسبح",
+     "cer": 0.037037037037037035,
+     "wer": 0.16666666666666666,
+     "seconds": 3.1463038548752835
+    },
+    {
+     "i": 10,
+     "text": "كان فاضل شخصا محترما في الحي.",
+     "heard": "كان فاضل شخصاً وحترماً في الحي",
+     "cer": 0.10714285714285714,
+     "wer": 0.3333333333333333,
+     "seconds": 3.0882539682539685
+    },
+    {
+     "i": 11,
+     "text": "دخل شخص غريب من الباب فجأة.",
+     "heard": "دخل شخص غريب من الباب فجأة",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 3.378503401360544
+    },
+    {
+     "i": 12,
+     "text": "اجتاح العديد من السياح الجزيرة .",
+     "heard": "اشتاح العديد من السياح الجزيرة",
+     "cer": 0.03333333333333333,
+     "wer": 0.2,
+     "seconds": 3.575873015873016
+    },
+    {
+     "i": 13,
+     "text": "ارتدى سامي بعض الملابس و ذهب إلى محلّ المواد الغذائيّة.",
+     "heard": "ارتدى سامي بعض الملابس وذهب إلى محل المواد الغذائية",
+     "cer": 0.05555555555555555,
+     "wer": 0.4,
+     "seconds": 6.130068027210885
+    },
+    {
+     "i": 14,
+     "text": "لم يُقدَّر للبشر إطلاقًا أن يعيشوا إلى الأبد.",
+     "heard": "لم يقدر للبشر اتواقاً أن يعيش وإلى الأباب",
+     "cer": 0.29545454545454547,
+     "wer": 0.625,
+     "seconds": 4.342131519274377
+    },
+    {
+     "i": 15,
+     "text": "عليك أن لا تركن سيارتك في هذا الشارع.",
+     "heard": "عليك أن لا تركن سيارتك في هذا الشارل",
+     "cer": 0.027777777777777776,
+     "wer": 0.125,
+     "seconds": 4.249251700680272
+    }
+   ],
+   "flores_cer": 0.09490550633063159,
+   "tatoeba_cer": 0.07417212417212415
+  },
+  {
+   "package": "artifacts/voices/fr_FR/package",
+   "voice": "fr_FR-siwis-medium",
+   "language": "fr",
+   "parameters": 1565324,
+   "rows": 16,
+   "student_cer": 0.08793687391513479,
+   "teacher_cer": null,
+   "retention": null,
+   "per_row": [
+    {
+     "i": 0,
+     "text": "Est-ce que vous savez piloter un avion ?",
+     "heard": "Est-ce que vous savez piloter un avion ?",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.6718367346938776
+    },
+    {
+     "i": 1,
+     "text": "J'ignore souvent les conseils de Tom.",
+     "heard": "J'y miore souvent les conseils de Tom.",
+     "cer": 0.1111111111111111,
+     "wer": 0.2857142857142857,
+     "seconds": 1.9969160997732427
+    },
+    {
+     "i": 2,
+     "text": "Elle s'est envolée pour Tamanrasset.",
+     "heard": "Elle s'est envolée pour Tamanrasset.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.8343764172335602
+    },
+    {
+     "i": 3,
+     "text": "Cochez la bonne réponse !",
+     "heard": "Peu chez la bonne réponse.",
+     "cer": 0.17391304347826086,
+     "wer": 0.5,
+     "seconds": 1.4164172335600906
+    },
+    {
+     "i": 4,
+     "text": "Un foyer bâti sur des mensonges ne récoltera que des tourments.",
+     "heard": "Un foyer bâti sur des mensonges ne récoltera que des tourments.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 3.006984126984127
+    },
+    {
+     "i": 5,
+     "text": "Ton livre est sur le bureau.",
+     "heard": "Ton livre est sur le bureau.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.4512471655328798
+    },
+    {
+     "i": 6,
+     "text": "Ne disons rien de plus à ce sujet.",
+     "heard": "Mais dis-en rien de pur à ce sujet.",
+     "cer": 0.2727272727272727,
+     "wer": 0.5,
+     "seconds": 1.7647165532879818
+    },
+    {
+     "i": 7,
+     "text": "Ils l'ont laissée l’épouser.",
+     "heard": "Il l'a laissé les poser.",
+     "cer": 0.3333333333333333,
+     "wer": 0.8333333333333334,
+     "seconds": 1.2887074829931973
+    },
+    {
+     "i": 8,
+     "text": "Je peux m'appuyer sur Tom.",
+     "heard": "Je peux m'appuyer sur Tom.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.6718367346938776
+    },
+    {
+     "i": 9,
+     "text": "Nous aimons partager nos cadeaux.",
+     "heard": "Nous aimons partager nos cadeaux.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.6253968253968254
+    },
+    {
+     "i": 10,
+     "text": "Je ne l'ai pas perdue de vue.",
+     "heard": "Je ne l'ai pas perdu de vie.",
+     "cer": 0.07142857142857142,
+     "wer": 0.25,
+     "seconds": 1.3699773242630386
+    },
+    {
+     "i": 11,
+     "text": "Nous n'avons pas de machine à café au bureau mais nous en voulons une.",
+     "heard": "Nous n'avons pas de machines à café au bureau, mais nous envolons une.",
+     "cer": 0.043478260869565216,
+     "wer": 0.2,
+     "seconds": 3.0418140589569163
+    },
+    {
+     "i": 12,
+     "text": "Je suis tout à fait de ton avis.",
+     "heard": "Je suis tout à fait de ton avis.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.5209070294784581
+    },
+    {
+     "i": 13,
+     "text": "Dès que le réveil sonne, je me rendors aussitôt.",
+     "heard": "Dès que le réveil sonne, je me rendors aussi tôt.",
+     "cer": 0.021739130434782608,
+     "wer": 0.2222222222222222,
+     "seconds": 2.5658049886621317
+    },
+    {
+     "i": 14,
+     "text": "Tom arrangeait les fleurs.",
+     "heard": "Tom, arrangez les fleurs.",
+     "cer": 0.12,
+     "wer": 0.25,
+     "seconds": 1.3235374149659864
+    },
+    {
+     "i": 15,
+     "text": "Ne laisse pas Tom rester là.",
+     "heard": "Ne laisse pas tomber Estilla.",
+     "cer": 0.25925925925925924,
+     "wer": 0.5,
+     "seconds": 1.497687074829932
+    }
+   ],
+   "flores_cer": 0.05811075366668458,
+   "tatoeba_cer": 0.08793687391513479
+  },
+  {
+   "package": "artifacts/voices/ro_RO/package",
+   "voice": "ro_RO-mihai-medium",
+   "language": "ro",
+   "parameters": 1565164,
+   "rows": 16,
+   "student_cer": 0.10414213043713204,
+   "teacher_cer": null,
+   "retention": null,
+   "per_row": [
+    {
+     "i": 0,
+     "text": "Engleza este studiată în întreaga lume.",
+     "heard": "Înglesza este studiată în întreaga lume.",
+     "cer": 0.05263157894736842,
+     "wer": 0.16666666666666666,
+     "seconds": 2.6238548752834467
+    },
+    {
+     "i": 1,
+     "text": "Avionul decolează la zece și un sfert.",
+     "heard": "Avionul decoleaza la 10 și un stert.",
+     "cer": 0.16216216216216217,
+     "wer": 0.42857142857142855,
+     "seconds": 2.589024943310658
+    },
+    {
+     "i": 2,
+     "text": "Ea a văzut spirite mergând prin pereți.",
+     "heard": "Ia a vazut spiritem ergând prin perețe.",
+     "cer": 0.13157894736842105,
+     "wer": 0.7142857142857143,
+     "seconds": 2.5541950113378684
+    },
+    {
+     "i": 3,
+     "text": "O coaliție se compune din diferite partide.",
+     "heard": "o coaliție se compune din diferite partide.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.809614512471655
+    },
+    {
+     "i": 4,
+     "text": "Yuri a cumpărat lucruri bune de nimic.",
+     "heard": "Iurea cumpărat lucruri bune de nimic.",
+     "cer": 0.08108108108108109,
+     "wer": 0.2857142857142857,
+     "seconds": 2.2871655328798184
+    },
+    {
+     "i": 5,
+     "text": "Folosesc camera împreună cu sora mea.",
+     "heard": "folosesc camera împreună cu sora mea.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.507755102040816
+    },
+    {
+     "i": 6,
+     "text": "Cunoașterea eliberează. Ignoranța înrobește.",
+     "heard": "cu noastră e liberează, ignoranța îl lăbește.",
+     "cer": 0.23809523809523808,
+     "wer": 1.5,
+     "seconds": 2.6238548752834467
+    },
+    {
+     "i": 7,
+     "text": "Ne-am petrecut noaptea într-un hotel ieftin.",
+     "heard": "Ne-am petecut noaptea într-un hotel ieftin.",
+     "cer": 0.023255813953488372,
+     "wer": 0.125,
+     "seconds": 2.5774149659863945
+    },
+    {
+     "i": 8,
+     "text": "Cred că e o rușine că unii dintre profesorii de limbi străine au putut să termine facultatea fără să fi studiat cu un vorbitor nativ.",
+     "heard": "cred ca e o rusine ca unii dintre profesori de limb, stării ne-au putut să termine facultatea fără să fii studiat cu un vorbitor nativ.",
+     "cer": 0.06818181818181818,
+     "wer": 0.32,
+     "seconds": 7.453605442176871
+    },
+    {
+     "i": 9,
+     "text": "Furtuna s-a potolit treptat.",
+     "heard": "Fortuna s-a potolit de tat.",
+     "cer": 0.14814814814814814,
+     "wer": 0.6,
+     "seconds": 1.787936507936508
+    },
+    {
+     "i": 10,
+     "text": "Protejați-l pe președinte!",
+     "heard": "protejați-l pe președinte.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 1.6137868480725623
+    },
+    {
+     "i": 11,
+     "text": "Democrația este dictatura majorității.",
+     "heard": "democația este dictatura majorității.",
+     "cer": 0.02702702702702703,
+     "wer": 0.25,
+     "seconds": 2.5193650793650795
+    },
+    {
+     "i": 12,
+     "text": "În curând voi împlini treizeci și cinci de ani.",
+     "heard": "În curând voi înclinit 35 de ani.",
+     "cer": 0.391304347826087,
+     "wer": 0.4444444444444444,
+     "seconds": 2.449705215419501
+    },
+    {
+     "i": 13,
+     "text": "Lui nu-i place să vorbească.",
+     "heard": "Nu-i nu-i place să vorbescă.",
+     "cer": 0.1111111111111111,
+     "wer": 0.5,
+     "seconds": 1.7182766439909296
+    },
+    {
+     "i": 14,
+     "text": "Tom așteaptă să te ia acasă.",
+     "heard": "Tomaști teapta să te ia acasă.",
+     "cer": 0.18518518518518517,
+     "wer": 0.3333333333333333,
+     "seconds": 1.8459863945578232
+    },
+    {
+     "i": 15,
+     "text": "Majoritatea pasagerilor din autobuz dormeau.",
+     "heard": "Majoritatea pasa geri lor din autobuz dormeau.",
+     "cer": 0.046511627906976744,
+     "wer": 0.6,
+     "seconds": 2.948934240362812
+    }
+   ],
+   "flores_cer": 0.0727279151882144,
+   "tatoeba_cer": 0.10414213043713204
+  },
+  {
+   "package": "artifacts/voices/cs_CZ/package",
+   "voice": "cs_CZ-jirka-medium",
+   "language": "cs",
+   "parameters": 1568044,
+   "rows": 16,
+   "student_cer": 0.11137484739076572,
+   "teacher_cer": null,
+   "retention": null,
+   "per_row": [
+    {
+     "i": 0,
+     "text": "Řekl jste mi to minulý týden.",
+     "heard": "Řeklo, jisté mi to minulý týden.",
+     "cer": 0.10714285714285714,
+     "wer": 0.3333333333333333,
+     "seconds": 2.5541950113378684
+    },
+    {
+     "i": 1,
+     "text": "Překládat český text je velice těžké.",
+     "heard": "Překládat český text je velice těžký.",
+     "cer": 0.027777777777777776,
+     "wer": 0.16666666666666666,
+     "seconds": 3.308843537414966
+    },
+    {
+     "i": 2,
+     "text": "Kutub Minar a Červená pevnost se nacházejí v Dillí.",
+     "heard": "Kutub, minar a červená pevnost se nacházejí v dělí.",
+     "cer": 0.04,
+     "wer": 0.1111111111111111,
+     "seconds": 4.423401360544218
+    },
+    {
+     "i": 3,
+     "text": "Každý student má volný přístup do knihovny.",
+     "heard": "Každý student má volný přistup do kněhovny.",
+     "cer": 0.047619047619047616,
+     "wer": 0.2857142857142857,
+     "seconds": 3.5294331065759637
+    },
+    {
+     "i": 4,
+     "text": "Dneska přivezli nový nábytek.",
+     "heard": "Dneska přivezli nový nábytek.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 2.6238548752834467
+    },
+    {
+     "i": 5,
+     "text": "Netušil jsem, že se to stane.",
+     "heard": "netušil i jsem, že se to stane.",
+     "cer": 0.07407407407407407,
+     "wer": 0.16666666666666666,
+     "seconds": 2.5658049886621317
+    },
+    {
+     "i": 6,
+     "text": "Tom ještě pořád píše básně.",
+     "heard": "Ještě pořád písíš bázny.",
+     "cer": 0.34615384615384615,
+     "wer": 0.6,
+     "seconds": 2.6586848072562357
+    },
+    {
+     "i": 7,
+     "text": "Rychleji mluví, než myslí.",
+     "heard": "rychle je mluví než myslí.",
+     "cer": 0.08333333333333333,
+     "wer": 0.5,
+     "seconds": 2.5541950113378684
+    },
+    {
+     "i": 8,
+     "text": "Tom se touto prací nedokáže uživit.",
+     "heard": "o tom se tou to prací nedokáže uživit.",
+     "cer": 0.08823529411764706,
+     "wer": 0.5,
+     "seconds": 3.053424036281179
+    },
+    {
+     "i": 9,
+     "text": "Zaplaťte prosím u pokladny.",
+     "heard": "Zaplate prosím u pokladny.",
+     "cer": 0.038461538461538464,
+     "wer": 0.25,
+     "seconds": 2.2291156462585033
+    },
+    {
+     "i": 10,
+     "text": "Řekl jsem jí, aby šla domů.",
+     "heard": "řekl jsem jí, aby šla domů.",
+     "cer": 0.0,
+     "wer": 0.0,
+     "seconds": 3.053424036281179
+    },
+    {
+     "i": 11,
+     "text": "Tom mi řekl, že jsi nemocný.",
+     "heard": "V tom neřekl, že jsi nemocný.",
+     "cer": 0.19230769230769232,
+     "wer": 0.5,
+     "seconds": 2.6006349206349206
+    },
+    {
+     "i": 12,
+     "text": "Jak blízký si s nimi jsi?",
+     "heard": "Jak blizkí se z němej se.",
+     "cer": 0.375,
+     "wer": 0.8333333333333334,
+     "seconds": 2.159455782312925
+    },
+    {
+     "i": 13,
+     "text": "Mnohé nasliboval, málo toho vidím.",
+     "heard": "Mnohe naslibovalo, málo toho vidím.",
+     "cer": 0.0625,
+     "wer": 0.4,
+     "seconds": 3.239183673469388
+    },
+    {
+     "i": 14,
+     "text": "Nezastavil jsem se u vás, protože jsem neměl čas.",
+     "heard": "Nezastavělo i jsem se u vás, protože jsem neměl čas.",
+     "cer": 0.0851063829787234,
+     "wer": 0.2222222222222222,
+     "seconds": 4.6788208616780045
+    },
+    {
+     "i": 15,
+     "text": "Tom je profesionální zabiják.",
+     "heard": "a tom je profesionalní zaběrak.",
+     "cer": 0.21428571428571427,
+     "wer": 0.75,
+     "seconds": 2.6122448979591835
+    }
+   ],
+   "flores_cer": 0.07409518594280655,
+   "tatoeba_cer": 0.11137484739076572
+  }
+ ],
+ "notable": {
+  "german": "0.097 on FLORES, 0.032 on Tatoeba. German looked like the weakest student in the set; it was the test text, not the voice. FLORES news prose is dense with proper nouns that ASR mangles regardless of the speaker.",
+  "tiny_511k": "0.045 on Tatoeba against the full 1.56M model's 0.032. A third of the parameters still generalises to unseen text.",
+  "regressions": "Czech +0.037, Romanian +0.031 and French +0.030 got worse out of domain. All three remain far below the 0.261 of the currently published Vietnamese voice, but they are the three to listen to first."
+ },
+ "caveats": [
+  "16 sentences per voice. Directional, not precise.",
+  "Tatoeba sentences are shorter and simpler than FLORES, which flatters every voice; the domain SHIFT per voice is the meaningful signal, not the absolute.",
+  "Still intelligibility only. No listener has heard any of these."
+ ]
+}

@@ -29,6 +29,7 @@ import onnxruntime as ort
 from onnx import TensorProto, helper
 from piper.voice import PiperVoice
 from mexican_g2p_normalizer import normalize_mexican_g2p
+from piper_frontend_workers import disable_g2p_dataloader_workers
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -605,6 +606,11 @@ def build_pack(args: argparse.Namespace) -> dict[str, Any]:
     debug_model = make_debug_model(args.model, debug_outputs)
     session = ort.InferenceSession(debug_model.SerializeToString(), providers=["CPUExecutionProvider"])
     voice = PiperVoice.load(args.model, args.config)
+    # A pinyin teacher's front end spawns a DataLoader per sentence, which
+    # leaks file descriptors until the pack dies and costs 55x the wall time.
+    # No-op for eSpeak teachers. See tools/piper_frontend_workers.py.
+    if disable_g2p_dataloader_workers(voice):
+        print("front end: g2pW dataloader workers disabled (in-process batches)", flush=True)
     # es_MX toponym/number rewrites are applied only when the teacher's own
     # config says es-419; every other language must pass through untouched.
     espeak_voice = str((json.loads(args.config.read_text(encoding="utf-8"))

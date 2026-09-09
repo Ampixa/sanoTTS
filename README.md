@@ -20,7 +20,14 @@ in the browser via WASM.
   Arabic, Nepali (नेपाली), Hindi (हिन्दी), Vietnamese (Tiếng Việt),
   Indonesian (Bahasa), Chinese (中文). The pip package ships 27 of them across
   13 languages; Nepali, Hindi and Chinese are browser-only for now
-- **new:** **heart**, our best-sounding voice at **2.27M parameters** (24 kHz), and
+- **new (2026-09-08):** **ten more languages** — German, Turkish, Russian, French,
+  Spanish, Italian, Portuguese, Romanian, Czech and Arabic — each ~1.56M
+  parameters, and eight of them also in a ~511k variant. Whisper word error rate
+  on out-of-domain text runs 0.038 (Portuguese) to 0.392 (Romanian); that is
+  intelligibility over 16 sentences per language, not naturalness, and no one has
+  run a listening test. Numbers and method in
+  [`experiments/evidence/ood-tatoeba-20260908.json`](experiments/evidence/ood-tatoeba-20260908.json)
+- **heart**, our best-sounding voice at **2.27M parameters** (24 kHz), and
   **heart-nano**, the same voice in **294k parameters** — a complete text-to-speech
   stack, int8, in 337 KB. Both synthesize live in the browser demo
 - open source, **GPL-3.0**
