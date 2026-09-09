@@ -34,13 +34,21 @@ The shipped example runs **en_us_e12nano** (294,642 params), the only nano
 lineage with measurements on real silicon.
 
 - **Flash: ~500 KB** (399 KB of embedded weights + reference, plus code).
-- **Free heap: 136 KB minimum** for the embedded row (415 frames, 4.81 s).
-  The arena is `46.5 KB fixed + 195.7 B/frame` (measured, r2 0.9998), so a
-  shorter utterance needs less. The sketch walks a ladder from 320 KB down to
-  the floor and takes the largest one `malloc` gives it; output is identical
-  at every rung, so the extra space is speed, not correctness.
-- `arena_peak` measured **128,944 B** -- identical on the host, on the Arduino
-  build and in the ESP-IDF port. It is in every board report.
+- **Free heap: 84,208 B**, and that figure does not depend on how long the
+  utterance is. The runtime slides a window of
+  `NANO_FRAME_CHUNK + 2*PIPE_RF` columns over the frame axis instead of
+  materialising the whole plane, so `arena_peak` is flat from 192 frames to
+  2,905 (measured on an ESP32-S3: 31 s of speech at the same 84,208 B). A
+  shorter utterance than the window needs less -- 67,120 B at 93 frames.
+- `arena_peak` is identical on the host, on the Arduino build, in the ESP-IDF
+  port and in the ESPHome component. It is in every board report.
+- The remaining length ceiling is `MAX_TOKENS_RT` (1024 tokens, about 49 s),
+  not memory.
+
+  Before the windowing change the arena grew at 192 B/frame (208 above about
+  568 frames, where the embed phase overtakes the head phase), which put a
+  hard ceiling near 4.4 s on a board with ESPHome running. Older reports in
+  this file quote that regime; the `arena_peak` column is the tell.
 
 ## Measured
 

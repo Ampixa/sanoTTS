@@ -87,8 +87,18 @@ int main(int argc, char **argv) {
     const char *dir = argv[1];
     const char *out_dir = argv[2];
 
+    /* int8 fixtures ship front_q8/model_q8; --weights f32 exports ship
+     * front_f32/model_f32. The build must match: snt_nano.c refuses the other
+     * element type at compile time via NANO_WEIGHT_FORMAT. Same switch as
+     * test/nano_golden_main.c, so this harness covers every lineage the
+     * golden gate covers rather than the int8 ones alone. */
+#ifdef SNT_NANO_W_F32
+    void *front = xload(dir, "front_f32.bin", NULL);
+    void *model = xload(dir, "model_f32.bin", NULL);
+#else
     void *front = xload(dir, "front_q8.bin", NULL);
     void *model = xload(dir, "model_q8.bin", NULL);
+#endif
 
     char rows_path[512];
     snprintf(rows_path, sizeof rows_path, "%s/rows.txt", dir);

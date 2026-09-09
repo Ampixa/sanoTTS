@@ -50,14 +50,34 @@
  *     taps summing to 1.6e-5 of the DC gain, so the IIR is the more faithful
  *     of the two, not an approximation of it.
  *
- * MEMORY MODE: whole-utterance, with the mel-100 interface streamed through a
- * 7-column ring so it never materialises. Live arena is
- *   acoustic frame stream (44*4) + decoder trunk (48*4) + noise (4*4)
- *   = 384 bytes per mel frame = ~36 KB per second of audio at 93.75 fps.
- * (Materialising mel would add 400 B/frame; materialising the [513, T] complex
- * spectrum would add 4104 B/frame, which is why the head/iSTFT/OLA run inside
- * the per-frame loop exactly as R7's do.) The measured peak is reported in
- * snt_nano_stats.arena_peak.
+ * MEMORY MODE: WINDOWED. Nothing in the arena scales with the utterance.
+ *
+ * It used to be whole-utterance: the [DIM, T] activation plane cost 192 B per
+ * mel frame, the noise plane another 16, and the acoustic token plane 176 B
+ * per TOKEN, so the arena was a line in the length and the line was a ceiling.
+ * On an ESP32-S3 running ESPHome, which leaves 122,880 B of contiguous
+ * internal SRAM, three seconds of speech fitted, 4.4 s starved the weight
+ * staging (correct audio, three times the compute) and 5.3 s returned ERR_OOM.
+ *
+ * Every plane is now a fixed-width WINDOW. The pipeline runs in chunks of
+ * NANO_FRAME_CHUNK output frames; each stage inside a chunk works on a range
+ * shrunken by its own receptive field from the stage before it, so the first
+ * stage recomputes a skirt of PIPE_RF columns at each end that the neighbouring
+ * chunks also compute, and nothing has to survive a chunk boundary inside a
+ * plane. See "streaming window geometry" below for the arithmetic.
+ *
+ * Because the GLOBAL frame index still decides where the zero padding is and
+ * which token owns a frame, every column is computed from exactly the inputs
+ * the whole-utterance version gave it: the emitted PCM is BYTE-IDENTICAL, and
+ * it is identical for every chunk size too (verified from 2 to 2048 frames,
+ * on all three lineages, in all four build configurations).
+ *
+ * The mel-100 interface is still streamed through an EM_RING ring so it never
+ * materialises, and the head/iSTFT/OLA still run inside the per-frame loop --
+ * materialising the [513, T] complex spectrum would cost 4,104 B/frame. The
+ * measured peak is reported in snt_nano_stats.arena_peak; for en_us_e12nano at
+ * NANO_FRAME_CHUNK 128 it is 84,208 B for any utterance longer than the
+ * window, HOST-measured and DEVICE-confirmed from 192 to 2,905 frames.
  */
 #include <math.h>
 #include <stdint.h>
@@ -110,6 +130,114 @@
 /* gathered receptive fields: embed is the widest at MELS*EK = 700 */
 #define GATHER_MAX (((MELS * EK) + 31) & ~31)
 #define ACC_MAX (NANO_PW_HIDDEN + 16)
+
+/* ---- streaming window geometry ------------------------------------------
+ * Every activation plane in this file used to be allocated for the WHOLE
+ * utterance, so the arena grew linearly with the frame count T and the token
+ * count. The planes are now WINDOWS: a chunk of output columns is produced,
+ * the window slides, and the arena is a constant.
+ *
+ * A window is not a ring. Each chunk recomputes its own inputs from the last
+ * point that is cheap to reproduce (the token embedding for the token planes,
+ * the frame projection for the decoder plane), so nothing has to survive from
+ * one chunk to the next inside a plane and no modulo addressing is needed:
+ * the plane is addressed as x[ch * xw + (t - x0)], where x0 is the global
+ * column of the window's column 0. The cost is that the columns within one
+ * receptive field of a chunk boundary are computed twice; the benefit is that
+ * every column is computed from exactly the same inputs as the whole-utterance
+ * version computed it from, which is what makes the output BYTE-IDENTICAL
+ * rather than merely close.
+ *
+ * The width of the recomputed skirt is the pipeline's receptive-field radius.
+ * Per stage, "radius" is how far the stage's INPUT columns reach either side
+ * of the output column it produces:
+ *
+ *   resblock  conv0 at column a reads x[a-K/2 .. a+K/2] and conv1 at column t
+ *             reads conv0[t-K/2 .. t+K/2], so one block reaches 2*(K/2) = K-1
+ *             columns each way.
+ *   embed     mel column a is a 1x1 of ax[:,a] (radius 0), then the k=EK
+ *             embedding reads mel[t-EK/2 .. t+EK/2]: EK/2 each way.
+ *   trunk     the depthwise reads x[t-DWK/2 .. t+DWK/2] pre-residual and the
+ *             pointwise is 1x1 at the same column: DWK/2 each way.
+ *   head      per column: radius 0.
+ *
+ * PIPE_RF is their sum over the decoder plane (the frame-projection output
+ * through the last trunk block); TOK_RF and DUR_RF are the same sum over the
+ * acoustic token blocks and the duration blocks, which live on token planes.
+ * For en_us_e12nano / en_us_e13b that is 3*4 + 3 + 4*3 = 27 frames and 3*4 =
+ * 12 tokens; for en_us_r227f32, 4*4 + 3 + 5*3 = 34 frames and 4*4 = 16.  */
+#define RF_RESBLOCK(K) ((K) - 1)
+#define RF_EMBED (EK / 2)
+#define RF_TRUNK (DWK / 2)
+#define PIPE_RF (NANO_AC_DEPTH * RF_RESBLOCK(NANO_AC_KERNEL) + RF_EMBED \
+                 + NANO_BLOCKS * RF_TRUNK)
+#define TOK_RF (NANO_AC_TOKEN_DEPTH * RF_RESBLOCK(NANO_AC_KERNEL))
+#define DUR_RF (NANO_DUR_DEPTH * RF_RESBLOCK(NANO_DUR_KERNEL))
+
+/* Chunk sizes. Larger chunks recompute proportionally less and cost
+ * proportionally more arena; these are the shipped compromise and a build may
+ * override either. The frame chunk MUST be even: the head processes frames in
+ * pairs and a chunk boundary at an odd frame would split a pair. */
+#ifndef NANO_FRAME_CHUNK
+#define NANO_FRAME_CHUNK 128
+#endif
+#ifndef NANO_TOKEN_CHUNK
+#define NANO_TOKEN_CHUNK 128
+#endif
+#if (NANO_FRAME_CHUNK) % 2 != 0
+#error "NANO_FRAME_CHUNK must be even: the head emits frames in pairs"
+#endif
+#if (NANO_FRAME_CHUNK) < 2 || (NANO_TOKEN_CHUNK) < 1
+#error "chunk sizes must be positive"
+#endif
+
+/* Window bounds checking, host debug builds only. A stage that read outside
+ * its window would read a neighbouring allocation inside the same arena --
+ * live memory, so neither the allocator nor a sanitiser would notice, and the
+ * damage would show up only as changed audio. This turns that into a message.
+ * Off in every shipped build; it costs a compare per plane access. */
+#ifdef SNT_NANO_WINDOW_GUARD
+static long g_win_bad = 0;
+static int win_col(int w, int o, int idx) {
+    int c = idx - o;
+    if (c < 0 || c >= w) {
+        if (g_win_bad < 16)
+            fprintf(stderr, "snt_nano: WINDOW VIOLATION idx=%d origin=%d width=%d\n",
+                    idx, o, w);
+        g_win_bad++;
+        return 0;
+    }
+    return c;
+}
+long snt_nano_window_violations(void) { return g_win_bad; }
+#define WCOL(w, o, idx) win_col((w), (o), (idx))
+#else
+#define WCOL(w, o, idx) ((idx) - (o))
+#endif
+
+static int clampi(int v, int lo, int hi) {
+    return v < lo ? lo : (v > hi ? hi : v);
+}
+
+/* First and last token whose frames intersect [flo, fhi). Linear in the token
+ * count and called once per chunk; a prefix-sum table would be faster and
+ * would cost MAX_TOKENS_RT ints of .bss on a part where .bss is the scarce
+ * resource this whole change is about. */
+static void tok_span(const int *durs, int n_tokens, int flo, int fhi,
+                     int *t_lo, int *t_hi) {
+    int f = 0, lo = 0, hi = 0, seen = 0;
+    for (int t = 0; t < n_tokens; t++) {
+        int e = f + durs[t];
+        if (e > flo && f < fhi) {
+            if (!seen) { lo = t; seen = 1; }
+            hi = t;
+        }
+        f = e;
+        if (f >= fhi) break;
+    }
+    *t_lo = lo;
+    *t_hi = seen ? hi : lo;
+}
 
 /* ---------------------------------------------------------------------- */
 /* blob accessors                                                          */
@@ -463,6 +591,83 @@ int snt_nano_seeded_noise(uint64_t seed, int channels, int frames, float *out) {
     return 0;
 }
 
+/* A WINDOW of the same stream, without materialising it.
+ *
+ * snt_nano_seeded_noise writes [channels, frames] in that memory order, so
+ * channel c's frame t is stream element c*frames + t: the four channels are
+ * `frames` apart in a strictly sequential MT19937 stream and there is no way
+ * to have all four of one frame's values without having driven the generator
+ * past the last of them. Keeping only the wanted columns is therefore the
+ * only way to stop the noise buffer growing with the utterance.
+ *
+ * The DRAW ORDER here is identical to the full generator's, element for
+ * element, so the values are identical. What changes is that a 16-block is
+ * transformed only when it overlaps one of the four wanted ranges: the
+ * Box-Muller transform is a pure function of the block, it consumes no draws,
+ * and skipping it for a block nobody reads cannot perturb the stream. Cost is
+ * `channels * frames` integer draws per call -- microseconds -- against the
+ * transcendental cost of a full transform, which this avoids.
+ *
+ * Reproduced exactly, including the two edges the full generator has:
+ *   - elements in the trailing partial 16-block are never transformed;
+ *   - if the total size is not a multiple of 16, sixteen FURTHER draws are
+ *     taken, transformed, and overwrite the LAST sixteen elements -- which
+ *     reaches back into the last complete block.
+ * out[ch * stride + (t - lo)] receives channel ch, frame t, for t in [lo,hi).
+ */
+static int noise_window(uint64_t seed, int channels, int frames,
+                        int lo, int hi, float *out, int stride) {
+    mt19937 g;
+    long size = (long)channels * (long)frames;
+    long i;
+    float blk[16];
+    if (size < 16) return -1;   /* torch dispatches sizes < 16 to a scalar path */
+    if (lo < 0 || hi > frames || lo > hi) return -2;
+    mt_seed(&g, seed);
+    for (i = 0; i + 16 <= size; i += 16) {
+        int j;
+        int wanted = 0;
+        for (j = 0; j < 16; j++) blk[j] = mt_uniform(&g);
+        for (j = 0; j < channels; j++) {
+            long clo = (long)j * frames + lo, chi = (long)j * frames + hi;
+            if (i < chi && i + 16 > clo) { wanted = 1; break; }
+        }
+        if (!wanted) continue;
+        normal_fill_16(blk);
+        for (j = 0; j < 16; j++) {
+            long abs = i + j;
+            int ch = (int)(abs / frames);
+            int t = (int)(abs - (long)ch * frames);
+            if (t >= lo && t < hi) out[(size_t)ch * stride + (t - lo)] = blk[j];
+        }
+    }
+    {   /* trailing partial block: raw uniforms, never transformed. Always
+         * overwritten by the tail below (its range covers this one whenever
+         * it exists), but written here so the two generators stay literally
+         * the same procedure rather than the same result by argument. */
+        int rem = (int)(size - i), j;
+        for (j = 0; j < rem; j++) blk[j] = mt_uniform(&g);
+        for (j = 0; j < rem; j++) {
+            long abs = i + j;
+            int ch = (int)(abs / frames);
+            int t = (int)(abs - (long)ch * frames);
+            if (t >= lo && t < hi) out[(size_t)ch * stride + (t - lo)] = blk[j];
+        }
+    }
+    if (size % 16 != 0) {
+        int j;
+        for (j = 0; j < 16; j++) blk[j] = mt_uniform(&g);
+        normal_fill_16(blk);
+        for (j = 0; j < 16; j++) {
+            long abs = size - 16 + j;
+            int ch = (int)(abs / frames);
+            int t = (int)(abs - (long)ch * frames);
+            if (t >= lo && t < hi) out[(size_t)ch * stride + (t - lo)] = blk[j];
+        }
+    }
+    return 0;
+}
+
 /* ---------------------------------------------------------------------- */
 /* arena + int8 column kernels (semantics identical to snt_tts.c)          */
 /* ---------------------------------------------------------------------- */
@@ -591,11 +796,12 @@ static float quant_gather(NanoScratch *S, int n, int pad) {
     return s;
 }
 
+/* `col` is a LOCAL column of x, i.e. already offset by the window origin. */
 static void q1x1_col(const nano_w_t *w8, const float *sc, const float *bi, int pad,
-                     const float *x, int xT, int col, float *out, int out_stride,
+                     const float *x, int xw, int col, float *out, int out_stride,
                      int out_col, int in_ch, int out_ch) {
     NanoScratch *S = SCR();
-    for (int i = 0; i < in_ch; i++) S->gather[i] = x[(size_t)i * xT + col];
+    for (int i = 0; i < in_ch; i++) S->gather[i] = x[(size_t)i * xw + col];
     float s_act = quant_gather(S, in_ch, pad);
     nano_matvec(NANO_ACTBUF(S), w8, S->acc32, out_ch, pad);
     for (int o = 0; o < out_ch; o++)
@@ -626,6 +832,7 @@ typedef struct {
     const nano_w_t *c0w, *c1w;
     const float *c0s, *c0b, *c1s, *c1b;
     int c0pad, c1pad, ch, T, K, W;
+    int xw, x0;             /* x window: column count, and its global column 0 */
     int a0;                 /* absolute column of unit 0 of the current pass */
     float bscale, *x, *tmp;
 } RbCtx;
@@ -640,7 +847,8 @@ static void rb_conv0_range(int lo, int hi, void *vc) {
             for (int k = 0; k < c->K; k++) {
                 int idx = a + k - half;
                 S->gather[i * c->K + k] =
-                    (idx >= 0 && idx < c->T) ? c->x[(size_t)i * c->T + idx] : 0.0f;
+                    (idx >= 0 && idx < c->T)
+                        ? c->x[(size_t)i * c->xw + WCOL(c->xw, c->x0, idx)] : 0.0f;
             }
         float s_act = quant_gather(S, c->ch * c->K, c->c0pad);
         nano_matvec(NANO_ACTBUF(S), c->c0w, S->acc32, c->ch, c->c0pad);
@@ -668,20 +876,32 @@ static void rb_conv1_range(int lo, int hi, void *vc) {
         float s_act = quant_gather(S, c->ch * c->K, c->c1pad);
         nano_matvec(NANO_ACTBUF(S), c->c1w, S->acc32, c->ch, c->c1pad);
         for (int o = 0; o < c->ch; o++)
-            c->x[(size_t)o * c->T + t] +=
+            c->x[(size_t)o * c->xw + WCOL(c->xw, c->x0, t)] +=
                 c->bscale * (s_act * c->c1s[o] * (float)S->acc32[o] + c->c1b[o]);
     }
 }
 
+/* Writes output columns [lo, hi) of x, reading x over [lo-(K-1), hi+(K-1))
+ * -- which is why the caller's window must be that much wider than the range
+ * it asks for. `T` is the GLOBAL column count and still decides where the
+ * zero padding starts; `xw`/`x0` describe the window x actually occupies.
+ *
+ * conv0 runs ahead of conv1 by `half` columns exactly as before; the only
+ * change is that the run-ahead starts at lo-half instead of at 0, so the
+ * pre-residual columns a chunk boundary needs are produced rather than
+ * assumed. The ring is RB_TILE + K - 1 wide, which is still exactly the span
+ * conv1 reaches over one tile. */
 static void resblock(const nano_w_t *c0w, const float *c0s, const float *c0b, int c0pad,
                      const nano_w_t *c1w, const float *c1s, const float *c1b, int c1pad,
-                     float bscale, float *x, float *tmp, int ch, int T, int K) {
+                     float bscale, float *x, float *tmp, int ch, int T, int K,
+                     int xw, int x0, int lo, int hi) {
     int half = K / 2;
     RbCtx c = {c0w, c1w, c0s, c0b, c1s, c1b, c0pad, c1pad, ch, T, K,
-               RB_RING(K), 0, bscale, x, tmp};
-    int produced = 0;                 /* conv0 columns [0, produced) are live */
-    for (int t0 = 0; t0 < T; t0 += RB_TILE) {
-        int TL = (t0 + RB_TILE <= T) ? RB_TILE : (T - t0);
+               RB_RING(K), xw, x0, 0, bscale, x, tmp};
+    int produced = lo - half;         /* conv0 columns [lo-half, produced) live */
+    if (produced < 0) produced = 0;   /* columns < 0 are zero by the gather */
+    for (int t0 = lo; t0 < hi; t0 += RB_TILE) {
+        int TL = (t0 + RB_TILE <= hi) ? RB_TILE : (hi - t0);
         int need = t0 + TL + half;
         if (need > T) need = T;       /* columns >= T are zero by the gather */
         if (need > produced) {
@@ -799,6 +1019,8 @@ typedef struct {
     const float *ga;                  /* stem DyT alpha; NULL under LayerNorm */
     float *ax, *x, *noise, *mel;
     int T, a0;
+    int xw, x0;               /* ax/x window: column count and global column 0 */
+    int noisew, noise0;       /* noise window: the same, over its own range    */
 } EmCtx;
 
 /* pass 1: mel column a = ac_out(ax[:, a]), a 1x1 conv. Reads ax, writes mel. */
@@ -806,7 +1028,8 @@ static void em_mel_range(int lo, int hi, void *vc) {
     EmCtx *c = (EmCtx *)vc;
     for (int u = lo; u < hi; u++) {
         int a = c->a0 + u;
-        q1x1_col(c->ow, c->os, c->ob, NANO_AC_OUT_N16, c->ax, c->T, a,
+        q1x1_col(c->ow, c->os, c->ob, NANO_AC_OUT_N16, c->ax, c->xw,
+                 WCOL(c->xw, c->x0, a),
                  c->mel + (size_t)(a % EM_RING) * MELS, 1, 0, NANO_AC_HIDDEN, MELS);
     }
 }
@@ -833,25 +1056,27 @@ static void em_col_range(int lo, int hi, void *vc) {
         }
         float s_act = quant_gather(S, MELS * EK, NANO_EMBED_N16);
         nano_matvec(NANO_ACTBUF(S), c->ew, S->acc32, DIM, NANO_EMBED_N16);
+        int xc = WCOL(c->xw, c->x0, t);
         for (int o = 0; o < DIM; o++)
-            c->x[(size_t)o * c->T + t] = s_act * c->es[o] * (float)S->acc32[o] + c->eb[o];
+            c->x[(size_t)o * c->xw + xc] = s_act * c->es[o] * (float)S->acc32[o] + c->eb[o];
 
         for (int i = 0; i < NANO_NOISE_CH; i++)
             for (int k = 0; k < EK; k++) {
                 int idx = t + k - half;
-                S->gather[i * EK + k] =
-                    (idx >= 0 && idx < c->T) ? c->noise[(size_t)i * c->T + idx] : 0.0f;
+                S->gather[i * EK + k] = (idx >= 0 && idx < c->T)
+                    ? c->noise[(size_t)i * c->noisew
+                               + WCOL(c->noisew, c->noise0, idx)] : 0.0f;
             }
         float s_n = quant_gather(S, NANO_NOISE_CH * EK, NANO_NOISE_N16);
         nano_matvec(NANO_ACTBUF(S), c->nw, S->acc32, DIM, NANO_NOISE_N16);
         for (int o = 0; o < DIM; o++)
-            c->x[(size_t)o * c->T + t] += s_n * c->ns[o] * (float)S->acc32[o] + c->nb[o];
+            c->x[(size_t)o * c->xw + xc] += s_n * c->ns[o] * (float)S->acc32[o] + c->nb[o];
 
         {   /* stem norm (LayerNorm or DyT), folded in */
             float col[DIM], outc[DIM];
-            for (int ch = 0; ch < DIM; ch++) col[ch] = c->x[(size_t)ch * c->T + t];
+            for (int ch = 0; ch < DIM; ch++) col[ch] = c->x[(size_t)ch * c->xw + xc];
             NORM_COL(outc, col, c->ga, c->gw, c->gb, DIM);
-            for (int ch = 0; ch < DIM; ch++) c->x[(size_t)ch * c->T + t] = outc[ch];
+            for (int ch = 0; ch < DIM; ch++) c->x[(size_t)ch * c->xw + xc] = outc[ch];
         }
     }
 }
@@ -885,6 +1110,7 @@ typedef struct {
     float *x, *tc;                    /* tc: [TR_TILE][DIM], dw+LN of the tile */
     const float (*halo)[DIM];         /* pre-residual columns t0-1 .. t0-half */
     int t0, TL, T;
+    int xw, x0;                       /* x window: columns, and global column 0 */
 } TrCtx;
 
 /* pass 1: depthwise + LayerNorm for a column range. Reads x only. */
@@ -896,13 +1122,14 @@ static void tr_dw_range(int lo, int hi, void *vc) {
         float acol[DIM];
         for (int ch = 0; ch < DIM; ch++) {
             const float *wr = c->dww + (size_t)ch * DWK;
-            const float *xr = c->x + (size_t)ch * c->T;
+            const float *xr = c->x + (size_t)ch * c->xw;
             float a = c->dwb[ch];
             for (int k = 0; k < DWK; k++) {
                 int idx = t + k - half;
                 if (idx < 0 || idx >= c->T) continue;
                 /* halo[j] is the PRE-residual column t0-1-j, j < half */
-                float v = (idx < c->t0) ? c->halo[c->t0 - 1 - idx][ch] : xr[idx];
+                float v = (idx < c->t0) ? c->halo[c->t0 - 1 - idx][ch]
+                                        : xr[WCOL(c->xw, c->x0, idx)];
                 a += wr[k] * v;
             }
             acol[ch] = a;
@@ -927,8 +1154,9 @@ static void tr_pw_range(int lo, int hi, void *vc) {
         for (int i = 0; i < NANO_PW_HIDDEN; i++) S->gather[i] = hid[i];
         float s1 = quant_gather(S, NANO_PW_HIDDEN, NANO_B0_PW1_N16);
         nano_matvec(NANO_ACTBUF(S), c->pw1, S->acc32, DIM, NANO_B0_PW1_N16);
+        int xc = WCOL(c->xw, c->x0, t);
         for (int ch = 0; ch < DIM; ch++)
-            c->x[(size_t)ch * c->T + t] += c->gamma[ch] *
+            c->x[(size_t)ch * c->xw + xc] += c->gamma[ch] *
                 (s1 * c->pw1s[ch] * (float)S->acc32[ch] + c->pw1b[ch]);
     }
 }
@@ -1225,36 +1453,23 @@ int snt_nano_synthesize(const snt_nano_config *cfg,
     int n_tokens = n_ids;
 
     /* ---------------- duration student ---------------- */
+    /* The duration trunk runs on a token WINDOW: NANO_TOKEN_CHUNK output
+     * tokens plus DUR_RF tokens of recomputed context on each side, rather
+     * than one [H, n_tokens] plane for the whole utterance. */
     PROF_T0N(dur);
     const int H = NANO_DUR_HIDDEN;
     const float *demb = FF(NOFF_DUR_EMB_F32);
     size_t mark_dur = g_arena_top;
-    float *dh = (float *)aa((size_t)H * n_tokens * 4);
+    const int dchunk = (n_tokens < NANO_TOKEN_CHUNK) ? n_tokens : NANO_TOKEN_CHUNK;
+    int dwin = dchunk + 2 * DUR_RF;
+    if (dwin > n_tokens) dwin = n_tokens;
+    float *dh = (float *)aa((size_t)H * dwin * 4);
     float *dtmp = (float *)aa((size_t)H * RB_RING(NANO_DUR_KERNEL) * 4);
     if (g_arena_oom) return ERR_OOM;
     nano_w_t *r_dc0 = stage_buf((size_t)H * NANO_DUR_B0_C0_N16);
     nano_w_t *r_dc1 = stage_buf((size_t)H * NANO_DUR_B0_C1_N16);
     size_t mark_dproj = g_arena_top;
-    {
-        const nano_w_t *w8 = stage_w(FQ(NOFF_DUR_PROJ_W8),
-                                        (size_t)H * NANO_DUR_PROJ_N16);
-        const float *sc = FF(NOFF_DUR_PROJ_SCALE);
-        const float *bi = FF(NOFF_DUR_PROJ_BIAS);
-        float len_hint = log1pf((float)n_tokens) / log1pf((float)NANO_DUR_MAX_TOKENS);
-        for (int t = 0; t < n_tokens; t++) {
-            int id = ids[t];
-            if (id < 0 || id >= NANO_VOCAB) return -4;
-            for (int h = 0; h < H; h++) S->gather[h] = demb[(size_t)id * H + h];
-            S->gather[H] = (n_tokens > 1) ? (float)t / (float)(n_tokens - 1) : 0.0f;
-            S->gather[H + 1] = len_hint;
-            S->gather[H + 2] = 1.0f;   /* valid_hint: single unpadded sequence */
-            float s_act = quant_gather(S, H + 3, NANO_DUR_PROJ_N16);
-            nano_matvec(NANO_ACTBUF(S), w8, S->acc32, H, NANO_DUR_PROJ_N16);
-            for (int o = 0; o < H; o++)
-                dh[(size_t)o * n_tokens + t] = s_act * sc[o] * (float)S->acc32[o] + bi[o];
-        }
-    }
-    g_arena_top = mark_dproj;   /* the projection matrix is spent */
+    static int durs[MAX_TOKENS_RT];
     {
         const long off[NANO_DUR_DEPTH][7] = {
             NANO_RB_ROW(NOFF_DUR_B, 0),
@@ -1276,28 +1491,66 @@ int snt_nano_synthesize(const snt_nano_config *cfg,
             NANO_RB_ROW(NOFF_DUR_B, 7),
 #endif
         };
-        for (int b = 0; b < NANO_DUR_DEPTH; b++) {
-            const nano_w_t *c0 = res_copy(FQ(off[b][0]), (size_t)H * NANO_DUR_B0_C0_N16, r_dc0);
-            const nano_w_t *c1 = res_copy(FQ(off[b][3]), (size_t)H * NANO_DUR_B0_C1_N16, r_dc1);
-            resblock(c0, FF(off[b][1]), FF(off[b][2]), NANO_DUR_B0_C0_N16,
-                     c1, FF(off[b][4]), FF(off[b][5]), NANO_DUR_B0_C1_N16,
-                     *FF(off[b][6]), dh, dtmp, H, n_tokens, NANO_DUR_KERNEL);
-        }
-    }
-    static int durs[MAX_TOKENS_RT];
-    {
-        const float *os = FF(NOFF_DUR_OUT_SCALE);
-        const float *ob = FF(NOFF_DUR_OUT_BIAS);
-        const nano_w_t *w8 = stage_w(FQ(NOFF_DUR_OUT_W8), NANO_DUR_OUT_N16);
-        for (int t = 0; t < n_tokens; t++) {
-            for (int i = 0; i < H; i++) S->gather[i] = dh[(size_t)i * n_tokens + t];
-            float s_act = quant_gather(S, H, NANO_DUR_OUT_N16);
-            nano_matvec(NANO_ACTBUF(S), w8, S->acc32, 1, NANO_DUR_OUT_N16);
-            float logd = s_act * os[0] * (float)S->acc32[0] + ob[0];
-            float d = roundf(fmaxf(expf(logd), 1.0f) * LENGTH_SCALE);
-            if (d < 1.0f) d = 1.0f;
-            if (d > (float)NANO_DUR_MAX_DURATION) d = (float)NANO_DUR_MAX_DURATION;
-            durs[t] = (int)d;
+        const float len_hint =
+            log1pf((float)n_tokens) / log1pf((float)NANO_DUR_MAX_TOKENS);
+        for (int ta = 0; ta < n_tokens; ta += dchunk) {
+            int tb = ta + dchunk;
+            if (tb > n_tokens) tb = n_tokens;
+            /* ulo/uhi are the UNCLAMPED range of the stage about to run; each
+             * block shrinks them by its own receptive field, and after the
+             * last one they are exactly [ta, tb). Clamping is applied at the
+             * point of use only -- clamping them in place would stop the
+             * shrink from landing on [ta, tb) at the utterance edges. */
+            int ulo = ta - DUR_RF, uhi = tb + DUR_RF;
+            const int dorg = clampi(ulo, 0, n_tokens);
+            g_arena_top = mark_dproj;
+            {
+                const nano_w_t *w8 = stage_w(FQ(NOFF_DUR_PROJ_W8),
+                                                (size_t)H * NANO_DUR_PROJ_N16);
+                const float *sc = FF(NOFF_DUR_PROJ_SCALE);
+                const float *bi = FF(NOFF_DUR_PROJ_BIAS);
+                int hi = clampi(uhi, 0, n_tokens);
+                for (int t = dorg; t < hi; t++) {
+                    int id = ids[t];
+                    if (id < 0 || id >= NANO_VOCAB) return -4;
+                    for (int h = 0; h < H; h++) S->gather[h] = demb[(size_t)id * H + h];
+                    S->gather[H] = (n_tokens > 1) ? (float)t / (float)(n_tokens - 1) : 0.0f;
+                    S->gather[H + 1] = len_hint;
+                    S->gather[H + 2] = 1.0f;   /* valid_hint: one unpadded sequence */
+                    float s_act = quant_gather(S, H + 3, NANO_DUR_PROJ_N16);
+                    nano_matvec(NANO_ACTBUF(S), w8, S->acc32, H, NANO_DUR_PROJ_N16);
+                    for (int o = 0; o < H; o++)
+                        dh[(size_t)o * dwin + (t - dorg)] =
+                            s_act * sc[o] * (float)S->acc32[o] + bi[o];
+                }
+            }
+            g_arena_top = mark_dproj;   /* the projection matrix is spent */
+            for (int b = 0; b < NANO_DUR_DEPTH; b++) {
+                ulo += RF_RESBLOCK(NANO_DUR_KERNEL);
+                uhi -= RF_RESBLOCK(NANO_DUR_KERNEL);
+                const nano_w_t *c0 = res_copy(FQ(off[b][0]), (size_t)H * NANO_DUR_B0_C0_N16, r_dc0);
+                const nano_w_t *c1 = res_copy(FQ(off[b][3]), (size_t)H * NANO_DUR_B0_C1_N16, r_dc1);
+                resblock(c0, FF(off[b][1]), FF(off[b][2]), NANO_DUR_B0_C0_N16,
+                         c1, FF(off[b][4]), FF(off[b][5]), NANO_DUR_B0_C1_N16,
+                         *FF(off[b][6]), dh, dtmp, H, n_tokens, NANO_DUR_KERNEL,
+                         dwin, dorg, clampi(ulo, 0, n_tokens), clampi(uhi, 0, n_tokens));
+            }
+            {
+                const float *os = FF(NOFF_DUR_OUT_SCALE);
+                const float *ob = FF(NOFF_DUR_OUT_BIAS);
+                const nano_w_t *w8 = stage_w(FQ(NOFF_DUR_OUT_W8), NANO_DUR_OUT_N16);
+                for (int t = ta; t < tb; t++) {
+                    for (int i = 0; i < H; i++)
+                        S->gather[i] = dh[(size_t)i * dwin + (t - dorg)];
+                    float s_act = quant_gather(S, H, NANO_DUR_OUT_N16);
+                    nano_matvec(NANO_ACTBUF(S), w8, S->acc32, 1, NANO_DUR_OUT_N16);
+                    float logd = s_act * os[0] * (float)S->acc32[0] + ob[0];
+                    float d = roundf(fmaxf(expf(logd), 1.0f) * LENGTH_SCALE);
+                    if (d < 1.0f) d = 1.0f;
+                    if (d > (float)NANO_DUR_MAX_DURATION) d = (float)NANO_DUR_MAX_DURATION;
+                    durs[t] = (int)d;
+                }
+            }
         }
     }
     g_arena_top = mark_dur;
@@ -1308,301 +1561,160 @@ int snt_nano_synthesize(const snt_nano_config *cfg,
     if (T < 2) return -5;
     PROF_ADDN(PR_DUR, dur);
 
-    /* ---------------- acoustic student ---------------- */
-    PROF_T0N(ac);
+    /* ---------------- acoustic student, decoder and head ----------------
+     * Everything from here to the PCM callback runs on FRAME CHUNKS. One
+     * chunk of `fchunk` output frames is carried the whole way -- acoustic
+     * frame blocks, embed, trunk, head, iSTFT, overlap-add -- and then the
+     * window slides. Nothing but the iSTFT ring, the DC blocker state and the
+     * sample cursor crosses a chunk boundary, so the planes are windows of a
+     * FIXED width and the arena no longer grows with the utterance.
+     *
+     * Each stage inside a chunk works on a range shrunken by its own
+     * receptive field from the stage before it, so the first stage recomputes
+     * PIPE_RF columns at each end that the neighbouring chunks also compute.
+     * Those columns are computed from exactly the inputs the whole-utterance
+     * version gave them -- the GLOBAL frame index still decides where the
+     * zero padding is and which token owns a frame -- which is what makes the
+     * emitted PCM byte-identical rather than merely equivalent. */
     const int AH = NANO_AC_HIDDEN;
     const float *aemb = FF(NOFF_AC_EMB_F32);
     float maxdur = 1.0f;
     for (int t = 0; t < n_tokens; t++)
         if ((float)durs[t] > maxdur) maxdur = (float)durs[t];
+    const float lmax = log1pf(maxdur);
 
-    /* ONE [DIM, T] plane serves the acoustic output ax (which needs only the
-     * first AH = 44 of the DIM = 48 rows) and then the decoder trunk x.
+    /* Chunk geometry. The chunk is shrunk if the arena the caller gave us
+     * cannot hold the windows it implies: recomputing more is strictly better
+     * than refusing to speak, and the output does not depend on the chunk
+     * size. If even the smallest chunk does not fit, the aa() calls below
+     * report it through g_arena_oom exactly as they always have. */
+    int fchunk = (T < NANO_FRAME_CHUNK) ? T : NANO_FRAME_CHUNK;
+    int pwin = 0, twin = 0;
+    {
+        size_t avail = (g_arena_cap > g_arena_top) ? g_arena_cap - g_arena_top : 0;
+        for (;;) {
+            pwin = fchunk + 2 * PIPE_RF;
+            if (pwin > T) pwin = T;
+            twin = 0;
+            for (int fa = 0; fa < T; fa += fchunk) {
+                int fb = fa + fchunk;
+                int tlo, thi, w;
+                if (fb > T) fb = T;
+                tok_span(durs, n_tokens, clampi(fa - PIPE_RF, 0, T),
+                         clampi(fb + PIPE_RF, 0, T), &tlo, &thi);
+                w = clampi(thi + 1 + TOK_RF, 0, n_tokens)
+                  - clampi(tlo - TOK_RF, 0, n_tokens);
+                if (w > twin) twin = w;
+            }
+            {   /* every allocation the chunk MUST have, worst phase */
+                size_t need = (size_t)DIM * pwin * 4 + 16
+                            + (size_t)AH * RB_RING(NANO_AC_KERNEL) * 4 + 16
+                            + (size_t)AH * twin * 4 + 16
+                            + (size_t)NANO_NOISE_CH * pwin * 4 + 16;
+                if (need <= avail || fchunk <= 2) break;
+            }
+            fchunk = (fchunk / 2) & ~1;   /* stays even: the head pairs frames */
+            if (fchunk < 2) fchunk = 2;
+        }
+    }
+
+    /* ONE [DIM, pwin] plane serves the acoustic frame output ax (which needs
+     * only the first AH of the DIM rows) and then the decoder trunk x.
      *
-     * They can share it because the embed loop consumes ax exactly THREE
-     * columns AHEAD of where it writes x: at step t it reads ax[:][t+3] to
-     * make the mel column entering the k=7 window, then writes x[:][t]. Row
-     * strides are equal (both T), so x[c][t] aliases ax[c][t] for c < AH --
-     * a column that was last read at step t-3 and is never read again -- and
-     * rows AH..DIM-1 land above ax entirely. Nothing is copied and nothing is
-     * delayed; the write simply trails the read.
-     *
-     * That removes 176 B/frame (110,704 B on r06). With the resblock scratch
-     * now a ring, the whole-utterance cost falls from 384 to 208 B/frame. */
-    float *plane = (float *)aa((size_t)DIM * T * 4);
+     * They can share it for the reason they always have: the embed loop
+     * consumes ax exactly THREE columns AHEAD of where it writes x -- at step
+     * t it reads ax[:][t+3] to make the mel column entering the k=7 window,
+     * then writes x[:][t]. Row strides are equal, so x[c][t] aliases ax[c][t]
+     * for c < AH -- a column last read at step t-3 and never read again --
+     * and rows AH..DIM-1 land above ax entirely. Nothing is copied and
+     * nothing is delayed; the write simply trails the read. The only thing
+     * this change touches is the stride: pwin instead of T. */
+    float *plane = (float *)aa((size_t)DIM * pwin * 4);
     if (g_arena_oom) return ERR_OOM;
     float *ax = plane;
-    size_t mark_ac = g_arena_top;
-    /* one conv0 ring, reused by the token blocks and then the frame blocks */
-    float *atmp = (float *)aa((size_t)AH * RB_RING(NANO_AC_KERNEL) * 4);
-    float *th = (float *)aa((size_t)AH * n_tokens * 4);
-    if (g_arena_oom) return ERR_OOM;
-    nano_w_t *r_ac0 = stage_buf((size_t)AH * NANO_AC_TB0_C0_N16);
-    nano_w_t *r_ac1 = stage_buf((size_t)AH * NANO_AC_TB0_C1_N16);
-    /* tproj and fproj are one-shot matrices used at either end of the token
-     * blocks; they share one mark so neither outlives its loop. */
-    size_t mark_acproj = g_arena_top;
+    float *x = plane;                  /* written in place over ax, see above */
+    const size_t mark_ac = g_arena_top;
 
-    {
-        const nano_w_t *w8 = stage_w(FQ(NOFF_AC_TPROJ_W8),
-                                        (size_t)AH * NANO_AC_TPROJ_N16);
-        const float *sc = FF(NOFF_AC_TPROJ_SCALE);
-        const float *bi = FF(NOFF_AC_TPROJ_BIAS);
-        float lmax = log1pf(maxdur);
-        for (int t = 0; t < n_tokens; t++) {
-            int id = ids[t];
-            for (int h = 0; h < AH; h++) S->gather[h] = aemb[(size_t)id * AH + h];
-            S->gather[AH] = (n_tokens > 1) ? (float)t / (float)(n_tokens - 1) : 0.0f;
-            S->gather[AH + 1] = log1pf((float)durs[t]) / lmax;
-            float s_act = quant_gather(S, AH + 2, NANO_AC_TPROJ_N16);
-            nano_matvec(NANO_ACTBUF(S), w8, S->acc32, AH, NANO_AC_TPROJ_N16);
-            for (int o = 0; o < AH; o++)
-                th[(size_t)o * n_tokens + t] = s_act * sc[o] * (float)S->acc32[o] + bi[o];
-        }
-    }
-    g_arena_top = mark_acproj;
-    {
-        const long off[NANO_AC_TOKEN_DEPTH][7] = {
-            NANO_RB_ROW(NOFF_AC_TB, 0),
-            NANO_RB_ROW(NOFF_AC_TB, 1),
-            NANO_RB_ROW(NOFF_AC_TB, 2),
+    /* Weight-offset tables. Compile-time constants, hoisted out of the chunk
+     * loop so crossing a boundary costs no table rebuilds. */
+    const long tb_off[NANO_AC_TOKEN_DEPTH][7] = {
+        NANO_RB_ROW(NOFF_AC_TB, 0),
+        NANO_RB_ROW(NOFF_AC_TB, 1),
+        NANO_RB_ROW(NOFF_AC_TB, 2),
 #if NANO_AC_TOKEN_DEPTH > 3
-            NANO_RB_ROW(NOFF_AC_TB, 3),
+        NANO_RB_ROW(NOFF_AC_TB, 3),
 #endif
 #if NANO_AC_TOKEN_DEPTH > 4
-            NANO_RB_ROW(NOFF_AC_TB, 4),
+        NANO_RB_ROW(NOFF_AC_TB, 4),
 #endif
 #if NANO_AC_TOKEN_DEPTH > 5
-            NANO_RB_ROW(NOFF_AC_TB, 5),
+        NANO_RB_ROW(NOFF_AC_TB, 5),
 #endif
 #if NANO_AC_TOKEN_DEPTH > 6
-            NANO_RB_ROW(NOFF_AC_TB, 6),
+        NANO_RB_ROW(NOFF_AC_TB, 6),
 #endif
 #if NANO_AC_TOKEN_DEPTH > 7
-            NANO_RB_ROW(NOFF_AC_TB, 7),
+        NANO_RB_ROW(NOFF_AC_TB, 7),
 #endif
-        };
-        for (int b = 0; b < NANO_AC_TOKEN_DEPTH; b++) {
-            const nano_w_t *c0 = res_copy(FQ(off[b][0]), (size_t)AH * NANO_AC_TB0_C0_N16, r_ac0);
-            const nano_w_t *c1 = res_copy(FQ(off[b][3]), (size_t)AH * NANO_AC_TB0_C1_N16, r_ac1);
-            resblock(c0, FF(off[b][1]), FF(off[b][2]), NANO_AC_TB0_C0_N16,
-                     c1, FF(off[b][4]), FF(off[b][5]), NANO_AC_TB0_C1_N16,
-                     *FF(off[b][6]), th, atmp, AH, n_tokens, NANO_AC_KERNEL);
-        }
-    }
-    /* expand tokens -> frames on the fly, appending the three positional feats */
-    {
-        const nano_w_t *w8 = stage_w(FQ(NOFF_AC_FPROJ_W8),
-                                        (size_t)AH * NANO_AC_FPROJ_N16);
-        const float *sc = FF(NOFF_AC_FPROJ_SCALE);
-        const float *bi = FF(NOFF_AC_FPROJ_BIAS);
-        int f = 0;
-        for (int tok = 0; tok < n_tokens; tok++) {
-            for (int d = 0; d < durs[tok]; d++, f++) {
-                for (int h = 0; h < AH; h++) S->gather[h] = th[(size_t)h * n_tokens + tok];
-                S->gather[AH] = (T > 1) ? (float)f / (float)(T - 1) : 0.0f;
-                S->gather[AH + 1] = (float)tok / (float)(n_tokens > 1 ? n_tokens - 1 : 1);
-                S->gather[AH + 2] = (durs[tok] > 1) ? (float)d / (float)(durs[tok] - 1) : 0.0f;
-                float s_act = quant_gather(S, AH + 3, NANO_AC_FPROJ_N16);
-                nano_matvec(NANO_ACTBUF(S), w8, S->acc32, AH, NANO_AC_FPROJ_N16);
-                for (int o = 0; o < AH; o++)
-                    ax[(size_t)o * T + f] = s_act * sc[o] * (float)S->acc32[o] + bi[o];
-            }
-        }
-    }
-    g_arena_top = mark_acproj;
-    {
-        const long off[NANO_AC_DEPTH][7] = {
-            NANO_RB_ROW(NOFF_AC_FB, 0),
-            NANO_RB_ROW(NOFF_AC_FB, 1),
-            NANO_RB_ROW(NOFF_AC_FB, 2),
+    };
+    const long fb_off[NANO_AC_DEPTH][7] = {
+        NANO_RB_ROW(NOFF_AC_FB, 0),
+        NANO_RB_ROW(NOFF_AC_FB, 1),
+        NANO_RB_ROW(NOFF_AC_FB, 2),
 #if NANO_AC_DEPTH > 3
-            NANO_RB_ROW(NOFF_AC_FB, 3),
+        NANO_RB_ROW(NOFF_AC_FB, 3),
 #endif
 #if NANO_AC_DEPTH > 4
-            NANO_RB_ROW(NOFF_AC_FB, 4),
+        NANO_RB_ROW(NOFF_AC_FB, 4),
 #endif
 #if NANO_AC_DEPTH > 5
-            NANO_RB_ROW(NOFF_AC_FB, 5),
+        NANO_RB_ROW(NOFF_AC_FB, 5),
 #endif
 #if NANO_AC_DEPTH > 6
-            NANO_RB_ROW(NOFF_AC_FB, 6),
+        NANO_RB_ROW(NOFF_AC_FB, 6),
 #endif
 #if NANO_AC_DEPTH > 7
-            NANO_RB_ROW(NOFF_AC_FB, 7),
+        NANO_RB_ROW(NOFF_AC_FB, 7),
 #endif
-        };
-        for (int b = 0; b < NANO_AC_DEPTH; b++) {
-            const nano_w_t *c0 = res_copy(FQ(off[b][0]), (size_t)AH * NANO_AC_FB0_C0_N16, r_ac0);
-            const nano_w_t *c1 = res_copy(FQ(off[b][3]), (size_t)AH * NANO_AC_FB0_C1_N16, r_ac1);
-            resblock(c0, FF(off[b][1]), FF(off[b][2]), NANO_AC_FB0_C0_N16,
-                     c1, FF(off[b][4]), FF(off[b][5]), NANO_AC_FB0_C1_N16,
-                     *FF(off[b][6]), ax, atmp, AH, T, NANO_AC_KERNEL);
-        }
-    }
-    g_arena_top = mark_ac;   /* atmp / th / residency buffers are dead */
-    PROF_ADDN(PR_AC, ac);
-
-    /* ---------------- decoder ---------------- */
-    PROF_T0N(emb);
-    float *x = plane;                  /* written in place over ax, see above */
-    size_t mark_noise = g_arena_top;   /* everything above here dies with embed */
-    float *noise = (float *)aa((size_t)NANO_NOISE_CH * T * 4);
-    if (g_arena_oom) return ERR_OOM;
-    if (snt_nano_seeded_noise(cfg->noise_seed, NANO_NOISE_CH, T, noise) != 0)
-        return -6;
-
-    /* embed(mel) + noise_adapter(noise) + stem LayerNorm, tiled. The mel-100
-     * interface is still streamed through a ring rather than materialised;
-     * the ring is now EM_RING columns wide instead of EK so a whole tile's
-     * worth of embed columns can run in parallel off it. */
-    {
-        static float melring[EM_RING][MELS];
-        /* The three matrices of this stage are interleaved inside the tile,
-         * so unlike the phases either side of it they must be resident
-         * SIMULTANEOUSLY: 4,800 + 33,792 + 1,536 = 40,128 B. */
-        EmCtx ec;
-        ec.ow = stage_w(FQ(NOFF_AC_OUT_W8), (size_t)MELS * NANO_AC_OUT_N16);
-        ec.os = FF(NOFF_AC_OUT_SCALE);
-        ec.ob = FF(NOFF_AC_OUT_BIAS);
-        ec.ew = stage_w(DQ(DOFF_EMBED_W8), (size_t)DIM * NANO_EMBED_N16);
-        ec.es = DF(DOFF_EMBED_SCALE);
-        ec.eb = DF(DOFF_EMBED_BIAS);
-        ec.nw = stage_w(DQ(DOFF_NOISE_W8), (size_t)DIM * NANO_NOISE_N16);
-        ec.ns = DF(DOFF_NOISE_SCALE);
-        ec.nb = DF(DOFF_NOISE_BIAS);
-        ec.gw = DF(DOFF_NORM_W_F32);
-        ec.gb = DF(DOFF_NORM_B_F32);
-#if NANO_NORM_TYPE == 1
-        ec.ga = DF(DOFF_NORM_A_F32);
-#else
-        ec.ga = NULL;
-#endif
-        ec.ax = ax;
-        ec.x = x;
-        ec.noise = noise;
-        ec.mel = &melring[0][0];
-        ec.T = T;
-        const int half = EK / 2;
-        int produced = 0;               /* mel columns [0, produced) are live */
-        for (int t0 = 0; t0 < T; t0 += EM_TILE) {
-            int TL = (t0 + EM_TILE <= T) ? EM_TILE : (T - t0);
-            int need = t0 + TL + half;
-            if (need > T) need = T;     /* columns >= T are zero by the gather */
-            if (need > produced) {
-                ec.a0 = produced;
-                snt_par_run(em_mel_range, need - produced, &ec);
-                produced = need;
-            }
-            ec.a0 = t0;
-            snt_par_run(em_col_range, TL, &ec);
-        }
-    }
-    /* noise and the embed staging are dead from here; x already occupies the
-     * plane, so rewinding the top is the whole of the deallocation. */
-    g_arena_top = mark_noise;
-    size_t mark_dec = g_arena_top;
-
-    PROF_ADDN(PR_EMBED, emb);
-
-    /* ConvNeXt1D blocks */
-    {
-        const long qb[NANO_BLOCKS][11] = {
-            NANO_DEC_ROW(0),
-            NANO_DEC_ROW(1),
-            NANO_DEC_ROW(2),
-            NANO_DEC_ROW(3),
+    };
+    const long qb[NANO_BLOCKS][11] = {
+        NANO_DEC_ROW(0),
+        NANO_DEC_ROW(1),
+        NANO_DEC_ROW(2),
+        NANO_DEC_ROW(3),
 #if NANO_BLOCKS > 4
-            NANO_DEC_ROW(4),
+        NANO_DEC_ROW(4),
 #endif
 #if NANO_BLOCKS > 5
-            NANO_DEC_ROW(5),
+        NANO_DEC_ROW(5),
 #endif
 #if NANO_BLOCKS > 6
-            NANO_DEC_ROW(6),
+        NANO_DEC_ROW(6),
 #endif
 #if NANO_BLOCKS > 7
-            NANO_DEC_ROW(7),
+        NANO_DEC_ROW(7),
 #endif
-        };
+    };
 #if NANO_NORM_TYPE == 1
-        /* per-block DyT alpha vectors; region names from the exporter */
-        const long qa[NANO_BLOCKS] = {DOFF_B0_NORM_A_F32, DOFF_B1_NORM_A_F32,
-                                      DOFF_B2_NORM_A_F32, DOFF_B3_NORM_A_F32,
+    /* per-block DyT alpha vectors; region names from the exporter */
+    const long qa[NANO_BLOCKS] = {DOFF_B0_NORM_A_F32, DOFF_B1_NORM_A_F32,
+                                  DOFF_B2_NORM_A_F32, DOFF_B3_NORM_A_F32,
 #if NANO_BLOCKS > 4
-                                      DOFF_B4_NORM_A_F32,
+                                  DOFF_B4_NORM_A_F32,
 #endif
 #if NANO_BLOCKS > 5
-                                      DOFF_B5_NORM_A_F32,
+                                  DOFF_B5_NORM_A_F32,
 #endif
 #if NANO_BLOCKS > 6
-                                      DOFF_B6_NORM_A_F32,
+                                  DOFF_B6_NORM_A_F32,
 #endif
 #if NANO_BLOCKS > 7
-                                      DOFF_B7_NORM_A_F32,
+                                  DOFF_B7_NORM_A_F32,
 #endif
-        };
+    };
 #endif
-        const int half = DWK / 2;
-        /* pre-residual snapshot of the tile boundary, and the tile's dw+LN
-         * output. Both are TILE-shaped, not T-shaped: 576 + 6,144 bytes. */
-        static float halo[DWK / 2][DIM];
-        static float halo_next[DWK / 2][DIM];
-        static float tile_c[TR_TILE][DIM];
-        /* The blocks run one after another, so ONE pair of buffers sized
-         * to a single block's pointwise matrices serves all of them. */
-        nano_w_t *r_pw0 = stage_buf((size_t)NANO_PW_HIDDEN * NANO_B0_PW0_N16);
-        nano_w_t *r_pw1 = stage_buf((size_t)DIM * NANO_B0_PW1_N16);
-        for (int b = 0; b < NANO_BLOCKS; b++) {
-            TrCtx tc;
-            tc.dww = DF(qb[b][0]);
-            tc.dwb = DF(qb[b][1]);
-            tc.nwt = DF(qb[b][2]);
-            tc.nbt = DF(qb[b][3]);
-#if NANO_NORM_TYPE == 1
-            tc.nat = DF(qa[b]);
-#else
-            tc.nat = NULL;
-#endif
-            tc.pw0 = res_copy(DQ(qb[b][4]),
-                              (size_t)NANO_PW_HIDDEN * NANO_B0_PW0_N16, r_pw0);
-            tc.pw0s = DF(qb[b][5]);
-            tc.pw0b = DF(qb[b][6]);
-            tc.pw1 = res_copy(DQ(qb[b][7]),
-                              (size_t)DIM * NANO_B0_PW1_N16, r_pw1);
-            tc.pw1s = DF(qb[b][8]);
-            tc.pw1b = DF(qb[b][9]);
-            tc.gamma = DF(qb[b][10]);
-            tc.x = x;
-            tc.tc = &tile_c[0][0];
-            tc.halo = (const float (*)[DIM])halo;
-            tc.T = T;
-            memset(halo, 0, sizeof halo);
-            for (int t0 = 0; t0 < T; t0 += TR_TILE) {
-                int TL = (t0 + TR_TILE <= T) ? TR_TILE : (T - t0);
-                /* snapshot BEFORE pass 2 writes: halo_next[j] is the
-                 * pre-residual column (t0+TL-1-j), i.e. the next tile's
-                 * t0'-1-j. */
-                for (int j = 0; j < half; j++) {
-                    int col = t0 + TL - 1 - j;
-                    for (int ch = 0; ch < DIM; ch++)
-                        halo_next[j][ch] = (col >= 0 && col < T)
-                            ? x[(size_t)ch * T + col] : 0.0f;
-                }
-                tc.t0 = t0;
-                tc.TL = TL;
-                PROF_T0N(dw);
-                snt_par_run(tr_dw_range, TL, &tc);   /* barrier: x reads done */
-                PROF_ADDN(PR_TRUNK_DW, dw);
-                PROF_T0N(pw);
-                snt_par_run(tr_pw_range, TL, &tc);   /* then x writes */
-                PROF_ADDN(PR_TRUNK_PW, pw);
-                memcpy(halo, halo_next, sizeof halo);
-            }
-        }
-    }
 
-    /* ---------------- head + iSTFT + OLA + DC block ---------------- */
+    /* ---------------- head + iSTFT + OLA + DC block: carried state ------- */
     static float win[NFFT], ring[NFFT];
     static float fre[2][NFFT], fim[2][NFFT];
     static float cwre[NFFT / 2], cwim[NFFT / 2];
@@ -1645,114 +1757,384 @@ int snt_nano_synthesize(const snt_nano_config *cfg,
     const float *fga = NULL;
     (void)fga;   /* the LayerNorm NORM_COL drops its alpha argument */
 #endif
-    /* the trunk's pointwise staging is spent; the head reuses those bytes */
-    g_arena_top = mark_dec;
-    const nano_w_t *hw = stage_w(DQ(DOFF_HEAD_W8),
-                                    (size_t)NANO_HEAD_OUT * NANO_HEAD_N16);
-    const float *hs = DF(DOFF_HEAD_SCALE);
-    const float *hb = DF(DOFF_HEAD_BIAS);
     const int out_total = HOP * (T - 1);   /* torch.istft(center=True) length */
     int emitted = 0, aborted = 0;
     float dc_x1 = 0.0f, dc_y1 = 0.0f;      /* first-order DC blocker state */
     int pcm_n = 0;
 
-    for (int t0 = 0; t0 < T && !aborted; t0 += 2) {
-        int np = (t0 + 1 < T) ? 2 : 1;    /* frames processed in this pair */
+    /* ======================= the chunk loop ============================= */
+    for (int fa = 0; fa < T && !aborted; fa += fchunk) {
+        int fb = fa + fchunk;
+        if (fb > T) fb = T;
+        /* ulo/uhi are the UNCLAMPED range of the stage about to run. Each
+         * stage shrinks them by its own receptive field; after the last trunk
+         * block they are exactly [fa, fb). They are clamped at the point of
+         * use only -- clamping in place would stop the shrink from landing on
+         * [fa, fb) at the utterance edges. */
+        int ulo = fa - PIPE_RF, uhi = fb + PIPE_RF;
+        const int porg = clampi(ulo, 0, T);    /* plane window origin */
+        const int pend = clampi(uhi, 0, T);
 
-        /* --- per frame: head LayerNorm + quantise, then the parallel
-         *     head-int8 + spectrum range, then the Hermitian pack --- */
-        for (int p = 0; p < np; p++) {
-            int t = t0 + p;
-            PROF_T0N(hd);
-            float col[DIM], ncol[DIM];
-            for (int c = 0; c < DIM; c++) col[c] = x[(size_t)c * T + t];
-            NORM_COL(ncol, col, fga, fgw, fgb, DIM);
-            for (int i = 0; i < DIM; i++) S->gather[i] = ncol[i];
-            float s_act = quant_gather(S, DIM, NANO_HEAD_N16);
-            PROF_ADDN(PR_HEAD, hd);
+        g_arena_top = mark_ac;
 
-            PROF_T0N(sp);
-            {
-                HeadCtx hc = {NANO_ACTBUF(S), hw, hs, hb, g_acc_head, s_act,
-                              fre[p], fim[p]};
-                snt_par_run(head_spec_range, BINS, &hc);
-            }
-            PROF_ADDN(PR_SPEC, sp);
-
-            PROF_T0N(pk);
-            /* real IFFT via an N/2 complex IFFT (Hermitian pack) -- R7's path */
-            for (int k = 0; k < NFFT / 2; k++) {
-                float xr = fre[p][k], xi = fim[p][k];
-                float mr = fre[p][NFFT / 2 - k], mi = fim[p][NFFT / 2 - k];
-                float ar = 0.5f * (xr + mr), ai = 0.5f * (xi - mi);
-                float dr = xr - mr, di = xi + mi;
-                float br = 0.5f * (dr * cwre[k] - di * cwim[k]);
-                float bi2 = 0.5f * (dr * cwim[k] + di * cwre[k]);
-                zre[p][k] = ar - bi2;
-                zim[p][k] = ai + br;
-            }
-            PROF_ADDN(PR_FFT, pk);
-        }
-
-        PROF_T0N(ff);
+        /* ---- acoustic student, on this chunk's token window ---- */
+        PROF_T0N(ac);
+        int tlo, thi;
+        tok_span(durs, n_tokens, porg, pend, &tlo, &thi);
         {
-            FftCtx fc;
-            fc.zre[0] = zre[0]; fc.zre[1] = zre[1];
-            fc.zim[0] = zim[0]; fc.zim[1] = zim[1];
-            fc.n = NFFT / 2;
-            snt_par_run(fft_pair_range, np, &fc);
-        }
-        for (int p = 0; p < np; p++)
-            for (int n = 0; n < NFFT / 2; n++) {
-                fre[p][2 * n] = zre[p][n];
-                fre[p][2 * n + 1] = zim[p][n];
-            }
-        PROF_ADDN(PR_FFT, ff);
+            int tul = tlo - TOK_RF, tuh = thi + 1 + TOK_RF;
+            const int torg = clampi(tul, 0, n_tokens);
+            /* one conv0 ring, reused by the token blocks and then the frame
+             * blocks; th dies with the frame projection that consumes it */
+            float *atmp = (float *)aa((size_t)AH * RB_RING(NANO_AC_KERNEL) * 4);
+            float *th = (float *)aa((size_t)AH * twin * 4);
+            nano_w_t *r_ac0, *r_ac1;
+            size_t mark_acproj;
+            if (g_arena_oom) return ERR_OOM;
+            r_ac0 = stage_buf((size_t)AH * NANO_AC_TB0_C0_N16);
+            r_ac1 = stage_buf((size_t)AH * NANO_AC_TB0_C1_N16);
+            /* tproj and fproj are one-shot matrices used at either end of the
+             * token blocks; they share one mark so neither outlives its loop */
+            mark_acproj = g_arena_top;
 
-        /* --- overlap-add strictly in frame order: the ring, the DC blocker
-         *     state and the PCM callback are all sequential --- */
-        for (int p = 0; p < np; p++) {
-            int t = t0 + p;
-            PROF_T0N(ol);
-            const float *fr = fre[p];
-            int base = t * HOP;
-            for (int i = 0; i < NFFT; i++) ring[(base + i) % NFFT] += fr[i] * win[i];
-
-            int emit_from = base, emit_to = base + HOP;
-            if (t == T - 1) emit_to = out_total + NFFT / 2;
-            int interior_from = NFFT - HOP;
-            int interior_to = (T - 1) * HOP + HOP;
-            for (int s2 = emit_from; s2 < emit_to; s2++) {
-                int out_idx = s2 - NFFT / 2;
-                if (out_idx >= 0 && out_idx < out_total) {
-                    float sample;
-                    if (s2 >= interior_from && s2 < interior_to) {
-                        sample = ring[s2 & (NFFT - 1)] * env_inv[s2 & (HOP - 1)];
-                    } else {
-                        float e = 0.0f;
-                        int j0 = (s2 - NFFT + HOP) / HOP;
-                        if (j0 < 0) j0 = 0;
-                        for (int j = j0; j <= s2 / HOP && j < T; j++) {
-                            float w2 = win[s2 - j * HOP];
-                            e += w2 * w2;
-                        }
-                        sample = (e > 1e-11f) ? ring[s2 & (NFFT - 1)] / e : 0.0f;
-                    }
-                    /* H(z) = (1 - z^-1) / (1 - R z^-1), 2 MAC/sample */
-                    float y = sample - dc_x1 + DC_POLE * dc_y1;
-                    dc_x1 = sample;
-                    dc_y1 = y;
-                    pcm_buf[pcm_n++] = y;
-                    emitted++;
+            {
+                const nano_w_t *w8 = stage_w(FQ(NOFF_AC_TPROJ_W8),
+                                                (size_t)AH * NANO_AC_TPROJ_N16);
+                const float *sc = FF(NOFF_AC_TPROJ_SCALE);
+                const float *bi = FF(NOFF_AC_TPROJ_BIAS);
+                int hi = clampi(tuh, 0, n_tokens);
+                for (int t = torg; t < hi; t++) {
+                    int id = ids[t];
+                    for (int h = 0; h < AH; h++) S->gather[h] = aemb[(size_t)id * AH + h];
+                    S->gather[AH] = (n_tokens > 1) ? (float)t / (float)(n_tokens - 1) : 0.0f;
+                    S->gather[AH + 1] = log1pf((float)durs[t]) / lmax;
+                    float s_act = quant_gather(S, AH + 2, NANO_AC_TPROJ_N16);
+                    nano_matvec(NANO_ACTBUF(S), w8, S->acc32, AH, NANO_AC_TPROJ_N16);
+                    for (int o = 0; o < AH; o++)
+                        th[(size_t)o * twin + (t - torg)] =
+                            s_act * sc[o] * (float)S->acc32[o] + bi[o];
                 }
-                ring[s2 & (NFFT - 1)] = 0.0f;
             }
-            if (pcm_n && cb) {
-                if (cb(pcm_buf, pcm_n, user)) aborted = 1;
+            g_arena_top = mark_acproj;
+            for (int b = 0; b < NANO_AC_TOKEN_DEPTH; b++) {
+                const nano_w_t *c0 = res_copy(FQ(tb_off[b][0]),
+                                              (size_t)AH * NANO_AC_TB0_C0_N16, r_ac0);
+                const nano_w_t *c1 = res_copy(FQ(tb_off[b][3]),
+                                              (size_t)AH * NANO_AC_TB0_C1_N16, r_ac1);
+                tul += RF_RESBLOCK(NANO_AC_KERNEL);
+                tuh -= RF_RESBLOCK(NANO_AC_KERNEL);
+                resblock(c0, FF(tb_off[b][1]), FF(tb_off[b][2]), NANO_AC_TB0_C0_N16,
+                         c1, FF(tb_off[b][4]), FF(tb_off[b][5]), NANO_AC_TB0_C1_N16,
+                         *FF(tb_off[b][6]), th, atmp, AH, n_tokens, NANO_AC_KERNEL,
+                         twin, torg, clampi(tul, 0, n_tokens), clampi(tuh, 0, n_tokens));
             }
-            pcm_n = 0;
-            PROF_ADDN(PR_OLA, ol);
-            if (aborted) break;
+            /* expand tokens -> frames, appending the three positional feats */
+            {
+                const nano_w_t *w8 = stage_w(FQ(NOFF_AC_FPROJ_W8),
+                                                (size_t)AH * NANO_AC_FPROJ_N16);
+                const float *sc = FF(NOFF_AC_FPROJ_SCALE);
+                const float *bi = FF(NOFF_AC_FPROJ_BIAS);
+                int f = 0;
+                for (int tok = 0; tok < tlo; tok++) f += durs[tok];
+                for (int tok = tlo; tok <= thi; tok++) {
+                    for (int d = 0; d < durs[tok]; d++, f++) {
+                        if (f < porg || f >= pend) continue;
+                        for (int h = 0; h < AH; h++)
+                            S->gather[h] = th[(size_t)h * twin + (tok - torg)];
+                        S->gather[AH] = (T > 1) ? (float)f / (float)(T - 1) : 0.0f;
+                        S->gather[AH + 1] =
+                            (float)tok / (float)(n_tokens > 1 ? n_tokens - 1 : 1);
+                        S->gather[AH + 2] =
+                            (durs[tok] > 1) ? (float)d / (float)(durs[tok] - 1) : 0.0f;
+                        float s_act = quant_gather(S, AH + 3, NANO_AC_FPROJ_N16);
+                        nano_matvec(NANO_ACTBUF(S), w8, S->acc32, AH, NANO_AC_FPROJ_N16);
+                        for (int o = 0; o < AH; o++)
+                            ax[(size_t)o * pwin + (f - porg)] =
+                                s_act * sc[o] * (float)S->acc32[o] + bi[o];
+                    }
+                }
+            }
+            g_arena_top = mark_acproj;
+            for (int b = 0; b < NANO_AC_DEPTH; b++) {
+                const nano_w_t *c0 = res_copy(FQ(fb_off[b][0]),
+                                              (size_t)AH * NANO_AC_FB0_C0_N16, r_ac0);
+                const nano_w_t *c1 = res_copy(FQ(fb_off[b][3]),
+                                              (size_t)AH * NANO_AC_FB0_C1_N16, r_ac1);
+                ulo += RF_RESBLOCK(NANO_AC_KERNEL);
+                uhi -= RF_RESBLOCK(NANO_AC_KERNEL);
+                resblock(c0, FF(fb_off[b][1]), FF(fb_off[b][2]), NANO_AC_FB0_C0_N16,
+                         c1, FF(fb_off[b][4]), FF(fb_off[b][5]), NANO_AC_FB0_C1_N16,
+                         *FF(fb_off[b][6]), ax, atmp, AH, T, NANO_AC_KERNEL,
+                         pwin, porg, clampi(ulo, 0, T), clampi(uhi, 0, T));
+            }
+        }
+        g_arena_top = mark_ac;   /* atmp / th / residency buffers are dead */
+        PROF_ADDN(PR_AC, ac);
+
+        /* ---------------- decoder: embed ---------------- */
+        PROF_T0N(emb);
+        {
+            /* The noise the embed window reads is exactly the range the embed
+             * stage's own receptive field reaches, i.e. [ulo, uhi) before the
+             * shrink below. It is generated straight into that window: the
+             * MT19937 stream writes [channels, T] in channel-major order, so
+             * a whole-utterance buffer was the only other way to have all
+             * four channels of one frame -- see noise_window(). */
+            const int nlo = clampi(ulo, 0, T), nhi = clampi(uhi, 0, T);
+            const int nw = nhi - nlo;
+            float *noise = (float *)aa((size_t)NANO_NOISE_CH * nw * 4);
+            if (g_arena_oom) return ERR_OOM;
+            if (noise_window(cfg->noise_seed, NANO_NOISE_CH, T, nlo, nhi,
+                             noise, nw) != 0)
+                return -6;
+            ulo += RF_EMBED;
+            uhi -= RF_EMBED;
+            {
+                const int elo = clampi(ulo, 0, T), ehi = clampi(uhi, 0, T);
+                /* embed(mel) + noise_adapter(noise) + stem LayerNorm, tiled.
+                 * The mel-100 interface is still streamed through a ring
+                 * rather than materialised; the ring is EM_RING columns wide
+                 * so a whole tile's worth of embed columns can run off it. */
+                static float melring[EM_RING][MELS];
+                /* The three matrices of this stage are interleaved inside the
+                 * tile, so unlike the phases either side of it they must be
+                 * resident SIMULTANEOUSLY: 4,800 + 33,792 + 1,536 = 40,128 B. */
+                EmCtx ec;
+                const int half = EK / 2;
+                int produced;
+                ec.ow = stage_w(FQ(NOFF_AC_OUT_W8), (size_t)MELS * NANO_AC_OUT_N16);
+                ec.os = FF(NOFF_AC_OUT_SCALE);
+                ec.ob = FF(NOFF_AC_OUT_BIAS);
+                ec.ew = stage_w(DQ(DOFF_EMBED_W8), (size_t)DIM * NANO_EMBED_N16);
+                ec.es = DF(DOFF_EMBED_SCALE);
+                ec.eb = DF(DOFF_EMBED_BIAS);
+                ec.nw = stage_w(DQ(DOFF_NOISE_W8), (size_t)DIM * NANO_NOISE_N16);
+                ec.ns = DF(DOFF_NOISE_SCALE);
+                ec.nb = DF(DOFF_NOISE_BIAS);
+                ec.gw = DF(DOFF_NORM_W_F32);
+                ec.gb = DF(DOFF_NORM_B_F32);
+#if NANO_NORM_TYPE == 1
+                ec.ga = DF(DOFF_NORM_A_F32);
+#else
+                ec.ga = NULL;
+#endif
+                ec.ax = ax;
+                ec.x = x;
+                ec.noise = noise;
+                ec.mel = &melring[0][0];
+                ec.T = T;
+                ec.xw = pwin;
+                ec.x0 = porg;
+                ec.noisew = nw;
+                ec.noise0 = nlo;
+                produced = elo - half;   /* mel columns [., produced) are live */
+                if (produced < 0) produced = 0;
+                for (int t0 = elo; t0 < ehi; t0 += EM_TILE) {
+                    int TL = (t0 + EM_TILE <= ehi) ? EM_TILE : (ehi - t0);
+                    int need = t0 + TL + half;
+                    if (need > T) need = T;  /* columns >= T are zero by the gather */
+                    if (need > produced) {
+                        ec.a0 = produced;
+                        snt_par_run(em_mel_range, need - produced, &ec);
+                        produced = need;
+                    }
+                    ec.a0 = t0;
+                    snt_par_run(em_col_range, TL, &ec);
+                }
+            }
+        }
+        /* noise and the embed staging are dead from here; x already occupies
+         * the plane, so rewinding the top is the whole of the deallocation. */
+        g_arena_top = mark_ac;
+        PROF_ADDN(PR_EMBED, emb);
+
+        /* ---------------- decoder: ConvNeXt1D blocks ---------------- */
+        {
+            const int half = DWK / 2;
+            /* pre-residual snapshot of the tile boundary, and the tile's
+             * dw+LN output. Both are TILE-shaped, not T-shaped. */
+            static float halo[DWK / 2][DIM];
+            static float halo_next[DWK / 2][DIM];
+            static float tile_c[TR_TILE][DIM];
+            /* The blocks run one after another, so ONE pair of buffers sized
+             * to a single block's pointwise matrices serves all of them. */
+            nano_w_t *r_pw0 = stage_buf((size_t)NANO_PW_HIDDEN * NANO_B0_PW0_N16);
+            nano_w_t *r_pw1 = stage_buf((size_t)DIM * NANO_B0_PW1_N16);
+            for (int b = 0; b < NANO_BLOCKS; b++) {
+                TrCtx tc;
+                int blo, bhi;
+                ulo += RF_TRUNK;
+                uhi -= RF_TRUNK;
+                blo = clampi(ulo, 0, T);
+                bhi = clampi(uhi, 0, T);
+                tc.dww = DF(qb[b][0]);
+                tc.dwb = DF(qb[b][1]);
+                tc.nwt = DF(qb[b][2]);
+                tc.nbt = DF(qb[b][3]);
+#if NANO_NORM_TYPE == 1
+                tc.nat = DF(qa[b]);
+#else
+                tc.nat = NULL;
+#endif
+                tc.pw0 = res_copy(DQ(qb[b][4]),
+                                  (size_t)NANO_PW_HIDDEN * NANO_B0_PW0_N16, r_pw0);
+                tc.pw0s = DF(qb[b][5]);
+                tc.pw0b = DF(qb[b][6]);
+                tc.pw1 = res_copy(DQ(qb[b][7]),
+                                  (size_t)DIM * NANO_B0_PW1_N16, r_pw1);
+                tc.pw1s = DF(qb[b][8]);
+                tc.pw1b = DF(qb[b][9]);
+                tc.gamma = DF(qb[b][10]);
+                tc.x = x;
+                tc.tc = &tile_c[0][0];
+                tc.halo = (const float (*)[DIM])halo;
+                tc.T = T;
+                tc.xw = pwin;
+                tc.x0 = porg;
+                /* The first tile of a chunk needs the block's PRE-residual
+                 * columns below blo, which are in the window and untouched by
+                 * this block. At blo == 0 every column is out of range and
+                 * this fills zeros -- what the old memset did, and the only
+                 * case the whole-utterance version ever had. */
+                for (int j = 0; j < half; j++) {
+                    int col = blo - 1 - j;
+                    for (int ch = 0; ch < DIM; ch++)
+                        halo[j][ch] = (col >= 0 && col < T)
+                            ? x[(size_t)ch * pwin + WCOL(pwin, porg, col)] : 0.0f;
+                }
+                for (int t0 = blo; t0 < bhi; t0 += TR_TILE) {
+                    int TL = (t0 + TR_TILE <= bhi) ? TR_TILE : (bhi - t0);
+                    /* snapshot BEFORE pass 2 writes: halo_next[j] is the
+                     * pre-residual column (t0+TL-1-j), i.e. the next tile's
+                     * t0'-1-j. */
+                    for (int j = 0; j < half; j++) {
+                        int col = t0 + TL - 1 - j;
+                        for (int ch = 0; ch < DIM; ch++)
+                            halo_next[j][ch] = (col >= 0 && col < T)
+                                ? x[(size_t)ch * pwin + WCOL(pwin, porg, col)] : 0.0f;
+                    }
+                    tc.t0 = t0;
+                    tc.TL = TL;
+                    PROF_T0N(dw);
+                    snt_par_run(tr_dw_range, TL, &tc);   /* barrier: x reads done */
+                    PROF_ADDN(PR_TRUNK_DW, dw);
+                    PROF_T0N(pw);
+                    snt_par_run(tr_pw_range, TL, &tc);   /* then x writes */
+                    PROF_ADDN(PR_TRUNK_PW, pw);
+                    memcpy(halo, halo_next, sizeof halo);
+                }
+            }
+        }
+        /* the trunk's pointwise staging is spent; the head reuses those bytes */
+        g_arena_top = mark_ac;
+
+        /* ---------------- head + iSTFT + OLA + DC block ---------------- */
+        {
+            const nano_w_t *hw = stage_w(DQ(DOFF_HEAD_W8),
+                                            (size_t)NANO_HEAD_OUT * NANO_HEAD_N16);
+            const float *hs = DF(DOFF_HEAD_SCALE);
+            const float *hb = DF(DOFF_HEAD_BIAS);
+
+            for (int t0 = fa; t0 < fb && !aborted; t0 += 2) {
+                int np = (t0 + 1 < fb) ? 2 : 1;   /* frames processed in this pair */
+
+                /* --- per frame: head LayerNorm + quantise, then the parallel
+                 *     head-int8 + spectrum range, then the Hermitian pack --- */
+                for (int p = 0; p < np; p++) {
+                    int t = t0 + p;
+                    PROF_T0N(hd);
+                    float col[DIM], ncol[DIM];
+                    for (int c = 0; c < DIM; c++)
+                        col[c] = x[(size_t)c * pwin + WCOL(pwin, porg, t)];
+                    NORM_COL(ncol, col, fga, fgw, fgb, DIM);
+                    for (int i = 0; i < DIM; i++) S->gather[i] = ncol[i];
+                    float s_act = quant_gather(S, DIM, NANO_HEAD_N16);
+                    PROF_ADDN(PR_HEAD, hd);
+
+                    PROF_T0N(sp);
+                    {
+                        HeadCtx hc = {NANO_ACTBUF(S), hw, hs, hb, g_acc_head, s_act,
+                                      fre[p], fim[p]};
+                        snt_par_run(head_spec_range, BINS, &hc);
+                    }
+                    PROF_ADDN(PR_SPEC, sp);
+
+                    PROF_T0N(pk);
+                    /* real IFFT via an N/2 complex IFFT (Hermitian pack) -- R7's path */
+                    for (int k = 0; k < NFFT / 2; k++) {
+                        float xr = fre[p][k], xi = fim[p][k];
+                        float mr = fre[p][NFFT / 2 - k], mi = fim[p][NFFT / 2 - k];
+                        float ar = 0.5f * (xr + mr), ai = 0.5f * (xi - mi);
+                        float dr = xr - mr, di = xi + mi;
+                        float br = 0.5f * (dr * cwre[k] - di * cwim[k]);
+                        float bi2 = 0.5f * (dr * cwim[k] + di * cwre[k]);
+                        zre[p][k] = ar - bi2;
+                        zim[p][k] = ai + br;
+                    }
+                    PROF_ADDN(PR_FFT, pk);
+                }
+
+                PROF_T0N(ff);
+                {
+                    FftCtx fc;
+                    fc.zre[0] = zre[0]; fc.zre[1] = zre[1];
+                    fc.zim[0] = zim[0]; fc.zim[1] = zim[1];
+                    fc.n = NFFT / 2;
+                    snt_par_run(fft_pair_range, np, &fc);
+                }
+                for (int p = 0; p < np; p++)
+                    for (int n = 0; n < NFFT / 2; n++) {
+                        fre[p][2 * n] = zre[p][n];
+                        fre[p][2 * n + 1] = zim[p][n];
+                    }
+                PROF_ADDN(PR_FFT, ff);
+
+                /* --- overlap-add strictly in frame order: the ring, the DC
+                 *     blocker state and the PCM callback are all sequential --- */
+                for (int p = 0; p < np; p++) {
+                    int t = t0 + p;
+                    PROF_T0N(ol);
+                    const float *fr = fre[p];
+                    int base = t * HOP;
+                    for (int i = 0; i < NFFT; i++) ring[(base + i) % NFFT] += fr[i] * win[i];
+
+                    int emit_from = base, emit_to = base + HOP;
+                    if (t == T - 1) emit_to = out_total + NFFT / 2;
+                    int interior_from = NFFT - HOP;
+                    int interior_to = (T - 1) * HOP + HOP;
+                    for (int s2 = emit_from; s2 < emit_to; s2++) {
+                        int out_idx = s2 - NFFT / 2;
+                        if (out_idx >= 0 && out_idx < out_total) {
+                            float sample;
+                            if (s2 >= interior_from && s2 < interior_to) {
+                                sample = ring[s2 & (NFFT - 1)] * env_inv[s2 & (HOP - 1)];
+                            } else {
+                                float e = 0.0f;
+                                int j0 = (s2 - NFFT + HOP) / HOP;
+                                if (j0 < 0) j0 = 0;
+                                for (int j = j0; j <= s2 / HOP && j < T; j++) {
+                                    float w2 = win[s2 - j * HOP];
+                                    e += w2 * w2;
+                                }
+                                sample = (e > 1e-11f) ? ring[s2 & (NFFT - 1)] / e : 0.0f;
+                            }
+                            /* H(z) = (1 - z^-1) / (1 - R z^-1), 2 MAC/sample */
+                            float y = sample - dc_x1 + DC_POLE * dc_y1;
+                            dc_x1 = sample;
+                            dc_y1 = y;
+                            pcm_buf[pcm_n++] = y;
+                            emitted++;
+                        }
+                        ring[s2 & (NFFT - 1)] = 0.0f;
+                    }
+                    if (pcm_n && cb) {
+                        if (cb(pcm_buf, pcm_n, user)) aborted = 1;
+                    }
+                    pcm_n = 0;
+                    PROF_ADDN(PR_OLA, ol);
+                    if (aborted) break;
+                }
+            }
         }
     }
 

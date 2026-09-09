@@ -5,14 +5,21 @@ voices — **294k to 2.3M parameters** — that run with **no cloud and no NPU**
 real-time on a ~$3 ESP32-S3 (out a GPIO into an LM386 and a speaker), or live
 in the browser via WASM.
 
-![sanoTTS — nine tiny voices, six languages, browser + $3 chip](docs/assets/saanotts-hero-v2.png)
+![sanoTTS — thirty tiny voices, sixteen languages, browser + $3 chip](docs/assets/saanotts-hero-v2.png)
 
 - smallest neural TTS family known — **294k to 2.3M parameters**
-- runs **real-time** on a **$3 microcontroller** (ESP32-S3)
+- runs **real-time on a $3 microcontroller** — measured **RTF 0.383 on an
+  ESP32-S3**, 2.6x faster than real time, with the Xtensa LX7 SIMD kernels the
+  Arduino library assembles by default ([BOARDS.md](BOARDS.md), 2026-09-04).
+  Scalar C on the same board is 1.58, i.e. slower than real time
 - runs right in your browser — **WebAssembly**, no server
-- under **4 MB** per voice, zero dependencies (espeak-ng phonemizer included)
-- **11 voices** across **6 languages** — English, Nepali (नेपाली), Hindi (हिन्दी),
-  Vietnamese (Tiếng Việt), Indonesian (Bahasa), Chinese (中文)
+- **0.3 to 8.7 MB** per voice depending on precision — 337 KB int8 (heart-nano),
+  ~3 MB fp16, 5.5-8.7 MB fp32 — zero dependencies (espeak-ng phonemizer included)
+- **30 voices** across **16 languages** in the browser demo — English, German,
+  French, Spanish, Italian, Portuguese, Russian, Czech, Romanian, Turkish,
+  Arabic, Nepali (नेपाली), Hindi (हिन्दी), Vietnamese (Tiếng Việt),
+  Indonesian (Bahasa), Chinese (中文). The pip package ships 27 of them across
+  13 languages; Nepali, Hindi and Chinese are browser-only for now
 - **new:** **heart**, our best-sounding voice at **2.27M parameters** (24 kHz), and
   **heart-nano**, the same voice in **294k parameters** — a complete text-to-speech
   stack, int8, in 337 KB. Both synthesize live in the browser demo
@@ -136,9 +143,16 @@ host, and load them the same way `web/index.html` does:
 - wasm runtime: ~700 KB total gzipped over the wire (espeak-ng G2P
   ships ~2.5 MB uncompressed including its phoneme-table `.data`, ~700 KB
   gzipped; the acoustic/decoder wasm adds another ~40 KB)
-- per-voice weights: 4–7 MB, fp32 (`front_f32.bin` + `dec_f32.bin`), fetched
-  lazily on first use of that voice, not bundled with the runtime — int8
-  quantized voices (~4x smaller) are planned but not yet shipped
+- per-voice weights, fetched lazily on first use of that voice and never
+  bundled with the runtime:
+  - **int8** — heart-nano at **337 KB**, the on-device stack unchanged
+  - **fp16** — the ten voices added 2026-09-08 at **~3.0 MB** each; fp16 is the
+    reference for these, not an approximation, since every number they have was
+    measured on the fp16 package. The browser widens them to fp32 after
+    download and checks a sha256 of the widened bytes
+  - **fp32** — the twelve older voices, **5.5 to 8.7 MB** (amy 5.6, Vietnamese
+    6.0, heart 8.7). Converting these to fp16 would halve them, and is not done
+    only because their published output is the fp32 output
 
 **CSP note:** the wasm runtime needs `'wasm-unsafe-eval'` (or
 `'unsafe-eval'` on older browsers) in your `script-src` Content-Security-Policy,
@@ -282,8 +296,14 @@ ports), `web/` (browser demo), `configs/` + `data/textsets/` (contracts).
 
 The copyleft comes from [espeak-ng](https://github.com/espeak-ng/espeak-ng)
 alone, which is used for grapheme-to-phoneme. An earlier version of this note
-said piper was GPLv3 too; it is not — [piper](https://github.com/rhasspy/piper)
-and piper-phonemize are MIT.
+said piper was GPLv3 too. That needs splitting: the original
+[rhasspy/piper](https://github.com/rhasspy/piper) and piper-phonemize are MIT,
+and the teacher voices we distil from are MIT data — but `piper-tts` on PyPI,
+which our training tools import, is
+[OHF-Voice/piper1-gpl](https://github.com/OHF-Voice/piper1-gpl) and is
+**GPL-3.0-or-later**. It is a training-time tool that the shipped package never
+imports, so it does not reach the runtime, but "piper is MIT" is too loose to
+leave standing.
 
 The runtime files were audited against that boundary: none of them reference
 espeak, and the espeak-ng code lives entirely in the G2P and port layers, which
