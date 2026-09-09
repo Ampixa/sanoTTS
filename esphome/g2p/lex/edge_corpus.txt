@@ -1,0 +1,19 @@
+# Adversarial inputs for the C port: every branch of the tokeniser, the
+# number speller and the special-case table that a plain announcement never
+# reaches. Not a fidelity corpus -- a coverage one.
+U.S. Dr. Smith's cat-and-mouse game, "quoted" (parenthetical) -- dashes.
+$1,234.56 and £20 and €0.99 please.
+Call 555-0199 at 4:05 p.m. on 2019-07-04.
+The 1st, 2nd, 3rd, 21st and 100th readings were 0.5, 12.75 and 1,000,000.
+It's a doorSensor named USAToday with a HTTPServer and an iPhone.
+café naïve résumé Zzyzx Bingley Fitzwilliam Euroclydon
+don'ts boys' o'clock rock'n'roll
+minus -5 degrees and -12.5 percent
+100% & 3+4 @home
+He read the book; she had read it too. I used to live there. I live here.
+That cup is that which I saw.
+A e i o u B C D
+2019 1905 1000 1042 900 90
+0.5 .75 12.345.678
+The temperature is 22 degrees; the humidity, 48%: comfortable...
+"She said 'hello' and left," he wrote -- twice.

@@ -1,0 +1,62 @@
+# Home Assistant announcement corpus for the espeak-free lexicon G2P.
+#
+# Written for this port, not sampled from anything: the shapes a voice
+# assistant in a house actually says. Contractions, digits, times,
+# temperatures, percentages, device names and room names are all deliberate,
+# because those are exactly where a dictionary-first front end can fail
+# differently from espeak. Lines starting with '#' are comments.
+#
+# Blank lines are ignored.
+
+The front door is unlocked.
+The back door has been open for ten minutes.
+The garage door is still open.
+A window in the living room is open.
+The kitchen window has been open since four o'clock.
+Motion detected in the hallway.
+Motion detected in the back garden.
+Someone is at the front door.
+The doorbell was pressed twice.
+It's twenty two degrees in the living room.
+The bedroom is eighteen degrees and falling.
+The temperature outside is 3 degrees.
+The upstairs thermostat is set to 21 degrees.
+Humidity in the bathroom is 78%.
+The freezer is at minus 19 degrees.
+The washing machine has finished.
+The laundry finished 15 minutes ago.
+Don't forget the laundry in the dryer.
+The dishwasher will finish in 40 minutes.
+The robot vacuum is stuck under the sofa.
+The kitchen light has been on for 3 hours.
+All the lights are off.
+You're low on detergent.
+You have 2 new messages.
+The car battery is at 64%.
+The smoke alarm battery is low.
+The back door sensor battery is at 9%.
+Three sensors need new batteries.
+The boiler pressure is low.
+There is a water leak under the kitchen sink.
+The internet connection has been restored.
+The heating is now off.
+Your alarm is set for 6:30 tomorrow morning.
+Good morning. It's Tuesday the 3rd of December.
+It's going to rain this afternoon.
+The bins go out tonight.
+Nobody has been home since 9 a.m.
+Everyone has left the house.
+The kids are back from school.
+The guest bedroom window is open and it's raining.
+The oven has reached 180 degrees.
+Dinner will be ready in 25 minutes.
+Your parcel was delivered at 2:15.
+The gate has been left open.
+The garden hose is still running.
+The office desk lamp is on.
+The pool pump has been running for 6 hours.
+The car is charging and will be full at 7 a.m.
+The solar panels produced 12.4 kilowatt hours today.
+Are you sure you want to arm the alarm?
+The alarm is armed. You have 30 seconds to leave.
+The house is secure. Goodnight.

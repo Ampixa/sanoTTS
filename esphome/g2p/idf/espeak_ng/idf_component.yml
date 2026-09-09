@@ -1,0 +1,20 @@
+## IDF component manifest for `espeak_ng`.
+##
+## ESPHome's esp32.add_idf_component(name=..., path=...) writes a `path:`
+## dependency on this directory into .esphome/build/<name>/src/idf_component.yml;
+## the component manager then treats it as an ordinary local IDF component and
+## reads THIS manifest for its own requirements.
+##
+## `spiffs` is a built-in IDF component, so it is declared in CMakeLists.txt's
+## REQUIRES and must NOT appear here -- the component manager would try to
+## resolve it from the registry and fail.
+##
+## LICENCE: this component links espeak-ng, which is GPL-3.0-or-later.
+## See README.md before distributing a firmware image built with it.
+version: "1.52.0"
+description: espeak-ng 1.52.0 translator (no audio synthesis) plus the e12nano phoneme front end
+url: https://github.com/espeak-ng/espeak-ng
+
+dependencies:
+  idf:
+    version: ">=5.0"

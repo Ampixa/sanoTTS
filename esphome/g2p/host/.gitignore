@@ -1,0 +1,3 @@
+# Host build artifacts from build_host.sh / build_espeak_host.sh
+nano_ids_host
+nano_ids_vendored

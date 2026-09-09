@@ -1,0 +1,6 @@
+# ESPHome build tree: toolchains, the generated ESP-IDF project, firmware images.
+.esphome/
+
+# Real credentials must never be committed. secrets.yaml IS tracked, with
+# placeholders, because the build will not validate without it -- see the
+# comment inside it about what those placeholders mean for a heap measurement.

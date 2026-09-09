@@ -1,0 +1,253 @@
+[
+ {
+  "system": "shipped-espeak.jsonl",
+  "rows": 330,
+  "rows_scored": 330,
+  "rows_failed": 0,
+  "failures": [],
+  "exact_sequence_match": 1.0,
+  "phoneme_string_exact": 1.0,
+  "token_error_rate": 0.0,
+  "reference_tokens": 30783,
+  "edit_distance_total": 0,
+  "top_confusions": [],
+  "worst_rows": [
+   {
+    "row_id": "pg1342-000",
+    "ter": 0.0,
+    "ref_ids": 62,
+    "cand_ids": 62
+   },
+   {
+    "row_id": "pg1342-001",
+    "ter": 0.0,
+    "ref_ids": 70,
+    "cand_ids": 70
+   },
+   {
+    "row_id": "pg1342-002",
+    "ter": 0.0,
+    "ref_ids": 63,
+    "cand_ids": 63
+   },
+   {
+    "row_id": "pg1342-003",
+    "ter": 0.0,
+    "ref_ids": 95,
+    "cand_ids": 95
+   },
+   {
+    "row_id": "pg1342-004",
+    "ter": 0.0,
+    "ref_ids": 98,
+    "cand_ids": 98
+   },
+   {
+    "row_id": "pg1342-005",
+    "ter": 0.0,
+    "ref_ids": 118,
+    "cand_ids": 118
+   },
+   {
+    "row_id": "pg1342-006",
+    "ter": 0.0,
+    "ref_ids": 90,
+    "cand_ids": 90
+   },
+   {
+    "row_id": "pg1342-007",
+    "ter": 0.0,
+    "ref_ids": 129,
+    "cand_ids": 129
+   },
+   {
+    "row_id": "pg1342-008",
+    "ter": 0.0,
+    "ref_ids": 78,
+    "cand_ids": 78
+   },
+   {
+    "row_id": "pg1342-009",
+    "ter": 0.0,
+    "ref_ids": 168,
+    "cand_ids": 168
+   }
+  ]
+ },
+ {
+  "system": "misaki-reference.jsonl",
+  "rows": 330,
+  "rows_scored": 330,
+  "rows_failed": 0,
+  "failures": [],
+  "exact_sequence_match": 0.018182,
+  "phoneme_string_exact": 0.018182,
+  "token_error_rate": 0.060936,
+  "reference_tokens": 31098,
+  "edit_distance_total": 1895,
+  "top_confusions": [
+   {
+    "reference": "ˌ",
+    "candidate": "<del>",
+    "count": 303
+   },
+   {
+    "reference": " ",
+    "candidate": "<del>",
+    "count": 154
+   },
+   {
+    "reference": "ɐ",
+    "candidate": "ə",
+    "count": 136
+   },
+   {
+    "reference": "ˈ",
+    "candidate": "ˌ",
+    "count": 129
+   },
+   {
+    "reference": "ə",
+    "candidate": "ᵻ",
+    "count": 122
+   },
+   {
+    "reference": "ə",
+    "candidate": "ɪ",
+    "count": 115
+   },
+   {
+    "reference": "<ins>",
+    "candidate": "ɹ",
+    "count": 82
+   },
+   {
+    "reference": "ᵊ",
+    "candidate": "ə",
+    "count": 82
+   },
+   {
+    "reference": "ˌ",
+    "candidate": "ˈ",
+    "count": 70
+   },
+   {
+    "reference": "<ins>",
+    "candidate": "ˈ",
+    "count": 64
+   },
+   {
+    "reference": "i",
+    "candidate": "ɪ",
+    "count": 55
+   },
+   {
+    "reference": "ˈ",
+    "candidate": "<del>",
+    "count": 42
+   },
+   {
+    "reference": "æ",
+    "candidate": "ə",
+    "count": 28
+   },
+   {
+    "reference": "ɪ",
+    "candidate": "ɛ",
+    "count": 27
+   },
+   {
+    "reference": "z",
+    "candidate": "s",
+    "count": 27
+   },
+   {
+    "reference": "t",
+    "candidate": "T",
+    "count": 25
+   },
+   {
+    "reference": "<ins>",
+    "candidate": "ɛ",
+    "count": 24
+   },
+   {
+    "reference": "ɔ",
+    "candidate": "ə",
+    "count": 20
+   },
+   {
+    "reference": "ə",
+    "candidate": "ᵊ",
+    "count": 19
+   },
+   {
+    "reference": "<ins>",
+    "candidate": "ˌ",
+    "count": 18
+   }
+  ],
+  "worst_rows": [
+   {
+    "row_id": "pg11-033",
+    "ter": 0.2373,
+    "ref_ids": 59,
+    "cand_ids": 69
+   },
+   {
+    "row_id": "pg11-032",
+    "ter": 0.1724,
+    "ref_ids": 58,
+    "cand_ids": 65
+   },
+   {
+    "row_id": "pg11-037",
+    "ter": 0.1724,
+    "ref_ids": 58,
+    "cand_ids": 65
+   },
+   {
+    "row_id": "pg35-041",
+    "ter": 0.1688,
+    "ref_ids": 77,
+    "cand_ids": 74
+   },
+   {
+    "row_id": "pg2701-006",
+    "ter": 0.1646,
+    "ref_ids": 79,
+    "cand_ids": 78
+   },
+   {
+    "row_id": "pg1342-051",
+    "ter": 0.1569,
+    "ref_ids": 51,
+    "cand_ids": 53
+   },
+   {
+    "row_id": "pg11-016",
+    "ter": 0.1395,
+    "ref_ids": 129,
+    "cand_ids": 135
+   },
+   {
+    "row_id": "pg11-015",
+    "ter": 0.1389,
+    "ref_ids": 108,
+    "cand_ids": 113
+   },
+   {
+    "row_id": "pg1342-050",
+    "ter": 0.137,
+    "ref_ids": 73,
+    "cand_ids": 68
+   },
+   {
+    "row_id": "pg11-025",
+    "ter": 0.1327,
+    "ref_ids": 113,
+    "cand_ids": 116
+   }
+  ]
+ }
+]

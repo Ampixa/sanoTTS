@@ -1,0 +1,151 @@
+# sanoTTS on an ESP32-S3, inside ESPHome.
+#
+# WHAT THIS CONFIG IS FOR
+# Home Assistant voice satellites cannot speak unless a server synthesizes the
+# audio and streams it back. This config puts the whole TTS stack on the
+# speaker, so Home Assistant sends text instead of audio and the device keeps
+# talking when the server is gone.
+#
+# It is deliberately a REALISTIC satellite, not a bench rig: WiFi, the native
+# API, OTA and the logger are all up, because the question being measured is
+# what is left for synthesis once ESPHome is doing its actual job. Comment any
+# of them out and the free-heap numbers stop meaning anything.
+#
+# TARGET: a bare ESP32-S3 devkit. NOT a Home Assistant Voice PE -- we do not
+# have one, and no number here should ever be attributed to that hardware.
+#
+# Board on the bench (esptool, 2026-09-09):
+#   ESP32-S3 (QFN56) rev v0.2, dual LX7 @ 240 MHz, embedded 8 MB PSRAM
+#   (AP_3v3), 16 MB flash, MAC e0:72:a1:f3:e7:84, on COM5.
+
+substitutions:
+  name: sanotts-s3
+
+esphome:
+  name: ${name}
+  friendly_name: sanoTTS S3
+  # Keeps the whole test self-contained: one boot produces the gate result and
+  # the whole memory ladder with no host interaction.
+  on_boot:
+    priority: -100
+    then:
+      - sanotts.log_heap: after-boot
+      # The gate and the ladder start 15 s in. The ladder now runs out to a
+      # ~31 s utterance and back, twice per row, so it takes minutes rather
+      # than the 25 s it took when it stopped at 6.7 s. Once it is done, speak
+      # real Home Assistant announcements through the on-device lexicon G2P --
+      # the point of milestone 1 is that the text-in path is real, not a
+      # compiled-in id array.
+      - delay: 260s
+      - sanotts.log_heap: before-say
+      - sanotts.say: "The front door is unlocked."
+      - sanotts.say: "The garage door has been open for ten minutes."
+      - sanotts.say: "It is twenty two degrees outside."
+      - sanotts.log_heap: after-say
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  variant: esp32s3
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      # PSRAM is present on this part and ESPHome will use it for its own
+      # allocations, which is exactly the situation a real satellite is in.
+      # The synthesis arena is NOT allowed to land there -- see sanotts.h: a
+      # PSRAM-backed arena is correct but ~5.7x slower because the PIE vector
+      # kernels cannot read it, and the component logs a warning and reports
+      # arena_internal=0 if it ever happens.
+      CONFIG_SPIRAM: y
+      CONFIG_SPIRAM_MODE_OCT: y
+      CONFIG_SPIRAM_SPEED_80M: y
+      CONFIG_SPIRAM_USE_CAPS_ALLOC: y
+      # Measured necessity, not tuning. Without this the largest free INTERNAL
+      # block after ESPHome is up is 114,688 B, and the 415-frame golden gate
+      # row needs 128,944 B in one piece -- so the correctness gate cannot even
+      # run. WiFi and lwIP are the biggest internal-heap consumers on the part
+      # and their buffers do not need to be SIMD-readable; the synthesis arena
+      # does. Moving them out is what buys the arena its contiguous block.
+      CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+  # UART0 explicitly. ESPHome defaults an esp32-s3-devkitc-1 console to
+  # USB_SERIAL_JTAG, which routes every log line to the S3's native USB port --
+  # and this bench board is reached through a CH343 UART bridge on COM5, so the
+  # default produces a completely silent serial port and a board that looks
+  # bricked. It is not: it is talking to a connector nobody is listening on.
+  hardware_uart: UART0
+  # The gate and the ladder print a lot; 115200 makes the ladder take minutes.
+  baud_rate: 921600
+  level: INFO
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${name} fallback"
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+external_components:
+  - source:
+      type: local
+      path: components
+
+sanotts:
+  id: tts
+  # Run the golden-fixture correctness gate 15 s after boot, once ESPHome is
+  # genuinely up. BOARDS.md: a speed number without a passing correctness gate
+  # is not a result.
+  gate_on_boot: true
+  ladder_on_boot: true
+  # Left for WiFi, lwIP and the API server while synthesis holds its arena.
+  arena_reserve: 16kB
+  lexicon: gold
+  volume: 80%
+  # I2S to a MAX98357A. These are the pins arduino/examples/SpeakGolden uses on
+  # an S3 (GPIO22-25 do not exist on this part and GPIO26 belongs to the
+  # flash/PSRAM SPI bus). Comment the block out if no DAC is wired: the golden
+  # gate proves synthesis without a speaker.
+  i2s:
+    bclk_pin: GPIO5
+    lrclk_pin: GPIO6
+    dout_pin: GPIO7
+
+# The text-in path, callable from Home Assistant. This is the whole point of
+# milestone 1: HA sends a string, the device turns it into speech itself.
+api:
+  encryption:
+    key: !secret api_key
+  actions:
+    - action: say
+      variables:
+        message: string
+      then:
+        - sanotts.say: !lambda "return message;"
+    - action: run_gate
+      then:
+        - sanotts.gate:
+    - action: run_ladder
+      then:
+        - sanotts.ladder:
+
+button:
+  - platform: template
+    name: "Say front door"
+    on_press:
+      - sanotts.say: "The front door is unlocked."
+  - platform: template
+    name: "Run correctness gate"
+    on_press:
+      - sanotts.gate:
+  - platform: template
+    name: "Run memory ladder"
+    on_press:
+      - sanotts.ladder:

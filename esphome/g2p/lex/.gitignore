@@ -1,0 +1,5 @@
+# Host build artefacts. The generated tables are tracked; these are not.
+*.o
+*.su
+test_nano_lex_g2p
+__pycache__/
