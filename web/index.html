@@ -201,10 +201,12 @@
        language and its two numbers on one line, the play controls under them. */
     table.langtable { font-size:13px; }
     table.langtable thead { display:none; }
-    table.langtable tbody tr { display:grid; grid-template-columns:1fr auto auto;
+    table.langtable tbody tr { display:grid; grid-template-columns:1fr auto;
         gap:2px 10px; padding:8px 0; border-top:1px solid var(--rule); }
     table.langtable tbody tr:first-child { border-top:none; }
-    table.langtable td { display:block; border-top:none; padding:0; }
+    /* width:1% is a table shrink-wrap trick; inside this grid it resolves
+       against the track and collapses the cell to a few pixels. */
+    table.langtable td { display:block; border-top:none; padding:0; width:auto; }
     td.lt-m::before { content:attr(data-h) " "; font-size:9.5px; letter-spacing:.5px;
         text-transform:uppercase; color:var(--muted2); font-weight:normal; }
     td.lt-samp { grid-column:1 / -1; padding-left:0; margin-top:4px; }
@@ -415,138 +417,112 @@
   Quality lives in the decoder: doubling it from 1.09M to 1.84M params moves SCOREQ from 3.70 to 4.16.</p>
 
   <p class="lead" style="margin:32px 0 6px"><b>Every language we ship, and what we know about it</b></p>
-  <p class="note">Two numbers and a play button. <b>WER</b> is Whisper word error rate over 16
-  held-out Tatoeba sentences per language &mdash; conversational text, deliberately a different
-  domain from the corpus these voices were distilled on. <b>SCOREQ</b> is a no-reference quality
-  predictor. The <b>sample</b> buttons synthesize a sentence in that language on this page, right
-  now, through the same runtime as the picker above &mdash; nothing here is a pre-rendered clip.
-  Where a language ships in two sizes, both are here and both are playable.</p>
+  <p class="note"><b>WER</b> is Whisper word error rate over 16 held-out Tatoeba sentences per
+  language &mdash; conversational text, deliberately a different domain from the corpus these
+  voices were distilled on. The <b>sample</b> buttons synthesize that language on this page, right
+  now, through the same runtime as the picker above. Where a language ships in two sizes, both are
+  playable.</p>
   <table class="langtable">
     <thead>
-      <tr><th>Language</th><th class="lt-m">WER</th><th class="lt-m">SCOREQ</th><th>Sample</th></tr>
+      <tr><th>Language</th><th class="lt-m">WER</th><th>Sample</th></tr>
     </thead>
     <tbody>
       <tr>
         <td class="lt-lang">Portuguese &#x1F1E7;&#x1F1F7;</td>
         <td class="lt-m" data-h="WER">0.038</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="portuguese" title="synthesize a sentence of Portuguese live, right now">&#9654; 1.57M</button><button class="samp" data-voice="portuguese-tiny" title="synthesize a sentence of Portuguese live, right now">&#9654; 512k</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Italian &#x1F1EE;&#x1F1F9;</td>
         <td class="lt-m" data-h="WER">0.080</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="italian" title="synthesize a sentence of Italian live, right now">&#9654; 1.57M</button><button class="samp" data-voice="italian-tiny" title="synthesize a sentence of Italian live, right now">&#9654; 512k</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">German &#x1F1E9;&#x1F1EA;</td>
         <td class="lt-m" data-h="WER">0.099<span class="alt">512k · 0.145</span></td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="german" title="synthesize a sentence of German live, right now">&#9654; 1.57M</button><button class="samp" data-voice="german-tiny" title="synthesize a sentence of German live, right now">&#9654; 512k</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Russian &#x1F1F7;&#x1F1FA;</td>
         <td class="lt-m" data-h="WER">0.120</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="russian" title="synthesize a sentence of Russian live, right now">&#9654; 1.57M</button><button class="samp" data-voice="russian-tiny" title="synthesize a sentence of Russian live, right now">&#9654; 512k</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Spanish &#x1F1EA;&#x1F1F8;</td>
         <td class="lt-m" data-h="WER">0.147</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="spanish" title="synthesize a sentence of Spanish live, right now">&#9654; 1.56M</button><button class="samp" data-voice="spanish-tiny" title="synthesize a sentence of Spanish live, right now">&#9654; 510k</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">French &#x1F1EB;&#x1F1F7;</td>
         <td class="lt-m" data-h="WER">0.221</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="french" title="synthesize a sentence of French live, right now">&#9654; 1.57M</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Indonesian &#x1F1EE;&#x1F1E9;</td>
         <td class="lt-m" data-h="WER">0.256</td>
-        <td class="lt-m" data-h="SCOREQ">1.714</td>
         <td class="lt-samp"><button class="samp" data-voice="indonesian" title="synthesize a sentence of Indonesian live, right now">&#9654; 1.46M</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Arabic &#x1F1EF;&#x1F1F4;</td>
         <td class="lt-m" data-h="WER">0.274</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="arabic" title="synthesize a sentence of Arabic live, right now">&#9654; 1.57M</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Turkish &#x1F1F9;&#x1F1F7;</td>
         <td class="lt-m" data-h="WER">0.303</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="turkish" title="synthesize a sentence of Turkish live, right now">&#9654; 1.56M</button><button class="samp" data-voice="turkish-tiny" title="synthesize a sentence of Turkish live, right now">&#9654; 510k</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Czech &#x1F1E8;&#x1F1FF;</td>
         <td class="lt-m" data-h="WER">0.351</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="czech" title="synthesize a sentence of Czech live, right now">&#9654; 1.57M</button><button class="samp" data-voice="czech-tiny" title="synthesize a sentence of Czech live, right now">&#9654; 513k</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Romanian &#x1F1F7;&#x1F1F4;</td>
         <td class="lt-m" data-h="WER">0.392</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="romanian" title="synthesize a sentence of Romanian live, right now">&#9654; 1.57M</button><button class="samp" data-voice="romanian-tiny" title="synthesize a sentence of Romanian live, right now">&#9654; 512k</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Vietnamese &#x1F1FB;&#x1F1F3;</td>
         <td class="lt-m" data-h="WER">0.468</td>
-        <td class="lt-m" data-h="SCOREQ">1.525</td>
         <td class="lt-samp"><button class="samp" data-voice="vietnamese" title="synthesize a sentence of Vietnamese live, right now">&#9654; 1.46M</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">English &#x1F1FA;&#x1F1F8;</td>
         <td class="lt-m none" data-h="WER">&mdash;</td>
-        <td class="lt-m" data-h="SCOREQ">heart 3.479<span class="alt">heart-nano 2.294</span></td>
         <td class="lt-samp"><button class="samp" data-voice="amy" title="synthesize a sentence of English live, right now">&#9654; amy</button><button class="samp" data-voice="heart" title="synthesize a sentence of English live, right now">&#9654; heart</button><button class="samp" data-voice="heartnano" title="synthesize a sentence of English live, right now">&#9654; heart-nano</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Nepali &#x1F1F3;&#x1F1F5;</td>
         <td class="lt-m none" data-h="WER">&mdash;</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="nepali" title="synthesize a sentence of Nepali live, right now">&#9654; 1.47M</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Hindi &#x1F1EE;&#x1F1F3;</td>
         <td class="lt-m none" data-h="WER">&mdash;</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="hindi" title="synthesize a sentence of Hindi live, right now">&#9654; 1.50M</button><span class="sampnote"></span></td>
       </tr>
       <tr>
         <td class="lt-lang">Chinese &#x1F1E8;&#x1F1F3;</td>
         <td class="lt-m none" data-h="WER">&mdash;</td>
-        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
         <td class="lt-samp"><button class="samp" data-voice="chinese" title="synthesize a sentence of Chinese live, right now">&#9654; 1.50M</button><span class="sampnote"></span></td>
       </tr>
     </tbody>
   </table>
-  <p class="note"><b>The empty cells mean unmeasured &mdash; not zero, and not good.</b> Nothing in
-  this table is imputed: no number is carried across from one language to another, and none of the
-  ten languages added on 2026-09-08 has a SCOREQ at all. The two columns are also not the same
-  question. WER asks whether the words come through; SCOREQ asks how it sounds. On the voices where
-  we have both, the second answer is far less flattering: Indonesian reads <b>0.256</b> word error
-  &mdash; the words arrive &mdash; and still scores <b>1.714</b>, against <b>3.479</b> for
-  <i>heart</i> in English. So a low WER above is evidence a voice is <i>intelligible</i>, and is not
-  evidence that it sounds good. Whether the ten land nearer 1.5 or nearer 3.5 we have not measured,
-  and we are not going to guess it for you &mdash; press play.</p>
-  <p class="note">Three limits worth naming. The SCOREQ figures come from a different evaluation set
-  than the WER ones (24 diverse English sentences for <i>heart</i>, 24 held-out Tatoeba sentences per
-  language for Indonesian and Vietnamese), so the two columns are not a head-to-head ranking. SCOREQ
-  is a predictor <b>trained largely on English</b>, and comparing its output across languages is not
-  an established use of it &mdash; a limit of the instrument, not a hedge about the result. And 16
-  sentences per language is directional, not precise; no listening test has been run on any of the
-  ten. Czech, Romanian and French are the three whose error rate got <i>worse</i> on unseen text, so
-  they are the ones to press first. The Indonesian and Vietnamese rows are the espeak arm of a
-  paired A/B &mdash; the phoneme path this page actually runs.
-  (<code>experiments/evidence/ood-tatoeba-20260908.json</code>,
-  <code>idvi-espeak-free-ab-20260904.json</code>,
-  <code>heart-diverse24-remeasure-20260904.json</code>.)</p>
+  <p class="note">Lower is better. Press play to judge the rest.</p>
 
   <hr>
+
+  <p class="note"><b>What these numbers are, and are not.</b> WER is measured with Whisper over 16
+  held-out Tatoeba sentences per language &mdash; directional, not precise. It says the words come
+  through; it says nothing about whether a voice sounds good. No listening test has been run on any
+  of the ten languages added on 2026-09-08, and none of them has a SCOREQ. Czech, Romanian and
+  French got <i>worse</i> on unseen text than on the corpus they were trained on, so they are the
+  ones to press first. Indonesian and Vietnamese are the espeak arm of a paired A/B &mdash; the
+  phoneme path this page actually runs. Everything above is reproducible from
+  <code>experiments/evidence/ood-tatoeba-20260908.json</code>,
+  <code>idvi-espeak-free-ab-20260904.json</code> and
+  <code>heart-diverse24-remeasure-20260904.json</code>.</p>
 
   <p class="note">Open source under <b>GPL-3.0</b> — builds on
   <a href="https://github.com/OHF-Voice/piper1-gpl">piper</a> and
