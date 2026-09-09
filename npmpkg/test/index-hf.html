@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>sanotts-web default-host smoke test</title>
+</head>
+<body>
+<h1>sanotts-web default-host smoke test</h1>
+<p id="status">running…</p>
+<script type="module">
+  // The sibling index.html covers the SELF-HOSTED path (explicit assetBase and
+  // voiceBase). This one covers the opposite case and the one every npm user
+  // actually hits: no voiceBase at all, so the weights must come from the
+  // DEFAULT_VOICE_BASE on Hugging Face. It needs the network by design.
+  //
+  // Two voices, deliberately: `amy` is a piperlite package and `heart-nano` a
+  // nano one, and they take different code paths through loadVoice and
+  // synthesize. A test that only covered one would pass while the other was
+  // fetching from a directory that does not exist on that host.
+  import { SanoTTS, KNOWN_VOICES } from '../src/index.js';
+
+  const statusEl = document.getElementById('status');
+  const ASSET_BASE = '../../web/';   // wasm still comes from the local tree
+
+  async function run() {
+    const tts = await SanoTTS.load({ assetBase: ASSET_BASE });
+    const results = {};
+    for (const voice of ['amy', 'heartnano']) {
+      const r = await tts.synthesize('Fetched from Hugging Face.', { voice });
+      results[voice] = {
+        ok: r.samples instanceof Float32Array
+          && r.samples.length > 8000
+          && Array.from(r.samples.subarray(0, 2000)).every(Number.isFinite),
+        sampleRate: r.sampleRate,
+        numSamples: r.samples.length,
+        peak: Math.max(...Array.from(r.samples).map(Math.abs)),
+      };
+    }
+    const ok = Object.values(results).every((r) => r.ok);
+    window.__testResult = { ok, results, knownVoices: KNOWN_VOICES.length };
+    statusEl.textContent = ok ? 'OK' : 'FAIL — see window.__testResult';
+  }
+
+  run().catch((e) => {
+    window.__testResult = { ok: false, error: String((e && e.stack) || e) };
+    statusEl.textContent = 'FAIL — ' + String(e);
+  });
+</script>
+</body>
+</html>

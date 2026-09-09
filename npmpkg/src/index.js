@@ -14,9 +14,10 @@
 //   3. snt_voice_synthesize(front_blob, dec_blob, ids, n_ids, length_scale,
 //      out_ptr, out_cap) renders the waveform.
 //
-// Voice weights (front_f32.bin + dec_f32.bin + meta.json) are NOT bundled —
-// they are 4-7MB per voice (fp32) and are fetched + cached lazily on first use.
-// See README.md for self-hosting instructions and exact file sizes.
+// Voice weights (the blobs meta.json names, plus meta.json itself) are NOT
+// bundled — 0.3 MB for the int8 heart-nano, ~3 MB for the f16 voices added
+// 2026-09-08, 5.5-8.7 MB for the older f32 ones — and are fetched and cached
+// lazily on first use. See README.md for self-hosting and exact sizes.
 
 // Where the wasm modules live. These are small (~2.5 MB all told) and are
 // injected as <script> tags, which is picky about MIME types, so they stay on
@@ -54,6 +55,45 @@ const NANO_OUT_CAP = 24000 * 30;
 // *different* assetBase (e.g. two SanoTTS.load() calls pointed at different
 // self-hosted mirrors) always actually fetches that url.
 const scriptLoadPromises = new Map();
+
+/**
+ * Widen a float16 weight blob to the float32 the runtime reads.
+ *
+ * The ten languages added 2026-09-08 ship f16 to halve the download; float16
+ * is their reference rather than an approximation, since every quality number
+ * they have was measured on the fp16 package. The wasm runtime has always been
+ * handed f32, so the conversion happens here rather than in C.
+ *
+ * A blob is `meta_bytes` of header followed by `weight_floats` values, and the
+ * header is copied through untouched.
+ */
+function widenF16(bytes, dims) {
+  const head = Number(dims && dims.meta_bytes);
+  const n = Number(dims && dims.weight_floats);
+  if (!Number.isInteger(head) || !Number.isInteger(n) || head < 0 || n <= 0) {
+    throw new Error('sanotts-web: f16 blob has no usable meta_bytes/weight_floats');
+  }
+  if (bytes.length !== head + 2 * n) {
+    throw new Error(
+      `sanotts-web: f16 blob is ${bytes.length} bytes, meta.json implies ${head + 2 * n}`);
+  }
+  const out = new Uint8Array(head + 4 * n);
+  out.set(bytes.subarray(0, head), 0);
+  const src = new DataView(bytes.buffer, bytes.byteOffset + head, 2 * n);
+  const dst = new DataView(out.buffer, head, 4 * n);
+  for (let i = 0; i < n; i++) {
+    const b = src.getUint16(i * 2, true);
+    const exp = (b >> 10) & 0x1f;
+    const frac = b & 0x3ff;
+    const sign = (b & 0x8000) ? -1 : 1;
+    let v;
+    if (exp === 0) v = sign * frac * 5.960464477539063e-8;
+    else if (exp === 31) v = frac ? NaN : sign * Infinity;
+    else v = sign * Math.pow(2, exp - 25) * (1024 + frac);
+    dst.setFloat32(i * 4, v, true);
+  }
+  return out;
+}
 
 function joinUrl(base, path) {
   return (base.endsWith('/') ? base : base + '/') + path;
@@ -279,6 +319,16 @@ export class SanoTTS {
         }
         if (meta.dec_bytes !== undefined && dec.length !== meta.dec_bytes) {
           throw new Error(`sanotts-web: ${key}/${decName} is ${dec.length} bytes, meta.json says ${meta.dec_bytes}`);
+        }
+        // meta.weights === 'f16' means the blobs were narrowed for transfer.
+        // Without this the raw halves reach a runtime expecting f32 and it
+        // emits confident noise rather than failing.
+        if (meta.weights === 'f16') {
+          return {
+            meta,
+            front: widenF16(front, meta.front_dims),
+            dec: widenF16(dec, meta.dec_dims),
+          };
         }
         return { meta, front, dec };
       })();

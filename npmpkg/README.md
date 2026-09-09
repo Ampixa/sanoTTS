@@ -101,7 +101,7 @@ scope). It will throw if `document` is unavailable (e.g. under plain Node).
 | `chinese` | Mandarin | `cmn` | 1.50M params |
 
 Each voice is `meta.json` (params, ~1KB) + `front_*.bin` (duration +
-acoustic) + `dec_*.bin` or `model_*.bin` (decoder) — 4–7 MB per fp32 voice,
+acoustic) + `dec_*.bin` or `model_*.bin` (decoder) — 0.3 to 8.7 MB per voice depending on precision,
 8.7 MB for `heart`, and 337 KB for the int8 `heartnano`.
 
 These are **not** bundled in this package. They are fetched the first time a
@@ -161,7 +161,9 @@ Either way, sizes to plan around:
 
 - wasm runtime: ~700 KB total (espeak-ng G2P: ~2.5 MB uncompressed / ~700 KB
   gzipped including its phoneme-table data; acoustic/decoder wasm: ~40 KB)
-- per-voice weights: 4–7 MB, fp32 (int8 quantized voices are planned, not
+- per-voice weights, fetched lazily on first use: **337 KB** int8
+  (heart-nano), **~3 MB** f16 (the ten languages added 2026-09-08, widened
+  to f32 after download), **5.5–8.7 MB** f32 (the older voices)
   yet shipped)
 
 ### CSP note

@@ -1,7 +1,7 @@
 {
   "name": "sanotts-web",
-  "version": "0.3.0",
-  "description": "Browser-native neural text-to-speech, WebAssembly, no server. 294k to 2.27M parameters, 11 voices, 6 languages; weights stream from Hugging Face. Live at https://tts.ampixa.com/sanoTTS",
+  "version": "0.4.0",
+  "description": "Browser-native neural text-to-speech, WebAssembly, no server. 294k to 2.27M parameters, 30 voices, 16 languages; weights stream from Hugging Face. Live at https://tts.ampixa.com/sanoTTS",
   "license": "GPL-3.0-or-later",
   "type": "module",
   "main": "./dist/index.js",
