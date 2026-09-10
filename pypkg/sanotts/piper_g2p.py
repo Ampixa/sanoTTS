@@ -283,6 +283,14 @@ def english_text_to_phoneme_ids(
 # expose, so the English entry covers both spellings.
 ENGLISH_VOICES: frozenset[str] = frozenset({"en", "en-us", "en-gb"})
 
+# Chinese does not dispatch on the espeak voice string, because a pinyin voice
+# has no espeak front end to name. ``zh_CN-xiao_ya-medium`` carries a leftover
+# ``espeak.voice`` of "zh"; the espeak Chinese voices this repo has shipped
+# before carry "cmn". Both, and a pinyin config with no espeak block at all,
+# resolve to ``zh_g2p`` -- which is selected by ``phoneme_type == "pinyin"``,
+# the field that actually says what the ids mean.
+CHINESE_VOICES: frozenset[str] = frozenset({"zh", "zh-cn", "cmn", "cmn-latn-pinyin"})
+
 
 # Which Indonesian front end ``path`` selects. Only ``id`` has more than one.
 #   "lexicon"  id_g2p        -- espeak-ng's own behaviour, reproduced by rule.
@@ -306,6 +314,19 @@ def module_for(table: frontend.PhonemeTable, path: str = "lexicon"):
     if path not in ID_PATHS:
         raise PiperG2PError("path", f"path must be one of {sorted(ID_PATHS)}, got {path!r}")
     voice = table.espeak_voice
+    # Chinese first: a pinyin table says so in `phoneme_type`, and its ids mean
+    # something different from every espeak table's, so the espeak voice string
+    # must not get a vote.
+    if table.phoneme_type == frontend.PHONEME_TYPE_PINYIN or voice in CHINESE_VOICES:
+        if table.phoneme_type != frontend.PHONEME_TYPE_PINYIN:
+            raise PiperG2PError(
+                "language",
+                f"espeak voice {voice!r} is Chinese but this voice's phoneme_type is "
+                f"{table.phoneme_type!r}; sanotts.zh_g2p emits pinyin initials, finals "
+                f"and tones, which an espeak-keyed map has no ids for",
+            )
+        from . import zh_g2p  # noqa: PLC0415
+        return zh_g2p
     if voice in ENGLISH_VOICES:
         return None
     if voice == "id":
@@ -320,7 +341,8 @@ def module_for(table: frontend.PhonemeTable, path: str = "lexicon"):
     raise PiperG2PError(
         "language",
         f"no espeak-free front end for espeak voice {voice!r}; "
-        f"known: {sorted(ENGLISH_VOICES)} + ['id', 'vi']",
+        f"known: {sorted(ENGLISH_VOICES)} + ['id', 'vi'] + "
+        f"{sorted(CHINESE_VOICES)} (pinyin only)",
     )
 
 

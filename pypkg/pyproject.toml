@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sanotts"
-version = "0.6.0"
+version = "0.7.0"
 description = "Self-contained, numpy-only inference runtime for sanoTTS voices, including the 294k and 2.27M heart voices."
 readme = { text = "sanotts: pip-installable, numpy-only inference for sanoTTS voices. Two graphs are supported: the piperlite voices (amy, kristin, hfc, vi, id) and the nano voices (heart at 2.27M parameters, heart-nano at 294k), the latter running mel-100 -> ConvNeXt1D -> iSTFT with a noise-fed decoder. Both are gated against the same PyTorch references the C runtime is held to. Voices download on demand or load from a local directory.", content-type = "text/plain" }
 license = { text = "MIT" }
@@ -62,6 +62,12 @@ include = [
   # sha256 of every payload.
   "sanotts/g2p_data/indo_g2p/*.xz",
   "sanotts/g2p_data/indo_g2p/MANIFEST.json",
+  # The MIT pypinyin tables behind the Chinese pinyin front end: 358 KB for the
+  # three that ship, against the 152 MB BERT piper uses for the same job.
+  # NOTICE.md carries their attribution and MANIFEST.json the sha256 of every
+  # payload.
+  "sanotts/g2p_data/zh_pinyin/*.xz",
+  "sanotts/g2p_data/zh_pinyin/MANIFEST.json",
 ]
 # `include` alone is not enough for the out-of-vocabulary model: hatchling
 # honours .gitignore when selecting files, the repo ignores *.npz for training

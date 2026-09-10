@@ -73,20 +73,36 @@ class FrontendError(RuntimeError):
     """Raised when the espeak-ng backend cannot be initialized or used."""
 
 
+# Piper's own phoneme types, and the two this package can read. ``espeak``
+# keys its map on single codepoints; ``pinyin`` keys it on whole initials and
+# finals (``zh``, ``ang``), which is why the key-length rule below is gated.
+PHONEME_TYPE_ESPEAK = "espeak"
+PHONEME_TYPE_PINYIN = "pinyin"
+SUPPORTED_PHONEME_TYPES: frozenset[str] = frozenset(
+    {PHONEME_TYPE_ESPEAK, PHONEME_TYPE_PINYIN})
+
+
 @dataclass(frozen=True)
 class PhonemeTable:
-    """A single voice's codepoint -> Piper phoneme-id map."""
+    """A single voice's phoneme -> Piper phoneme-id map.
+
+    ``phoneme_type`` decides both what the keys look like and which framing
+    ``phonemes_to_ids`` a caller must use, so it travels with the map rather
+    than being re-derived. It defaults to ``espeak`` so that the many callers
+    that build a table by hand keep working unchanged.
+    """
 
     espeak_voice: str
     id_map: dict[str, int]
+    phoneme_type: str = PHONEME_TYPE_ESPEAK
 
 
 def load_phoneme_table(piper_config_path: Path) -> PhonemeTable:
     """Parse a Piper ``*.onnx.json`` / ``piper-phoneme-config.json`` file.
 
     Raises FrontendError if the file does not have the exact shape we
-    depend on (single-codepoint keys, single-id values, and the
-    pad/bos/eos framing ids piper hardcodes).
+    depend on (single-codepoint keys for an espeak voice, single-id values,
+    and the pad/bos/eos framing ids piper hardcodes).
     """
     import json
 
@@ -95,14 +111,21 @@ def load_phoneme_table(piper_config_path: Path) -> PhonemeTable:
     with piper_config_path.open("r", encoding="utf-8") as handle:
         config = json.load(handle)
 
-    phoneme_type = config.get("phoneme_type", "espeak")
-    if phoneme_type not in (None, "espeak"):
+    phoneme_type = config.get("phoneme_type") or PHONEME_TYPE_ESPEAK
+    if phoneme_type not in SUPPORTED_PHONEME_TYPES:
         raise FrontendError(f"{piper_config_path}: unsupported phoneme_type={phoneme_type!r}")
 
     espeak_cfg = config.get("espeak") or {}
     espeak_voice = espeak_cfg.get("voice")
     if not espeak_voice:
-        raise FrontendError(f"{piper_config_path}: missing espeak.voice")
+        # A pinyin voice does not need espeak at all, and the language block is
+        # the authority for it. xiao_ya happens to carry a leftover
+        # ``espeak.voice`` of "zh"; a pinyin teacher without one must still load.
+        if phoneme_type == PHONEME_TYPE_PINYIN:
+            espeak_voice = ((config.get("language") or {}).get("family")
+                            or (config.get("language") or {}).get("code") or "zh")
+        else:
+            raise FrontendError(f"{piper_config_path}: missing espeak.voice")
 
     raw_map = config.get("phoneme_id_map")
     if not isinstance(raw_map, dict) or not raw_map:
@@ -110,7 +133,9 @@ def load_phoneme_table(piper_config_path: Path) -> PhonemeTable:
 
     id_map: dict[str, int] = {}
     for key, ids in raw_map.items():
-        if len(key) != 1:
+        if not key:
+            raise FrontendError(f"{piper_config_path}: empty map key")
+        if phoneme_type == PHONEME_TYPE_ESPEAK and len(key) != 1:
             raise FrontendError(f"{piper_config_path}: multi-codepoint map key {key!r}")
         if not isinstance(ids, list) or len(ids) != 1:
             raise FrontendError(f"{piper_config_path}: multi-id map value {key!r} -> {ids!r}")
@@ -123,7 +148,8 @@ def load_phoneme_table(piper_config_path: Path) -> PhonemeTable:
                 f"{piper_config_path}: framing symbol {sym!r} maps to {got}, expected {want}"
             )
 
-    return PhonemeTable(espeak_voice=str(espeak_voice), id_map=id_map)
+    return PhonemeTable(espeak_voice=str(espeak_voice), id_map=id_map,
+                        phoneme_type=str(phoneme_type))
 
 
 _COMPAT_DIR: Path | None = None
@@ -351,6 +377,15 @@ def phonemes_to_ids(phonemes: list[str], table: PhonemeTable) -> list[int]:
 
 def text_to_phoneme_ids(text: str, table: PhonemeTable) -> np.ndarray:
     """Full text -> Piper phoneme-id array, matching PiperVoice exactly."""
+    if table.phoneme_type != PHONEME_TYPE_ESPEAK:
+        # espeak-ng is not a fallback for a pinyin voice: it would emit IPA
+        # this voice has no id for and the caller would get silence with a
+        # warning. sanotts.zh_g2p is the front end these weights answer to.
+        raise FrontendError(
+            f"this voice's phoneme_type is {table.phoneme_type!r}, not "
+            f"{PHONEME_TYPE_ESPEAK!r}; espeak-ng cannot produce its phonemes. "
+            f"Use sanotts.piper_g2p.text_to_phoneme_ids instead."
+        )
     clean_text = text.strip()
     if not clean_text:
         raise FrontendError("text is empty")

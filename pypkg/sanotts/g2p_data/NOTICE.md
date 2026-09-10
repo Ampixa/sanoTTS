@@ -1,13 +1,14 @@
 # Third-party assets in `sanotts/g2p_data/`
 
 Two licences, both permissive. The English assets at the top of this file are
-**Apache-2.0**; the Indonesian ones in `indo_g2p/` are **MIT**, with one
-Apache-2.0 upstream behind a table that is deliberately *not* vendored.
-Nothing here is derived from espeak-ng, and none of it carries a copyleft
-obligation. `tools/build_nano_g2p_assets.py` fetches each English file from the
-pinned revision below and refuses to write it if its sha256 has changed;
-`tools/vendor_indo_g2p.py` does the same job for `indo_g2p/` and records every
-payload's sha256 in `indo_g2p/MANIFEST.json`.
+**Apache-2.0**; the Indonesian ones in `indo_g2p/` and the Chinese ones in
+`zh_pinyin/` are **MIT**, each with one upstream behind a table that is
+deliberately *not* vendored. Nothing here is derived from espeak-ng, and none
+of it carries a copyleft obligation. `tools/build_nano_g2p_assets.py` fetches
+each English file from the pinned revision below and refuses to write it if its
+sha256 has changed; `tools/vendor_indo_g2p.py` and `tools/vendor_zh_pinyin.py`
+do the same job for `indo_g2p/` and `zh_pinyin/` and record every payload's
+sha256 in the matching `MANIFEST.json`.
 
 ---
 
@@ -229,3 +230,78 @@ test fixture in this package is derived from it. It was chosen precisely
 because it is independent of both espeak-ng and of the dictionary indo-g2p
 ships, so the two can be checked against each other rather than against
 themselves.
+
+---
+
+## `zh_pinyin/` — the Chinese pinyin front end
+
+- **Upstream:** [pypinyin](https://github.com/mozillazg/python-pinyin) 0.55.0,
+  `pypinyin/pinyin_dict.py` (`PINYIN_DICT`, 41,923 characters) and
+  `pypinyin/phrases_dict.py` (`PHRASES_DICT`, 47,111 phrases).
+- **License:** **MIT.** Declared by the repository's own `LICENSE.txt`
+  ("The MIT License (MIT), Copyright (c) 2016 mozillazg, 闲耘"), by the GitHub
+  licence API, and by the PyPI classifier. The two upstream data projects it
+  builds those dictionaries from are MIT as well, both confirmed at the source
+  rather than assumed:
+  - [mozillazg/pinyin-data](https://github.com/mozillazg/pinyin-data) — MIT
+    (`LICENSE`, Copyright (c) 2016 mozillazg), for the character readings. Its
+    own inputs are the Unicode Consortium's Unihan fields (`kMandarin`,
+    `kXHC1983`, `kHanyuPinlu`, `kTGHZ2013`), which carry the Unicode licence, a
+    permissive attribution licence with no copyleft term.
+  - [mozillazg/phrase-pinyin-data](https://github.com/mozillazg/phrase-pinyin-data)
+    — MIT (GitHub licence API; the repository has no `LICENSE` file at the path
+    the README implies), for the phrase readings.
+  - **Not used:** that project's `cc_cedict.txt`, which is generated from
+    CC-CEDICT and carries **CC BY-SA 3.0**. It is an opt-in overlay in
+    pypinyin, not part of `PHRASES_DICT`, and nothing here loads it.
+- **Copyright:** mozillazg, 闲耘 and the pypinyin contributors.
+- **Modifications:** the readings are converted once, at vendoring time, from
+  pypinyin's tone-marked spelling to the TONE3 spelling piper's pinyin map is
+  keyed on (`zhōng` → `zhong1`, neutral tone as `5`, `ü` as `v`), using
+  pypinyin's own `contrib.tone_convert.to_tone3`. The phrase table is split:
+  `phrases.xz` holds the 8,756 entries whose readings differ from the
+  per-character defaults, `phrase_keys.xz` the remaining 38,355 keys with their
+  redundant readings dropped. No reading is altered, added or removed.
+  `tools/vendor_zh_pinyin.py` regenerates all three files and records each
+  payload's sha256 in `zh_pinyin/MANIFEST.json`.
+- **Size:** 358,508 B compressed (chars 134,028; phrases 82,212; phrase_keys
+  142,268), against 152 MB for the g2pW model that does the same job in piper.
+
+### `sanotts/zh_g2p.py` is not derived from pypinyin's source
+
+The lookup around these tables — forward maximum match over the phrase keys,
+the phrase's readings when one matches, the character's first reading otherwise
+— is reimplemented from the algorithm, and pypinyin is MIT in any case, so
+neither the data nor the shape of the code creates an obligation beyond the
+attribution above.
+
+### What is deliberately **not** vendored
+
+- **g2pW's `MONOPHONIC_CHARS.txt` and `POLYPHONIC_CHARS.txt`.** These are the
+  character lists g2pW itself uses for the 68% of characters it decides without
+  running its BERT, and combining them with the pypinyin phrase lexicon was
+  measured as an alternative front end. Two reasons they are not here. First,
+  they are worth almost nothing: on held-out text they moved sentence-level id
+  parity from 67.9% to 68.6% and the id error rate from 0.305% to 0.281%.
+  Second, and decisively, **no licence covers them**. The
+  [GitYCC/g2pW](https://github.com/GitYCC/g2pW) repository is Apache-2.0 but
+  does not contain these files; they ship only inside `G2PWModel-v2-onnx.zip`,
+  downloaded from a Google Storage bucket, and neither the archive nor the
+  README states any terms for the model or its data. An MIT package cannot
+  redistribute an artefact with no stated licence on the strength of a sibling
+  repository's badge.
+- **g2pw's `char_bopomofo_dict.json`** (1.9 MB) and its Bopomofo-to-pinyin
+  table. These *are* inside the Apache-2.0 `g2pw` PyPI package, but they are
+  only useful together with the two files above, so they are not vendored
+  either.
+
+### g2pW was an oracle, not a source
+
+Every parity number in `experiments/evidence/zh-pinyin-g2p-20260910.json` was
+produced by running piper's own g2pW front end over the corpus and comparing.
+The 54-entry `TEACHER_READINGS` table in `zh_g2p.py` is the one artefact
+learned from that comparison: it records, per character, that this particular
+teacher speaks the Taiwanese Mandarin reading (`和` as `hàn`, `期` as `qí`)
+rather than the mainland one pypinyin gives. It is a table of facts about what
+the shipped weights were trained on, derived from observed outputs on our own
+corpus, not a copy of any file g2pW distributes.

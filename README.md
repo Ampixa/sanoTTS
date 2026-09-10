@@ -277,6 +277,43 @@ minimum correlation, the float build reproduces the training-side output at
 1.000000 (`mcu/test/fixtures/en_us_r227f32`). Rebuild both with
 `mcu/ports/wasm/build_nano.sh`, gate with `mcu/ports/wasm/verify_nano_node.mjs`.
 
+## Built on sanoTTS
+
+Other people's work, linked because it is theirs and because some of it goes
+where we have not.
+
+**[sanoTTS-jp](https://github.com/ayutaz/sanoTTS-jp)** — Japanese, which this
+repository does not have. A clean-room reimplementation of the distillation
+recipe by [@ayutaz](https://github.com/ayutaz), 559 K parameters, MIT, teacher
+is [piper-plus](https://github.com/ayutaz/piper-plus) (MB-iSTFT-VITS2). It does
+the harder half of Japanese **on the chip**: morphological analysis of mixed
+kanji/kana and pitch-accent estimation, not just the acoustic model. Browser
+demo at [ayutaz.github.io/sanoTTS-jp](https://ayutaz.github.io/sanoTTS-jp/) —
+type kanji, it speaks. Inference is dependency-free C99 that never calls
+`malloc`.
+
+Hardware ports of it, all M5Stack:
+[CoreS3](https://github.com/nnn112358/SanoTTS-jp-M5StackCoreS3) (ESP-IDF),
+[Tab5 / ESP32-P4](https://github.com/nnn112358/SanoTTS-jp-Tab5) (PIE SIMD),
+[Stack-chan](https://github.com/nnn112358/StackChan-IDF-for-SanoTTS-jp)
+(streaming synthesis with avatar lip-sync), and
+[RLCD4.2](https://github.com/ochisamu/sanoTTS-jp-RLCD4.2).
+
+**[An independent hardware measurement](https://github.com/magatsux2019/sanotts-atoms3-results)**
+of sanoTTS-jp on an M5Stack AtomS3, and worth reading precisely because it does
+not agree with the headline: correctness **PASS** (PCM checksum exactly matched
+the upstream baseline), repeatability **PASS**, real-time **FAIL** at xRT 1.718
+against a threshold of 1.0. Different board, different language, different
+model from the one we measure at 0.383 xRT — which is the point. "Runs
+real-time on a $3 chip" is a claim about a specific model on specific silicon
+with specific kernels, and someone changing any of those may well find
+otherwise.
+
+**[kokopop](https://github.com/tterrasson/kokopop)** — a standalone C++ library
+for running neural TTS from GGUF with no Python, MIT.
+
+If you have built something, open an issue and it goes here.
+
 ## How it works
 
 ![text → duration → acoustic → decoder → audio](docs/assets/saanotts-signal-path.png)

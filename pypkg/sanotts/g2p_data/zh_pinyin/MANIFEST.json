@@ -1,0 +1,26 @@
+{
+ "files": {
+  "chars": {
+   "lines": 41923,
+   "raw_bytes": 395174,
+   "raw_sha256": "59731bd1fcee681102978e67607aeb973605c4022f72340b720897fc02f02019",
+   "xz_bytes": 134028
+  },
+  "phrase_keys": {
+   "lines": 38355,
+   "raw_bytes": 387636,
+   "raw_sha256": "78375fe24381d3f9971e64ab86fec8e531f17cbd985ce2760d0253b294d21db8",
+   "xz_bytes": 142268
+  },
+  "phrases": {
+   "lines": 8756,
+   "raw_bytes": 231041,
+   "raw_sha256": "1414e92fc0c82e4b900fc9fbc7321068cf26c12a9485519534f003fa5e2279f1",
+   "xz_bytes": 82212
+  }
+ },
+ "generated_by": "tools/vendor_zh_pinyin.py",
+ "license": "MIT",
+ "source": "pypinyin 0.55.0 (PINYIN_DICT, PHRASES_DICT)",
+ "style": "TONE3, neutral tone as 5, u-umlaut as v"
+}

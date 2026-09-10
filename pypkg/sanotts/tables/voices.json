@@ -144,6 +144,11 @@
    "package": "tr-dfki-0p51m",
    "language": "tr_TR",
    "sample_rate": 22050
+  },
+  "zh": {
+   "package": "zh-xiaoya-1p55m",
+   "language": "zh_CN",
+   "sample_rate": 22050
   }
  },
  "_comment_nano": "Voices with \"runtime\": \"nano\" come from the voices-v2 release and run through sanotts.nano, not sanotts.models: a different graph (mel-100 -> ConvNeXt1D -> iSTFT, noise-fed decoder) that models.py rejects. Their packages carry front_q8.bin/model_q8.bin/meta.json rather than the roota.raw-fp16.v1 manifest."

@@ -1,0 +1,5694 @@
+{
+"_source": "snowfluke/indo-g2p at dd5f102cba7345ba46adef8c2ad9fa261587ea4e, run under bun 1.2.23",
+"_what": "Reference output of the TypeScript original. `core` is toPhoneme from indo-g2p/core (English table off), `schwa` is applySchwa, `syllables` is toSyllables, `normalized` is normalizeText, `core_no_colloc` is resolveSchwa:false and `core_abbr` is expandAbbr:true. The Python port must reproduce all of it exactly.",
+"_word_selection": "the 500 lowest-sha256 word types of the Tatoeba Indonesian export that carry a Wiktionary pronunciation, plus 40 words chosen for the branches they exercise",
+"_sentence_selection": "the 60 lowest-sha256 sentences of the 438-sentence development corpus",
+"words": [
+{
+"word": "abisekanama",
+"core": "abisekanama",
+"schwa": "abisekanama",
+"syllables": [
+"a",
+"bi",
+"se",
+"ka",
+"na",
+"ma"
+]
+},
+{
+"word": "acuh",
+"core": "atʃuh",
+"schwa": "acuh",
+"syllables": [
+"a",
+"cuh"
+]
+},
+{
+"word": "adenoma",
+"core": "adenoma",
+"schwa": "adenoma",
+"syllables": [
+"a",
+"de",
+"no",
+"ma"
+]
+},
+{
+"word": "adik",
+"core": "adiʔ",
+"schwa": "adik",
+"syllables": [
+"a",
+"dik"
+]
+},
+{
+"word": "adreskan",
+"core": "adreskan",
+"schwa": "adreskan",
+"syllables": [
+"ad",
+"res",
+"kan"
+]
+},
+{
+"word": "aferen",
+"core": "afəren",
+"schwa": "afəren",
+"syllables": [
+"a",
+"fe",
+"ren"
+]
+},
+{
+"word": "air",
+"core": "air",
+"schwa": "air",
+"syllables": [
+"a",
+"ir"
+]
+},
+{
+"word": "akelit",
+"core": "akelit",
+"schwa": "akelit",
+"syllables": [
+"a",
+"ke",
+"lit"
+]
+},
+{
+"word": "akhir",
+"core": "axir",
+"schwa": "akhir",
+"syllables": [
+"ak",
+"hir"
+]
+},
+{
+"word": "akhirat",
+"core": "axirat",
+"schwa": "akhirat",
+"syllables": [
+"ak",
+"hi",
+"rat"
+]
+},
+{
+"word": "akuisens",
+"core": "akuisens",
+"schwa": "akuisens",
+"syllables": [
+"a",
+"ku",
+"i",
+"sens"
+]
+},
+{
+"word": "alas",
+"core": "alas",
+"schwa": "alas",
+"syllables": [
+"a",
+"las"
+]
+},
+{
+"word": "aler",
+"core": "aler",
+"schwa": "aler",
+"syllables": [
+"a",
+"ler"
+]
+},
+{
+"word": "algoritme",
+"core": "algoritmə",
+"schwa": "algoritmə",
+"syllables": [
+"al",
+"go",
+"rit",
+"me"
+]
+},
+{
+"word": "alpukat",
+"core": "alpukat",
+"schwa": "alpukat",
+"syllables": [
+"al",
+"pu",
+"kat"
+]
+},
+{
+"word": "ama",
+"core": "ama",
+"schwa": "ama",
+"syllables": [
+"a",
+"ma"
+]
+},
+{
+"word": "ambasade",
+"core": "ambasadə",
+"schwa": "ambasadə",
+"syllables": [
+"am",
+"ba",
+"sa",
+"de"
+]
+},
+{
+"word": "ambek",
+"core": "ambəʔ",
+"schwa": "ambək",
+"syllables": [
+"am",
+"bek"
+]
+},
+{
+"word": "amebiasis",
+"core": "amebiasis",
+"schwa": "amebiasis",
+"syllables": [
+"a",
+"me",
+"bi",
+"a",
+"sis"
+]
+},
+{
+"word": "ametropia",
+"core": "ametropia",
+"schwa": "ametropia",
+"syllables": [
+"a",
+"met",
+"ro",
+"pi",
+"a"
+]
+},
+{
+"word": "amplop",
+"core": "amplop",
+"schwa": "amplop",
+"syllables": [
+"am",
+"plop"
+]
+},
+{
+"word": "anastesialogi",
+"core": "anastesialogi",
+"schwa": "anastesialogi",
+"syllables": [
+"a",
+"nas",
+"te",
+"si",
+"a",
+"lo",
+"gi"
+]
+},
+{
+"word": "andem",
+"core": "andəm",
+"schwa": "andəm",
+"syllables": [
+"an",
+"dem"
+]
+},
+{
+"word": "anehkan",
+"core": "anehkan",
+"schwa": "anehkan",
+"syllables": [
+"a",
+"neh",
+"kan"
+]
+},
+{
+"word": "anti",
+"core": "anti",
+"schwa": "anti",
+"syllables": [
+"an",
+"ti"
+]
+},
+{
+"word": "antikapitalisme",
+"core": "antikapitalismə",
+"schwa": "antikapitalismə",
+"syllables": [
+"an",
+"ti",
+"ka",
+"pi",
+"ta",
+"lis",
+"me"
+]
+},
+{
+"word": "apel",
+"core": "apəl",
+"schwa": "apəl",
+"syllables": [
+"a",
+"pel"
+]
+},
+{
+"word": "apo",
+"core": "apo",
+"schwa": "apo",
+"syllables": [
+"a",
+"po"
+]
+},
+{
+"word": "apologet",
+"core": "apologet",
+"schwa": "apologet",
+"syllables": [
+"a",
+"po",
+"lo",
+"get"
+]
+},
+{
+"word": "apologetis",
+"core": "apologetis",
+"schwa": "apologetis",
+"syllables": [
+"a",
+"po",
+"lo",
+"ge",
+"tis"
+]
+},
+{
+"word": "arkeologi",
+"core": "arkeologi",
+"schwa": "arkeologi",
+"syllables": [
+"ar",
+"ke",
+"o",
+"lo",
+"gi"
+]
+},
+{
+"word": "asertif",
+"core": "asertif",
+"schwa": "asertif",
+"syllables": [
+"a",
+"ser",
+"tif"
+]
+},
+{
+"word": "asistensi",
+"core": "asistensi",
+"schwa": "asistensi",
+"syllables": [
+"a",
+"sis",
+"ten",
+"si"
+]
+},
+{
+"word": "asrama",
+"core": "asrama",
+"schwa": "asrama",
+"syllables": [
+"as",
+"ra",
+"ma"
+]
+},
+{
+"word": "autoimun",
+"core": "aʊtoimun",
+"schwa": "autoimun",
+"syllables": [
+"au",
+"to",
+"i",
+"mun"
+]
+},
+{
+"word": "bagaikan",
+"core": "bagaɪkan",
+"schwa": "bagaikan",
+"syllables": [
+"ba",
+"gai",
+"kan"
+]
+},
+{
+"word": "bajak",
+"core": "badʒaʔ",
+"schwa": "bajak",
+"syllables": [
+"ba",
+"jak"
+]
+},
+{
+"word": "balapan",
+"core": "balapan",
+"schwa": "balapan",
+"syllables": [
+"ba",
+"la",
+"pan"
+]
+},
+{
+"word": "bapak",
+"core": "bapaʔ",
+"schwa": "bapak",
+"syllables": [
+"ba",
+"pak"
+]
+},
+{
+"word": "bareng",
+"core": "barəŋ",
+"schwa": "barəng",
+"syllables": [
+"ba",
+"reng"
+]
+},
+{
+"word": "bebek",
+"core": "bəbəʔ",
+"schwa": "bəbək",
+"syllables": [
+"be",
+"bek"
+]
+},
+{
+"word": "becak",
+"core": "bətʃaʔ",
+"schwa": "bəcak",
+"syllables": [
+"be",
+"cak"
+]
+},
+{
+"word": "begawan",
+"core": "bəgawan",
+"schwa": "bəgawan",
+"syllables": [
+"be",
+"ga",
+"wan"
+]
+},
+{
+"word": "begitu",
+"core": "bəgitu",
+"schwa": "bəgitu",
+"syllables": [
+"be",
+"gi",
+"tu"
+]
+},
+{
+"word": "bejo",
+"core": "bədʒo",
+"schwa": "bəjo",
+"syllables": [
+"be",
+"jo"
+]
+},
+{
+"word": "belah",
+"core": "bəlah",
+"schwa": "bəlah",
+"syllables": [
+"be",
+"lah"
+]
+},
+{
+"word": "belas",
+"core": "bəlas",
+"schwa": "bəlas",
+"syllables": [
+"bel",
+"as"
+]
+},
+{
+"word": "belit",
+"core": "bəlit",
+"schwa": "bəlit",
+"syllables": [
+"bel",
+"it"
+]
+},
+{
+"word": "beloon",
+"core": "bəloon",
+"schwa": "bəloon",
+"syllables": [
+"be",
+"lo",
+"on"
+]
+},
+{
+"word": "beludru",
+"core": "bəludru",
+"schwa": "bəludru",
+"syllables": [
+"bel",
+"ud",
+"ru"
+]
+},
+{
+"word": "belunggu",
+"core": "bəluŋgu",
+"schwa": "bəlunggu",
+"syllables": [
+"bel",
+"un",
+"ggu"
+]
+},
+{
+"word": "bengek",
+"core": "bəŋeʔ",
+"schwa": "bəngek",
+"syllables": [
+"ben",
+"gek"
+]
+},
+{
+"word": "bentang",
+"core": "bəntaŋ",
+"schwa": "bəntang",
+"syllables": [
+"ben",
+"tang"
+]
+},
+{
+"word": "berakal",
+"core": "bərakal",
+"schwa": "bərakal",
+"syllables": [
+"be",
+"ra",
+"kal"
+]
+},
+{
+"word": "berbuai",
+"core": "bərbuaɪ",
+"schwa": "bərbuai",
+"syllables": [
+"ber",
+"bu",
+"ai"
+]
+},
+{
+"word": "bergantung",
+"core": "bərgantuŋ",
+"schwa": "bərgantung",
+"syllables": [
+"ber",
+"gan",
+"tung"
+]
+},
+{
+"word": "berhubungan",
+"core": "bərhubuŋan",
+"schwa": "bərhubungan",
+"syllables": [
+"ber",
+"hu",
+"bun",
+"gan"
+]
+},
+{
+"word": "berjangka",
+"core": "bərdʒaŋka",
+"schwa": "bərjangka",
+"syllables": [
+"ber",
+"jan",
+"gka"
+]
+},
+{
+"word": "berkabung",
+"core": "bərkabuŋ",
+"schwa": "bərkabung",
+"syllables": [
+"ber",
+"ka",
+"bung"
+]
+},
+{
+"word": "berkekuatan",
+"core": "bərkəkuatan",
+"schwa": "bərkəkuatan",
+"syllables": [
+"ber",
+"ke",
+"ku",
+"at",
+"an"
+]
+},
+{
+"word": "berlinang",
+"core": "bərlinaŋ",
+"schwa": "bərlinang",
+"syllables": [
+"ber",
+"li",
+"nang"
+]
+},
+{
+"word": "bermain",
+"core": "bərmain",
+"schwa": "bərmain",
+"syllables": [
+"ber",
+"ma",
+"in"
+]
+},
+{
+"word": "berpeluang",
+"core": "bərpəluaŋ",
+"schwa": "bərpəluang",
+"syllables": [
+"ber",
+"pe",
+"lu",
+"ang"
+]
+},
+{
+"word": "berpeluit",
+"core": "bərpəluit",
+"schwa": "bərpəluit",
+"syllables": [
+"ber",
+"pe",
+"lu",
+"it"
+]
+},
+{
+"word": "bersentuhan",
+"core": "bərsəntuhan",
+"schwa": "bərsəntuhan",
+"syllables": [
+"ber",
+"sen",
+"tuh",
+"an"
+]
+},
+{
+"word": "bersihan",
+"core": "bərsihan",
+"schwa": "bərsihan",
+"syllables": [
+"ber",
+"sih",
+"an"
+]
+},
+{
+"word": "bertaman",
+"core": "bərtaman",
+"schwa": "bərtaman",
+"syllables": [
+"ber",
+"ta",
+"man"
+]
+},
+{
+"word": "bertanah",
+"core": "bərtanah",
+"schwa": "bərtanah",
+"syllables": [
+"ber",
+"ta",
+"nah"
+]
+},
+{
+"word": "bertawuran",
+"core": "bərtawuran",
+"schwa": "bərtawuran",
+"syllables": [
+"ber",
+"ta",
+"wur",
+"an"
+]
+},
+{
+"word": "bertunggu",
+"core": "bərtuŋgu",
+"schwa": "bərtunggu",
+"syllables": [
+"ber",
+"tun",
+"ggu"
+]
+},
+{
+"word": "bet",
+"core": "bet",
+"schwa": "bet",
+"syllables": [
+"bet"
+]
+},
+{
+"word": "bidang",
+"core": "bidaŋ",
+"schwa": "bidang",
+"syllables": [
+"bi",
+"dang"
+]
+},
+{
+"word": "bioetika",
+"core": "bioetika",
+"schwa": "bioetika",
+"syllables": [
+"bi",
+"o",
+"e",
+"ti",
+"ka"
+]
+},
+{
+"word": "blewah",
+"core": "blewah",
+"schwa": "blewah",
+"syllables": [
+"ble",
+"wah"
+]
+},
+{
+"word": "boksen",
+"core": "boʔsən",
+"schwa": "boksən",
+"syllables": [
+"bok",
+"sen"
+]
+},
+{
+"word": "brem",
+"core": "brəm",
+"schwa": "brəm",
+"syllables": [
+"brem"
+]
+},
+{
+"word": "bronkopneumoni",
+"core": "bronkopneumoni",
+"schwa": "bronkopneumoni",
+"syllables": [
+"bron",
+"kop",
+"ne",
+"u",
+"mo",
+"ni"
+]
+},
+{
+"word": "buku",
+"core": "buku",
+"schwa": "buku",
+"syllables": [
+"bu",
+"ku"
+]
+},
+{
+"word": "bus",
+"core": "bus",
+"schwa": "bus",
+"syllables": [
+"bus"
+]
+},
+{
+"word": "buyung",
+"core": "bujuŋ",
+"schwa": "buyung",
+"syllables": [
+"bu",
+"yung"
+]
+},
+{
+"word": "campurkan",
+"core": "tʃampurkan",
+"schwa": "campurkan",
+"syllables": [
+"cam",
+"pur",
+"kan"
+]
+},
+{
+"word": "cegeh",
+"core": "tʃegeh",
+"schwa": "cegeh",
+"syllables": [
+"ce",
+"geh"
+]
+},
+{
+"word": "celupkan",
+"core": "tʃelupkan",
+"schwa": "celupkan",
+"syllables": [
+"ce",
+"lup",
+"kan"
+]
+},
+{
+"word": "cengtri",
+"core": "tʃeŋtri",
+"schwa": "cengtri",
+"syllables": [
+"cen",
+"gtri"
+]
+},
+{
+"word": "cerah",
+"core": "tʃərah",
+"schwa": "cərah",
+"syllables": [
+"ce",
+"rah"
+]
+},
+{
+"word": "curang",
+"core": "tʃuraŋ",
+"schwa": "curang",
+"syllables": [
+"cu",
+"rang"
+]
+},
+{
+"word": "curi",
+"core": "tʃuri",
+"schwa": "curi",
+"syllables": [
+"cu",
+"ri"
+]
+},
+{
+"word": "daerah",
+"core": "daerah",
+"schwa": "daerah",
+"syllables": [
+"da",
+"e",
+"rah"
+]
+},
+{
+"word": "darurat",
+"core": "darurat",
+"schwa": "darurat",
+"syllables": [
+"da",
+"ru",
+"rat"
+]
+},
+{
+"word": "datang",
+"core": "dataŋ",
+"schwa": "datang",
+"syllables": [
+"dat",
+"ang"
+]
+},
+{
+"word": "dayung",
+"core": "dajuŋ",
+"schwa": "dayung",
+"syllables": [
+"da",
+"yung"
+]
+},
+{
+"word": "dederuk",
+"core": "dədəruʔ",
+"schwa": "dədəruk",
+"syllables": [
+"de",
+"de",
+"ruk"
+]
+},
+{
+"word": "deduktif",
+"core": "deduʔtif",
+"schwa": "deduktif",
+"syllables": [
+"de",
+"duk",
+"tif"
+]
+},
+{
+"word": "degenerasi",
+"core": "degenərasi",
+"schwa": "degenərasi",
+"syllables": [
+"de",
+"ge",
+"ne",
+"ra",
+"si"
+]
+},
+{
+"word": "dekapitasi",
+"core": "dekapitasi",
+"schwa": "dekapitasi",
+"syllables": [
+"de",
+"ka",
+"pi",
+"ta",
+"si"
+]
+},
+{
+"word": "denah",
+"core": "denah",
+"schwa": "denah",
+"syllables": [
+"de",
+"nah"
+]
+},
+{
+"word": "dengan",
+"core": "dəŋan",
+"schwa": "dəngan",
+"syllables": [
+"den",
+"gan"
+]
+},
+{
+"word": "dentikel",
+"core": "dentikel",
+"schwa": "dentikel",
+"syllables": [
+"den",
+"ti",
+"kel"
+]
+},
+{
+"word": "determinan",
+"core": "determinan",
+"schwa": "determinan",
+"syllables": [
+"de",
+"ter",
+"min",
+"an"
+]
+},
+{
+"word": "deuteranopia",
+"core": "deutəranopia",
+"schwa": "deutəranopia",
+"syllables": [
+"de",
+"u",
+"te",
+"ra",
+"no",
+"pi",
+"a"
+]
+},
+{
+"word": "deviasi",
+"core": "defiasi",
+"schwa": "deviasi",
+"syllables": [
+"de",
+"vi",
+"a",
+"si"
+]
+},
+{
+"word": "dia",
+"core": "dia",
+"schwa": "dia",
+"syllables": [
+"di",
+"a"
+]
+},
+{
+"word": "dialektika",
+"core": "dialeʔtika",
+"schwa": "dialektika",
+"syllables": [
+"di",
+"a",
+"lek",
+"ti",
+"ka"
+]
+},
+{
+"word": "diangkat",
+"core": "diaŋkat",
+"schwa": "diangkat",
+"syllables": [
+"di",
+"an",
+"gkat"
+]
+},
+{
+"word": "dicetak",
+"core": "ditʃetaʔ",
+"schwa": "dicetak",
+"syllables": [
+"di",
+"ce",
+"tak"
+]
+},
+{
+"word": "didapat",
+"core": "didapat",
+"schwa": "didapat",
+"syllables": [
+"di",
+"da",
+"pat"
+]
+},
+{
+"word": "didapatkan",
+"core": "didapatkan",
+"schwa": "didapatkan",
+"syllables": [
+"di",
+"da",
+"pat",
+"kan"
+]
+},
+{
+"word": "didestruksikan",
+"core": "didestruʔsikan",
+"schwa": "didestruksikan",
+"syllables": [
+"di",
+"des",
+"truk",
+"si",
+"kan"
+]
+},
+{
+"word": "diertikan",
+"core": "diərtikan",
+"schwa": "diərtikan",
+"syllables": [
+"di",
+"er",
+"ti",
+"kan"
+]
+},
+{
+"word": "digunakan",
+"core": "digunakan",
+"schwa": "digunakan",
+"syllables": [
+"di",
+"gu",
+"na",
+"kan"
+]
+},
+{
+"word": "dijunjung",
+"core": "didʒundʒuŋ",
+"schwa": "dijunjung",
+"syllables": [
+"di",
+"jun",
+"jung"
+]
+},
+{
+"word": "dikebaskan",
+"core": "dikəbaskan",
+"schwa": "dikəbaskan",
+"syllables": [
+"di",
+"ke",
+"bas",
+"kan"
+]
+},
+{
+"word": "dipatuhi",
+"core": "dipatuhi",
+"schwa": "dipatuhi",
+"syllables": [
+"di",
+"pa",
+"tu",
+"hi"
+]
+},
+{
+"word": "dipercayakan",
+"core": "dipərtʃajakan",
+"schwa": "dipərcayakan",
+"syllables": [
+"di",
+"per",
+"ca",
+"ya",
+"kan"
+]
+},
+{
+"word": "direkonstruksi",
+"core": "direkonstruʔsi",
+"schwa": "direkonstruksi",
+"syllables": [
+"di",
+"re",
+"kon",
+"struk",
+"si"
+]
+},
+{
+"word": "disedot",
+"core": "disədot",
+"schwa": "disədot",
+"syllables": [
+"di",
+"se",
+"dot"
+]
+},
+{
+"word": "diskret",
+"core": "diskret",
+"schwa": "diskret",
+"syllables": [
+"dis",
+"kret"
+]
+},
+{
+"word": "diskusi",
+"core": "diskusi",
+"schwa": "diskusi",
+"syllables": [
+"dis",
+"ku",
+"si"
+]
+},
+{
+"word": "disorientasi",
+"core": "disorientasi",
+"schwa": "disorientasi",
+"syllables": [
+"di",
+"so",
+"ri",
+"en",
+"ta",
+"si"
+]
+},
+{
+"word": "ditepikan",
+"core": "ditəpikan",
+"schwa": "ditəpikan",
+"syllables": [
+"di",
+"te",
+"pi",
+"kan"
+]
+},
+{
+"word": "diteriaki",
+"core": "ditəriaki",
+"schwa": "ditəriaki",
+"syllables": [
+"di",
+"te",
+"ri",
+"a",
+"ki"
+]
+},
+{
+"word": "dogmatisme",
+"core": "dogmatismə",
+"schwa": "dogmatismə",
+"syllables": [
+"dog",
+"ma",
+"tis",
+"me"
+]
+},
+{
+"word": "dok",
+"core": "doʔ",
+"schwa": "dok",
+"syllables": [
+"dok"
+]
+},
+{
+"word": "donat",
+"core": "donat",
+"schwa": "donat",
+"syllables": [
+"do",
+"nat"
+]
+},
+{
+"word": "dorong",
+"core": "doroŋ",
+"schwa": "dorong",
+"syllables": [
+"do",
+"rong"
+]
+},
+{
+"word": "duane",
+"core": "duanə",
+"schwa": "duanə",
+"syllables": [
+"du",
+"a",
+"ne"
+]
+},
+{
+"word": "duren",
+"core": "duren",
+"schwa": "duren",
+"syllables": [
+"du",
+"ren"
+]
+},
+{
+"word": "efektor",
+"core": "efeʔtor",
+"schwa": "efektor",
+"syllables": [
+"e",
+"fek",
+"tor"
+]
+},
+{
+"word": "ekofasisme",
+"core": "ekofasismə",
+"schwa": "ekofasismə",
+"syllables": [
+"e",
+"ko",
+"fa",
+"sis",
+"me"
+]
+},
+{
+"word": "eksitotoksisitas",
+"core": "eʔsitotoʔsisitas",
+"schwa": "eksitotoksisitas",
+"syllables": [
+"ek",
+"si",
+"to",
+"tok",
+"si",
+"si",
+"tas"
+]
+},
+{
+"word": "eksperimenter",
+"core": "eʔsperimenter",
+"schwa": "eksperimenter",
+"syllables": [
+"eks",
+"pe",
+"ri",
+"men",
+"ter"
+]
+},
+{
+"word": "elektrostatis",
+"core": "eleʔtrostatis",
+"schwa": "elektrostatis",
+"syllables": [
+"e",
+"lek",
+"tro",
+"sta",
+"tis"
+]
+},
+{
+"word": "emeritus",
+"core": "emeritus",
+"schwa": "emeritus",
+"syllables": [
+"e",
+"me",
+"ri",
+"tus"
+]
+},
+{
+"word": "empangan",
+"core": "əmpaŋan",
+"schwa": "əmpangan",
+"syllables": [
+"em",
+"pan",
+"gan"
+]
+},
+{
+"word": "enumeratif",
+"core": "enumeratif",
+"schwa": "enumeratif",
+"syllables": [
+"e",
+"nu",
+"me",
+"ra",
+"tif"
+]
+},
+{
+"word": "epidemiologis",
+"core": "epidəmiologis",
+"schwa": "epidəmiologis",
+"syllables": [
+"e",
+"pi",
+"de",
+"mi",
+"o",
+"lo",
+"gis"
+]
+},
+{
+"word": "episkop",
+"core": "episkop",
+"schwa": "episkop",
+"syllables": [
+"e",
+"pis",
+"kop"
+]
+},
+{
+"word": "estetika",
+"core": "estetika",
+"schwa": "estetika",
+"syllables": [
+"es",
+"te",
+"ti",
+"ka"
+]
+},
+{
+"word": "evaporasi",
+"core": "efaporasi",
+"schwa": "evaporasi",
+"syllables": [
+"e",
+"va",
+"po",
+"ra",
+"si"
+]
+},
+{
+"word": "fertilisasi",
+"core": "fertilisasi",
+"schwa": "fertilisasi",
+"syllables": [
+"fer",
+"ti",
+"li",
+"sa",
+"si"
+]
+},
+{
+"word": "fistel",
+"core": "fistel",
+"schwa": "fistel",
+"syllables": [
+"fis",
+"tel"
+]
+},
+{
+"word": "folder",
+"core": "foldər",
+"schwa": "foldər",
+"syllables": [
+"fol",
+"der"
+]
+},
+{
+"word": "fotorespirasi",
+"core": "fotorespirasi",
+"schwa": "fotorespirasi",
+"syllables": [
+"fo",
+"to",
+"res",
+"pi",
+"ra",
+"si"
+]
+},
+{
+"word": "frase",
+"core": "frasə",
+"schwa": "frasə",
+"syllables": [
+"fra",
+"se"
+]
+},
+{
+"word": "frater",
+"core": "fratər",
+"schwa": "fratər",
+"syllables": [
+"fra",
+"ter"
+]
+},
+{
+"word": "gambar",
+"core": "gambar",
+"schwa": "gambar",
+"syllables": [
+"gam",
+"bar"
+]
+},
+{
+"word": "gelora",
+"core": "gəlora",
+"schwa": "gəlora",
+"syllables": [
+"ge",
+"lo",
+"ra"
+]
+},
+{
+"word": "geoarkeologi",
+"core": "geoarkeologi",
+"schwa": "geoarkeologi",
+"syllables": [
+"ge",
+"o",
+"ar",
+"ke",
+"o",
+"lo",
+"gi"
+]
+},
+{
+"word": "getah",
+"core": "gətah",
+"schwa": "gətah",
+"syllables": [
+"ge",
+"tah"
+]
+},
+{
+"word": "gonore",
+"core": "gonore",
+"schwa": "gonore",
+"syllables": [
+"go",
+"no",
+"re"
+]
+},
+{
+"word": "gopek",
+"core": "gopeʔ",
+"schwa": "gopek",
+"syllables": [
+"go",
+"pek"
+]
+},
+{
+"word": "grafena",
+"core": "grafena",
+"schwa": "grafena",
+"syllables": [
+"gra",
+"fe",
+"na"
+]
+},
+{
+"word": "hadirin",
+"core": "hadirin",
+"schwa": "hadirin",
+"syllables": [
+"ha",
+"di",
+"rin"
+]
+},
+{
+"word": "halusinasi",
+"core": "halusinasi",
+"schwa": "halusinasi",
+"syllables": [
+"ha",
+"lu",
+"si",
+"na",
+"si"
+]
+},
+{
+"word": "hamba",
+"core": "hamba",
+"schwa": "hamba",
+"syllables": [
+"ham",
+"ba"
+]
+},
+{
+"word": "heksagon",
+"core": "heʔsagon",
+"schwa": "heksagon",
+"syllables": [
+"hek",
+"sa",
+"gon"
+]
+},
+{
+"word": "hereditas",
+"core": "hereditas",
+"schwa": "hereditas",
+"syllables": [
+"he",
+"re",
+"di",
+"tas"
+]
+},
+{
+"word": "hering",
+"core": "heriŋ",
+"schwa": "hering",
+"syllables": [
+"he",
+"ring"
+]
+},
+{
+"word": "hitam",
+"core": "hitam",
+"schwa": "hitam",
+"syllables": [
+"hit",
+"am"
+]
+},
+{
+"word": "hopyes",
+"core": "hopjəs",
+"schwa": "hopyəs",
+"syllables": [
+"hop",
+"yes"
+]
+},
+{
+"word": "hujan",
+"core": "hudʒan",
+"schwa": "hujan",
+"syllables": [
+"hu",
+"jan"
+]
+},
+{
+"word": "idiotipe",
+"core": "idiotipə",
+"schwa": "idiotipə",
+"syllables": [
+"i",
+"di",
+"o",
+"ti",
+"pe"
+]
+},
+{
+"word": "indah",
+"core": "indah",
+"schwa": "indah",
+"syllables": [
+"in",
+"dah"
+]
+},
+{
+"word": "instrumentasi",
+"core": "instrumentasi",
+"schwa": "instrumentasi",
+"syllables": [
+"in",
+"stru",
+"men",
+"ta",
+"si"
+]
+},
+{
+"word": "inteligensia",
+"core": "inteligensia",
+"schwa": "inteligensia",
+"syllables": [
+"in",
+"te",
+"li",
+"gen",
+"si",
+"a"
+]
+},
+{
+"word": "interpelan",
+"core": "intərpelan",
+"schwa": "intərpelan",
+"syllables": [
+"in",
+"ter",
+"pe",
+"lan"
+]
+},
+{
+"word": "interviu",
+"core": "intərfiu",
+"schwa": "intərviu",
+"syllables": [
+"in",
+"ter",
+"vi",
+"u"
+]
+},
+{
+"word": "istri",
+"core": "istri",
+"schwa": "istri",
+"syllables": [
+"is",
+"tri"
+]
+},
+{
+"word": "jari",
+"core": "dʒari",
+"schwa": "jari",
+"syllables": [
+"ja",
+"ri"
+]
+},
+{
+"word": "jas",
+"core": "dʒas",
+"schwa": "jas",
+"syllables": [
+"jas"
+]
+},
+{
+"word": "jatuh",
+"core": "dʒatuh",
+"schwa": "jatuh",
+"syllables": [
+"ja",
+"tuh"
+]
+},
+{
+"word": "jelutung",
+"core": "dʒəlutuŋ",
+"schwa": "jəlutung",
+"syllables": [
+"je",
+"lu",
+"tung"
+]
+},
+{
+"word": "jumbrek",
+"core": "dʒumbrəʔ",
+"schwa": "jumbrək",
+"syllables": [
+"jum",
+"brek"
+]
+},
+{
+"word": "jus",
+"core": "dʒus",
+"schwa": "jus",
+"syllables": [
+"jus"
+]
+},
+{
+"word": "kaca",
+"core": "katʃa",
+"schwa": "kaca",
+"syllables": [
+"ka",
+"ca"
+]
+},
+{
+"word": "kaliber",
+"core": "kalibər",
+"schwa": "kalibər",
+"syllables": [
+"ka",
+"li",
+"ber"
+]
+},
+{
+"word": "kancing",
+"core": "kantʃiŋ",
+"schwa": "kancing",
+"syllables": [
+"kan",
+"cing"
+]
+},
+{
+"word": "kapak",
+"core": "kapaʔ",
+"schwa": "kapak",
+"syllables": [
+"ka",
+"pak"
+]
+},
+{
+"word": "karier",
+"core": "karier",
+"schwa": "karier",
+"syllables": [
+"ka",
+"ri",
+"er"
+]
+},
+{
+"word": "karpet",
+"core": "karpet",
+"schwa": "karpet",
+"syllables": [
+"kar",
+"pet"
+]
+},
+{
+"word": "kartu",
+"core": "kartu",
+"schwa": "kartu",
+"syllables": [
+"kar",
+"tu"
+]
+},
+{
+"word": "kas",
+"core": "kas",
+"schwa": "kas",
+"syllables": [
+"kas"
+]
+},
+{
+"word": "kasar",
+"core": "kasar",
+"schwa": "kasar",
+"syllables": [
+"ka",
+"sar"
+]
+},
+{
+"word": "kastanye",
+"core": "kastaɲə",
+"schwa": "kastanyə",
+"syllables": [
+"kas",
+"tan",
+"ye"
+]
+},
+{
+"word": "katabolisme",
+"core": "katabolismə",
+"schwa": "katabolismə",
+"syllables": [
+"ka",
+"ta",
+"bo",
+"lis",
+"me"
+]
+},
+{
+"word": "katanya",
+"core": "kataɲa",
+"schwa": "katanya",
+"syllables": [
+"ka",
+"tan",
+"ya"
+]
+},
+{
+"word": "keamanan",
+"core": "kəamanan",
+"schwa": "kəamanan",
+"syllables": [
+"ke",
+"a",
+"ma",
+"nan"
+]
+},
+{
+"word": "keanggotaan",
+"core": "kəaŋgotaan",
+"schwa": "kəanggotaan",
+"syllables": [
+"ke",
+"an",
+"ggo",
+"ta",
+"an"
+]
+},
+{
+"word": "kebahagiaan",
+"core": "kəbahagiaan",
+"schwa": "kəbahagiaan",
+"syllables": [
+"ke",
+"ba",
+"ha",
+"gi",
+"a",
+"an"
+]
+},
+{
+"word": "kebangkitan",
+"core": "kəbaŋkitan",
+"schwa": "kəbangkitan",
+"syllables": [
+"ke",
+"ban",
+"gki",
+"tan"
+]
+},
+{
+"word": "kebelet",
+"core": "kəbələt",
+"schwa": "kəbələt",
+"syllables": [
+"ke",
+"be",
+"let"
+]
+},
+{
+"word": "kece",
+"core": "ketʃe",
+"schwa": "kece",
+"syllables": [
+"ke",
+"ce"
+]
+},
+{
+"word": "kecil",
+"core": "kətʃil",
+"schwa": "kəcil",
+"syllables": [
+"ke",
+"cil"
+]
+},
+{
+"word": "kedaerahan",
+"core": "kədaerahan",
+"schwa": "kədaerahan",
+"syllables": [
+"ke",
+"da",
+"e",
+"rah",
+"an"
+]
+},
+{
+"word": "kedondong",
+"core": "kədondoŋ",
+"schwa": "kədondong",
+"syllables": [
+"ke",
+"don",
+"dong"
+]
+},
+{
+"word": "keindraan",
+"core": "kəindraan",
+"schwa": "kəindraan",
+"syllables": [
+"ke",
+"in",
+"dra",
+"an"
+]
+},
+{
+"word": "kelabang",
+"core": "kəlabaŋ",
+"schwa": "kəlabang",
+"syllables": [
+"ke",
+"la",
+"bang"
+]
+},
+{
+"word": "kelompok",
+"core": "kəlompoʔ",
+"schwa": "kəlompok",
+"syllables": [
+"ke",
+"lom",
+"pok"
+]
+},
+{
+"word": "keluarkan",
+"core": "kəluarkan",
+"schwa": "kəluarkan",
+"syllables": [
+"ke",
+"lu",
+"ar",
+"kan"
+]
+},
+{
+"word": "kelukis",
+"core": "kəlukis",
+"schwa": "kəlukis",
+"syllables": [
+"ke",
+"lu",
+"kis"
+]
+},
+{
+"word": "kemampulabaan",
+"core": "kəmampulabaan",
+"schwa": "kəmampulabaan",
+"syllables": [
+"ke",
+"mam",
+"pu",
+"la",
+"ba",
+"an"
+]
+},
+{
+"word": "kemarahan",
+"core": "kəmarahan",
+"schwa": "kəmarahan",
+"syllables": [
+"ke",
+"ma",
+"rah",
+"an"
+]
+},
+{
+"word": "kembang",
+"core": "kəmbaŋ",
+"schwa": "kəmbang",
+"syllables": [
+"kem",
+"bang"
+]
+},
+{
+"word": "kemuning",
+"core": "kəmuniŋ",
+"schwa": "kəmuning",
+"syllables": [
+"ke",
+"mu",
+"ning"
+]
+},
+{
+"word": "kepah",
+"core": "kəpah",
+"schwa": "kəpah",
+"syllables": [
+"ke",
+"pah"
+]
+},
+{
+"word": "kepar",
+"core": "kəpar",
+"schwa": "kəpar",
+"syllables": [
+"ke",
+"par"
+]
+},
+{
+"word": "kepercayaan",
+"core": "kəpərtʃajaan",
+"schwa": "kəpərcayaan",
+"syllables": [
+"ke",
+"per",
+"ca",
+"ya",
+"an"
+]
+},
+{
+"word": "keramat",
+"core": "kəramat",
+"schwa": "kəramat",
+"syllables": [
+"ke",
+"ra",
+"mat"
+]
+},
+{
+"word": "kerani",
+"core": "kərani",
+"schwa": "kərani",
+"syllables": [
+"ke",
+"ra",
+"ni"
+]
+},
+{
+"word": "keren",
+"core": "kəren",
+"schwa": "kəren",
+"syllables": [
+"ke",
+"ren"
+]
+},
+{
+"word": "kerjakan",
+"core": "kərdʒakan",
+"schwa": "kərjakan",
+"syllables": [
+"ker",
+"ja",
+"kan"
+]
+},
+{
+"word": "kerning",
+"core": "kərniŋ",
+"schwa": "kərning",
+"syllables": [
+"ker",
+"ning"
+]
+},
+{
+"word": "kerupuk",
+"core": "kərupuʔ",
+"schwa": "kərupuk",
+"syllables": [
+"ke",
+"ru",
+"puk"
+]
+},
+{
+"word": "kerusakan",
+"core": "kərusakan",
+"schwa": "kərusakan",
+"syllables": [
+"ke",
+"ru",
+"sak",
+"an"
+]
+},
+{
+"word": "kesempatan",
+"core": "kəsəmpatan",
+"schwa": "kəsəmpatan",
+"syllables": [
+"ke",
+"sem",
+"pat",
+"an"
+]
+},
+{
+"word": "keseragaman",
+"core": "kəsəragaman",
+"schwa": "kəsəragaman",
+"syllables": [
+"ke",
+"se",
+"ra",
+"ga",
+"man"
+]
+},
+{
+"word": "kesetiakawanan",
+"core": "kəsətiakawanan",
+"schwa": "kəsətiakawanan",
+"syllables": [
+"ke",
+"se",
+"ti",
+"a",
+"ka",
+"wan",
+"an"
+]
+},
+{
+"word": "ketengkas",
+"core": "kəteŋkas",
+"schwa": "kətengkas",
+"syllables": [
+"ke",
+"ten",
+"gkas"
+]
+},
+{
+"word": "ketercapaian",
+"core": "kətərtʃapaɪan",
+"schwa": "kətərcapaian",
+"syllables": [
+"ke",
+"ter",
+"ca",
+"pai",
+"an"
+]
+},
+{
+"word": "ketur",
+"core": "kətur",
+"schwa": "kətur",
+"syllables": [
+"ke",
+"tur"
+]
+},
+{
+"word": "kewaspadaan",
+"core": "kəwaspadaan",
+"schwa": "kəwaspadaan",
+"syllables": [
+"ke",
+"was",
+"pa",
+"da",
+"an"
+]
+},
+{
+"word": "kinase",
+"core": "kinasə",
+"schwa": "kinasə",
+"syllables": [
+"ki",
+"na",
+"se"
+]
+},
+{
+"word": "kini",
+"core": "kini",
+"schwa": "kini",
+"syllables": [
+"ki",
+"ni"
+]
+},
+{
+"word": "kodeks",
+"core": "kodeʔs",
+"schwa": "kodeks",
+"syllables": [
+"ko",
+"deks"
+]
+},
+{
+"word": "kolateral",
+"core": "kolatəral",
+"schwa": "kolatəral",
+"syllables": [
+"ko",
+"la",
+"te",
+"ral"
+]
+},
+{
+"word": "kolombeng",
+"core": "kolombeŋ",
+"schwa": "kolombeng",
+"syllables": [
+"ko",
+"lom",
+"beng"
+]
+},
+{
+"word": "kombinasi",
+"core": "kombinasi",
+"schwa": "kombinasi",
+"syllables": [
+"kom",
+"bi",
+"na",
+"si"
+]
+},
+{
+"word": "komite",
+"core": "komite",
+"schwa": "komite",
+"syllables": [
+"ko",
+"mi",
+"te"
+]
+},
+{
+"word": "konkret",
+"core": "konkret",
+"schwa": "konkret",
+"syllables": [
+"kon",
+"kret"
+]
+},
+{
+"word": "kontrasepsi",
+"core": "kontrasepsi",
+"schwa": "kontrasepsi",
+"syllables": [
+"kon",
+"tra",
+"sep",
+"si"
+]
+},
+{
+"word": "kontraterorisme",
+"core": "kontraterorismə",
+"schwa": "kontraterorismə",
+"syllables": [
+"kon",
+"tra",
+"te",
+"ro",
+"ris",
+"me"
+]
+},
+{
+"word": "korek",
+"core": "koreʔ",
+"schwa": "korek",
+"syllables": [
+"ko",
+"rek"
+]
+},
+{
+"word": "kotoran",
+"core": "kotoran",
+"schwa": "kotoran",
+"syllables": [
+"ko",
+"to",
+"ran"
+]
+},
+{
+"word": "kredo",
+"core": "kredo",
+"schwa": "kredo",
+"syllables": [
+"kre",
+"do"
+]
+},
+{
+"word": "kuinternion",
+"core": "kuinternion",
+"schwa": "kuinternion",
+"syllables": [
+"ku",
+"in",
+"ter",
+"ni",
+"on"
+]
+},
+{
+"word": "kuliah",
+"core": "kuliah",
+"schwa": "kuliah",
+"syllables": [
+"ku",
+"li",
+"ah"
+]
+},
+{
+"word": "kupel",
+"core": "kupəl",
+"schwa": "kupəl",
+"syllables": [
+"ku",
+"pel"
+]
+},
+{
+"word": "lapis",
+"core": "lapis",
+"schwa": "lapis",
+"syllables": [
+"la",
+"pis"
+]
+},
+{
+"word": "laut",
+"core": "laut",
+"schwa": "laut",
+"syllables": [
+"la",
+"ut"
+]
+},
+{
+"word": "ledak",
+"core": "lədaʔ",
+"schwa": "lədak",
+"syllables": [
+"le",
+"dak"
+]
+},
+{
+"word": "lekong",
+"core": "lekoŋ",
+"schwa": "lekong",
+"syllables": [
+"le",
+"kong"
+]
+},
+{
+"word": "lektor",
+"core": "leʔtor",
+"schwa": "lektor",
+"syllables": [
+"lek",
+"tor"
+]
+},
+{
+"word": "lelaki",
+"core": "ləlaki",
+"schwa": "ləlaki",
+"syllables": [
+"le",
+"la",
+"ki"
+]
+},
+{
+"word": "lencang",
+"core": "ləntʃaŋ",
+"schwa": "ləncang",
+"syllables": [
+"len",
+"cang"
+]
+},
+{
+"word": "lensa",
+"core": "lensa",
+"schwa": "lensa",
+"syllables": [
+"len",
+"sa"
+]
+},
+{
+"word": "letup",
+"core": "lətup",
+"schwa": "lətup",
+"syllables": [
+"le",
+"tup"
+]
+},
+{
+"word": "level",
+"core": "lefəl",
+"schwa": "levəl",
+"syllables": [
+"le",
+"vel"
+]
+},
+{
+"word": "leveransir",
+"core": "lefəransir",
+"schwa": "levəransir",
+"syllables": [
+"le",
+"ve",
+"ran",
+"sir"
+]
+},
+{
+"word": "ligase",
+"core": "ligasə",
+"schwa": "ligasə",
+"syllables": [
+"li",
+"ga",
+"se"
+]
+},
+{
+"word": "lima",
+"core": "lima",
+"schwa": "lima",
+"syllables": [
+"li",
+"ma"
+]
+},
+{
+"word": "limfe",
+"core": "limfe",
+"schwa": "limfe",
+"syllables": [
+"lim",
+"fe"
+]
+},
+{
+"word": "linen",
+"core": "linən",
+"schwa": "linən",
+"syllables": [
+"li",
+"nen"
+]
+},
+{
+"word": "lintah",
+"core": "lintah",
+"schwa": "lintah",
+"syllables": [
+"lin",
+"tah"
+]
+},
+{
+"word": "loncat",
+"core": "lontʃat",
+"schwa": "loncat",
+"syllables": [
+"lon",
+"cat"
+]
+},
+{
+"word": "macam",
+"core": "matʃam",
+"schwa": "macam",
+"syllables": [
+"ma",
+"cam"
+]
+},
+{
+"word": "magersari",
+"core": "magərsari",
+"schwa": "magərsari",
+"syllables": [
+"ma",
+"ger",
+"sa",
+"ri"
+]
+},
+{
+"word": "mahasewa",
+"core": "mahasewa",
+"schwa": "mahasewa",
+"syllables": [
+"ma",
+"ha",
+"se",
+"wa"
+]
+},
+{
+"word": "majemuk",
+"core": "madʒəmuʔ",
+"schwa": "majəmuk",
+"syllables": [
+"ma",
+"je",
+"muk"
+]
+},
+{
+"word": "malabentuk",
+"core": "malabentuʔ",
+"schwa": "malabentuk",
+"syllables": [
+"ma",
+"la",
+"ben",
+"tuk"
+]
+},
+{
+"word": "mandi",
+"core": "mandi",
+"schwa": "mandi",
+"syllables": [
+"man",
+"di"
+]
+},
+{
+"word": "manga",
+"core": "maŋa",
+"schwa": "manga",
+"syllables": [
+"man",
+"ga"
+]
+},
+{
+"word": "mare",
+"core": "marə",
+"schwa": "marə",
+"syllables": [
+"ma",
+"re"
+]
+},
+{
+"word": "marmer",
+"core": "marmər",
+"schwa": "marmər",
+"syllables": [
+"mar",
+"mer"
+]
+},
+{
+"word": "maut",
+"core": "maut",
+"schwa": "maut",
+"syllables": [
+"ma",
+"ut"
+]
+},
+{
+"word": "melayu",
+"core": "məlaju",
+"schwa": "məlayu",
+"syllables": [
+"me",
+"la",
+"yu"
+]
+},
+{
+"word": "melengkung",
+"core": "mələŋkuŋ",
+"schwa": "mələngkung",
+"syllables": [
+"me",
+"len",
+"gkung"
+]
+},
+{
+"word": "mellotron",
+"core": "mellotron",
+"schwa": "mellotron",
+"syllables": [
+"mel",
+"lo",
+"tron"
+]
+},
+{
+"word": "melompat",
+"core": "məlompat",
+"schwa": "məlompat",
+"syllables": [
+"me",
+"lom",
+"pat"
+]
+},
+{
+"word": "memanfaatkan",
+"core": "məmanfaatkan",
+"schwa": "məmanfaatkan",
+"syllables": [
+"me",
+"man",
+"fa",
+"at",
+"kan"
+]
+},
+{
+"word": "memanipulasi",
+"core": "məmanipulasi",
+"schwa": "məmanipulasi",
+"syllables": [
+"me",
+"ma",
+"ni",
+"pu",
+"la",
+"si"
+]
+},
+{
+"word": "memanjat",
+"core": "məmandʒat",
+"schwa": "məmanjat",
+"syllables": [
+"me",
+"man",
+"jat"
+]
+},
+{
+"word": "mematikan",
+"core": "məmatikan",
+"schwa": "məmatikan",
+"syllables": [
+"me",
+"ma",
+"ti",
+"kan"
+]
+},
+{
+"word": "mematuhi",
+"core": "məmatuhi",
+"schwa": "məmatuhi",
+"syllables": [
+"me",
+"ma",
+"tuh",
+"i"
+]
+},
+{
+"word": "membalapkan",
+"core": "məmbalapkan",
+"schwa": "məmbalapkan",
+"syllables": [
+"mem",
+"ba",
+"lap",
+"kan"
+]
+},
+{
+"word": "membantingkan",
+"core": "məmbantiŋkan",
+"schwa": "məmbantingkan",
+"syllables": [
+"mem",
+"ban",
+"tin",
+"gkan"
+]
+},
+{
+"word": "membubuh",
+"core": "məmbubuh",
+"schwa": "məmbubuh",
+"syllables": [
+"mem",
+"bu",
+"buh"
+]
+},
+{
+"word": "membulat",
+"core": "məmbulat",
+"schwa": "məmbulat",
+"syllables": [
+"mem",
+"bu",
+"lat"
+]
+},
+{
+"word": "memerintah",
+"core": "məmərintah",
+"schwa": "məmərintah",
+"syllables": [
+"me",
+"me",
+"rin",
+"tah"
+]
+},
+{
+"word": "memperbaiki",
+"core": "məmpərbaiki",
+"schwa": "məmpərbaiki",
+"syllables": [
+"mem",
+"per",
+"ba",
+"ik",
+"i"
+]
+},
+{
+"word": "memperingin",
+"core": "məmpəriŋin",
+"schwa": "məmpəringin",
+"syllables": [
+"mem",
+"per",
+"in",
+"gin"
+]
+},
+{
+"word": "memperistri",
+"core": "məmpəristri",
+"schwa": "məmpəristri",
+"syllables": [
+"mem",
+"per",
+"is",
+"tri"
+]
+},
+{
+"word": "mempermurah",
+"core": "məmpərmurah",
+"schwa": "məmpərmurah",
+"syllables": [
+"mem",
+"per",
+"mu",
+"rah"
+]
+},
+{
+"word": "mempersingkat",
+"core": "məmpərsiŋkat",
+"schwa": "məmpərsingkat",
+"syllables": [
+"mem",
+"per",
+"sin",
+"gkat"
+]
+},
+{
+"word": "memproduksi",
+"core": "məmproduʔsi",
+"schwa": "məmproduksi",
+"syllables": [
+"mem",
+"pro",
+"duk",
+"si"
+]
+},
+{
+"word": "memupuri",
+"core": "məmupuri",
+"schwa": "məmupuri",
+"syllables": [
+"me",
+"mu",
+"pu",
+"ri"
+]
+},
+{
+"word": "mencampur",
+"core": "məntʃampur",
+"schwa": "məncampur",
+"syllables": [
+"men",
+"cam",
+"pur"
+]
+},
+{
+"word": "menderu",
+"core": "məndəru",
+"schwa": "məndəru",
+"syllables": [
+"men",
+"de",
+"ru"
+]
+},
+{
+"word": "menepik",
+"core": "mənəpiʔ",
+"schwa": "mənəpik",
+"syllables": [
+"me",
+"ne",
+"pik"
+]
+},
+{
+"word": "mengawaskan",
+"core": "məŋawaskan",
+"schwa": "məngawaskan",
+"syllables": [
+"men",
+"ga",
+"was",
+"kan"
+]
+},
+{
+"word": "mengejek",
+"core": "məŋedʒeʔ",
+"schwa": "məngejek",
+"syllables": [
+"men",
+"ge",
+"jek"
+]
+},
+{
+"word": "menggabung",
+"core": "məŋgabuŋ",
+"schwa": "mənggabung",
+"syllables": [
+"men",
+"gga",
+"bung"
+]
+},
+{
+"word": "menggunakan",
+"core": "məŋgunakan",
+"schwa": "mənggunakan",
+"syllables": [
+"meng",
+"gu",
+"na",
+"kan"
+]
+},
+{
+"word": "menghadirkan",
+"core": "məŋhadirkan",
+"schwa": "mənghadirkan",
+"syllables": [
+"men",
+"gha",
+"dir",
+"kan"
+]
+},
+{
+"word": "menghina",
+"core": "məŋhina",
+"schwa": "mənghina",
+"syllables": [
+"men",
+"ghi",
+"na"
+]
+},
+{
+"word": "menginang",
+"core": "məŋinaŋ",
+"schwa": "mənginang",
+"syllables": [
+"men",
+"gin",
+"ang"
+]
+},
+{
+"word": "menginstruksi",
+"core": "məŋinstruʔsi",
+"schwa": "mənginstruksi",
+"syllables": [
+"men",
+"gin",
+"struk",
+"si"
+]
+},
+{
+"word": "menilai",
+"core": "mənilaɪ",
+"schwa": "mənilai",
+"syllables": [
+"me",
+"ni",
+"lai"
+]
+},
+{
+"word": "menjunjungkan",
+"core": "məndʒundʒuŋkan",
+"schwa": "mənjunjungkan",
+"syllables": [
+"men",
+"jun",
+"jun",
+"gkan"
+]
+},
+{
+"word": "menonaktifkan",
+"core": "mənonaʔtifkan",
+"schwa": "mənonaktifkan",
+"syllables": [
+"me",
+"no",
+"nak",
+"tif",
+"kan"
+]
+},
+{
+"word": "menorah",
+"core": "mənorah",
+"schwa": "mənorah",
+"syllables": [
+"me",
+"no",
+"rah"
+]
+},
+{
+"word": "menormalkan",
+"core": "mənormalkan",
+"schwa": "mənormalkan",
+"syllables": [
+"me",
+"nor",
+"mal",
+"kan"
+]
+},
+{
+"word": "mental",
+"core": "mental",
+"schwa": "mental",
+"syllables": [
+"men",
+"tal"
+]
+},
+{
+"word": "mentol",
+"core": "mentol",
+"schwa": "mentol",
+"syllables": [
+"men",
+"tol"
+]
+},
+{
+"word": "mentransplantasikan",
+"core": "məntransplantasikan",
+"schwa": "məntransplantasikan",
+"syllables": [
+"men",
+"trans",
+"plan",
+"ta",
+"si",
+"kan"
+]
+},
+{
+"word": "menumpang",
+"core": "mənumpaŋ",
+"schwa": "mənumpang",
+"syllables": [
+"me",
+"num",
+"pang"
+]
+},
+{
+"word": "menyadari",
+"core": "məɲadari",
+"schwa": "mənyadari",
+"syllables": [
+"men",
+"ya",
+"da",
+"ri"
+]
+},
+{
+"word": "menyampuli",
+"core": "məɲampuli",
+"schwa": "mənyampuli",
+"syllables": [
+"men",
+"yam",
+"pul",
+"i"
+]
+},
+{
+"word": "menyangrai",
+"core": "məɲaŋraɪ",
+"schwa": "mənyangrai",
+"syllables": [
+"men",
+"yan",
+"grai"
+]
+},
+{
+"word": "menyebabkan",
+"core": "məɲəbabkan",
+"schwa": "mənyəbabkan",
+"syllables": [
+"men",
+"ye",
+"bab",
+"kan"
+]
+},
+{
+"word": "menyita",
+"core": "məɲita",
+"schwa": "mənyita",
+"syllables": [
+"men",
+"yi",
+"ta"
+]
+},
+{
+"word": "menyurati",
+"core": "məɲurati",
+"schwa": "mənyurati",
+"syllables": [
+"men",
+"yu",
+"ra",
+"ti"
+]
+},
+{
+"word": "meong",
+"core": "meoŋ",
+"schwa": "meong",
+"syllables": [
+"me",
+"ong"
+]
+},
+{
+"word": "meraja",
+"core": "məradʒa",
+"schwa": "məraja",
+"syllables": [
+"me",
+"ra",
+"ja"
+]
+},
+{
+"word": "merakyat",
+"core": "məraʔjat",
+"schwa": "mərakyat",
+"syllables": [
+"me",
+"rak",
+"yat"
+]
+},
+{
+"word": "merawat",
+"core": "mərawat",
+"schwa": "mərawat",
+"syllables": [
+"me",
+"ra",
+"wat"
+]
+},
+{
+"word": "merebahkan",
+"core": "mərəbahkan",
+"schwa": "mərəbahkan",
+"syllables": [
+"me",
+"re",
+"bah",
+"kan"
+]
+},
+{
+"word": "merosot",
+"core": "mərosot",
+"schwa": "mərosot",
+"syllables": [
+"me",
+"ro",
+"sot"
+]
+},
+{
+"word": "merpati",
+"core": "mərpati",
+"schwa": "mərpati",
+"syllables": [
+"mer",
+"pa",
+"ti"
+]
+},
+{
+"word": "mewacanakan",
+"core": "məwatʃanakan",
+"schwa": "məwacanakan",
+"syllables": [
+"me",
+"wa",
+"ca",
+"na",
+"kan"
+]
+},
+{
+"word": "minggu",
+"core": "miŋgu",
+"schwa": "minggu",
+"syllables": [
+"min",
+"ggu"
+]
+},
+{
+"word": "motor",
+"core": "motor",
+"schwa": "motor",
+"syllables": [
+"mo",
+"tor"
+]
+},
+{
+"word": "mundur",
+"core": "mundur",
+"schwa": "mundur",
+"syllables": [
+"mun",
+"dur"
+]
+},
+{
+"word": "mutagen",
+"core": "mutagen",
+"schwa": "mutagen",
+"syllables": [
+"mu",
+"ta",
+"gen"
+]
+},
+{
+"word": "nasreng",
+"core": "nasreŋ",
+"schwa": "nasreng",
+"syllables": [
+"nas",
+"reng"
+]
+},
+{
+"word": "negoisasi",
+"core": "negoisasi",
+"schwa": "negoisasi",
+"syllables": [
+"ne",
+"go",
+"i",
+"sa",
+"si"
+]
+},
+{
+"word": "ngejalanin",
+"core": "ŋedʒalanin",
+"schwa": "ngejalanin",
+"syllables": [
+"nge",
+"ja",
+"la",
+"nin"
+]
+},
+{
+"word": "ngejanjiin",
+"core": "ŋedʒandʒiin",
+"schwa": "ngejanjiin",
+"syllables": [
+"nge",
+"jan",
+"ji",
+"in"
+]
+},
+{
+"word": "ngelariin",
+"core": "ŋelariin",
+"schwa": "ngelariin",
+"syllables": [
+"nge",
+"la",
+"ri",
+"in"
+]
+},
+{
+"word": "nukleotida",
+"core": "nukleotida",
+"schwa": "nukleotida",
+"syllables": [
+"nuk",
+"le",
+"o",
+"ti",
+"da"
+]
+},
+{
+"word": "nyamuk",
+"core": "ɲamuʔ",
+"schwa": "nyamuk",
+"syllables": [
+"nya",
+"muk"
+]
+},
+{
+"word": "nyonya",
+"core": "ɲoɲa",
+"schwa": "nyonya",
+"syllables": [
+"nyon",
+"ya"
+]
+},
+{
+"word": "omakase",
+"core": "omakase",
+"schwa": "omakase",
+"syllables": [
+"o",
+"ma",
+"ka",
+"se"
+]
+},
+{
+"word": "openingan",
+"core": "openiŋan",
+"schwa": "openingan",
+"syllables": [
+"o",
+"pe",
+"nin",
+"gan"
+]
+},
+{
+"word": "operator",
+"core": "opərator",
+"schwa": "opərator",
+"syllables": [
+"o",
+"pe",
+"ra",
+"tor"
+]
+},
+{
+"word": "otak",
+"core": "otaʔ",
+"schwa": "otak",
+"syllables": [
+"o",
+"tak"
+]
+},
+{
+"word": "otonomisme",
+"core": "otonomismə",
+"schwa": "otonomismə",
+"syllables": [
+"o",
+"to",
+"no",
+"mis",
+"me"
+]
+},
+{
+"word": "otoritas",
+"core": "otoritas",
+"schwa": "otoritas",
+"syllables": [
+"o",
+"to",
+"ri",
+"tas"
+]
+},
+{
+"word": "padat",
+"core": "padat",
+"schwa": "padat",
+"syllables": [
+"pa",
+"dat"
+]
+},
+{
+"word": "pakai",
+"core": "pakaɪ",
+"schwa": "pakai",
+"syllables": [
+"pa",
+"kai"
+]
+},
+{
+"word": "pamit",
+"core": "pamit",
+"schwa": "pamit",
+"syllables": [
+"pa",
+"mit"
+]
+},
+{
+"word": "pandan",
+"core": "pandan",
+"schwa": "pandan",
+"syllables": [
+"pan",
+"dan"
+]
+},
+{
+"word": "panteon",
+"core": "panteon",
+"schwa": "panteon",
+"syllables": [
+"pan",
+"te",
+"on"
+]
+},
+{
+"word": "paras",
+"core": "paras",
+"schwa": "paras",
+"syllables": [
+"pa",
+"ras"
+]
+},
+{
+"word": "pedayung",
+"core": "pədajuŋ",
+"schwa": "pədayung",
+"syllables": [
+"pe",
+"da",
+"yung"
+]
+},
+{
+"word": "pegang",
+"core": "pəgaŋ",
+"schwa": "pəgang",
+"syllables": [
+"pe",
+"gang"
+]
+},
+{
+"word": "peguam",
+"core": "pəguam",
+"schwa": "pəguam",
+"syllables": [
+"pe",
+"gu",
+"am"
+]
+},
+{
+"word": "pelanjib",
+"core": "pəlandʒib",
+"schwa": "pəlanjib",
+"syllables": [
+"pe",
+"lan",
+"jib"
+]
+},
+{
+"word": "peleburan",
+"core": "pələburan",
+"schwa": "pələburan",
+"syllables": [
+"pe",
+"le",
+"bur",
+"an"
+]
+},
+{
+"word": "pelepas",
+"core": "pələpas",
+"schwa": "pələpas",
+"syllables": [
+"pe",
+"le",
+"pas"
+]
+},
+{
+"word": "pelik",
+"core": "pəliʔ",
+"schwa": "pəlik",
+"syllables": [
+"pe",
+"lik"
+]
+},
+{
+"word": "pelipis",
+"core": "pəlipis",
+"schwa": "pəlipis",
+"syllables": [
+"pe",
+"li",
+"pis"
+]
+},
+{
+"word": "peloncat",
+"core": "pəlontʃat",
+"schwa": "pəloncat",
+"syllables": [
+"pe",
+"lon",
+"cat"
+]
+},
+{
+"word": "peluncur",
+"core": "pəluntʃur",
+"schwa": "pəluncur",
+"syllables": [
+"pe",
+"lun",
+"cur"
+]
+},
+{
+"word": "pemahaman",
+"core": "pəmahaman",
+"schwa": "pəmahaman",
+"syllables": [
+"pe",
+"mah",
+"am",
+"an"
+]
+},
+{
+"word": "pemarah",
+"core": "pəmarah",
+"schwa": "pəmarah",
+"syllables": [
+"pe",
+"ma",
+"rah"
+]
+},
+{
+"word": "pembalasan",
+"core": "pəmbalasan",
+"schwa": "pəmbalasan",
+"syllables": [
+"pem",
+"ba",
+"las",
+"an"
+]
+},
+{
+"word": "pemberdayaan",
+"core": "pəmbərdajaan",
+"schwa": "pəmbərdayaan",
+"syllables": [
+"pem",
+"ber",
+"da",
+"ya",
+"an"
+]
+},
+{
+"word": "pemburuan",
+"core": "pəmburuan",
+"schwa": "pəmburuan",
+"syllables": [
+"pem",
+"bu",
+"ru",
+"an"
+]
+},
+{
+"word": "penangkal",
+"core": "pənaŋkal",
+"schwa": "pənangkal",
+"syllables": [
+"pe",
+"nan",
+"gkal"
+]
+},
+{
+"word": "pencangkok",
+"core": "pəntʃaŋkoʔ",
+"schwa": "pəncangkok",
+"syllables": [
+"pen",
+"can",
+"gkok"
+]
+},
+{
+"word": "pendalaman",
+"core": "pəndalaman",
+"schwa": "pəndalaman",
+"syllables": [
+"pen",
+"da",
+"la",
+"man"
+]
+},
+{
+"word": "pendapat",
+"core": "pəndapat",
+"schwa": "pəndapat",
+"syllables": [
+"pen",
+"da",
+"pat"
+]
+},
+{
+"word": "penendangan",
+"core": "pənendaŋan",
+"schwa": "pənendangan",
+"syllables": [
+"pe",
+"nen",
+"dan",
+"gan"
+]
+},
+{
+"word": "penerima",
+"core": "pənərima",
+"schwa": "pənərima",
+"syllables": [
+"pe",
+"ne",
+"ri",
+"ma"
+]
+},
+{
+"word": "pengalah",
+"core": "pəŋalah",
+"schwa": "pəngalah",
+"syllables": [
+"pen",
+"ga",
+"lah"
+]
+},
+{
+"word": "pengatur",
+"core": "pəŋatur",
+"schwa": "pəngatur",
+"syllables": [
+"pen",
+"ga",
+"tur"
+]
+},
+{
+"word": "pengawasan",
+"core": "pəŋawasan",
+"schwa": "pəngawasan",
+"syllables": [
+"pen",
+"ga",
+"was",
+"an"
+]
+},
+{
+"word": "pengganti",
+"core": "pəŋganti",
+"schwa": "pəngganti",
+"syllables": [
+"peng",
+"gan",
+"ti"
+]
+},
+{
+"word": "pengkeritik",
+"core": "pəŋkəritiʔ",
+"schwa": "pəngkəritik",
+"syllables": [
+"pen",
+"gke",
+"ri",
+"tik"
+]
+},
+{
+"word": "pengklasteran",
+"core": "pəŋklastəran",
+"schwa": "pəngklastəran",
+"syllables": [
+"pen",
+"gklas",
+"ter",
+"an"
+]
+},
+{
+"word": "penguatan",
+"core": "pəŋuatan",
+"schwa": "pənguatan",
+"syllables": [
+"pen",
+"gu",
+"at",
+"an"
+]
+},
+{
+"word": "penguin",
+"core": "pəŋuin",
+"schwa": "pənguin",
+"syllables": [
+"pen",
+"gu",
+"in"
+]
+},
+{
+"word": "penguji",
+"core": "pəŋudʒi",
+"schwa": "pənguji",
+"syllables": [
+"pen",
+"gu",
+"ji"
+]
+},
+{
+"word": "pengunduhan",
+"core": "pəŋunduhan",
+"schwa": "pəngunduhan",
+"syllables": [
+"pen",
+"gun",
+"duh",
+"an"
+]
+},
+{
+"word": "pensil",
+"core": "pensil",
+"schwa": "pensil",
+"syllables": [
+"pen",
+"sil"
+]
+},
+{
+"word": "pentol",
+"core": "pəntol",
+"schwa": "pəntol",
+"syllables": [
+"pen",
+"tol"
+]
+},
+{
+"word": "penurut",
+"core": "pənurut",
+"schwa": "pənurut",
+"syllables": [
+"pe",
+"nu",
+"rut"
+]
+},
+{
+"word": "penyelenggara",
+"core": "pəɲələŋgara",
+"schwa": "pənyələnggara",
+"syllables": [
+"pen",
+"ye",
+"len",
+"gga",
+"ra"
+]
+},
+{
+"word": "penyerut",
+"core": "pəɲerut",
+"schwa": "pənyerut",
+"syllables": [
+"pen",
+"ye",
+"rut"
+]
+},
+{
+"word": "penyetruman",
+"core": "pəɲətruman",
+"schwa": "pənyətruman",
+"syllables": [
+"pen",
+"ye",
+"tru",
+"man"
+]
+},
+{
+"word": "penyiangan",
+"core": "pəɲiaŋan",
+"schwa": "pənyiangan",
+"syllables": [
+"pen",
+"yi",
+"an",
+"gan"
+]
+},
+{
+"word": "penyuara",
+"core": "pəɲuara",
+"schwa": "pənyuara",
+"syllables": [
+"pen",
+"yu",
+"a",
+"ra"
+]
+},
+{
+"word": "perairan",
+"core": "pərairan",
+"schwa": "pərairan",
+"syllables": [
+"pe",
+"ra",
+"ir",
+"an"
+]
+},
+{
+"word": "perak",
+"core": "peraʔ",
+"schwa": "perak",
+"syllables": [
+"pe",
+"rak"
+]
+},
+{
+"word": "perbagus",
+"core": "pərbagus",
+"schwa": "pərbagus",
+"syllables": [
+"per",
+"ba",
+"gus"
+]
+},
+{
+"word": "perbekel",
+"core": "pərbəkəl",
+"schwa": "pərbəkəl",
+"syllables": [
+"per",
+"be",
+"kel"
+]
+},
+{
+"word": "percepatan",
+"core": "pərtʃəpatan",
+"schwa": "pərcəpatan",
+"syllables": [
+"per",
+"ce",
+"pat",
+"an"
+]
+},
+{
+"word": "pergi",
+"core": "pərgi",
+"schwa": "pərgi",
+"syllables": [
+"per",
+"gi"
+]
+},
+{
+"word": "perikanan",
+"core": "pərikanan",
+"schwa": "pərikanan",
+"syllables": [
+"pe",
+"ri",
+"kan",
+"an"
+]
+},
+{
+"word": "perjan",
+"core": "pərdʒan",
+"schwa": "pərjan",
+"syllables": [
+"per",
+"jan"
+]
+},
+{
+"word": "perkotaan",
+"core": "pərkotaan",
+"schwa": "pərkotaan",
+"syllables": [
+"per",
+"ko",
+"ta",
+"an"
+]
+},
+{
+"word": "perlihatkan",
+"core": "pərlihatkan",
+"schwa": "pərlihatkan",
+"syllables": [
+"per",
+"li",
+"hat",
+"kan"
+]
+},
+{
+"word": "permanen",
+"core": "pərmanen",
+"schwa": "pərmanen",
+"syllables": [
+"per",
+"ma",
+"nen"
+]
+},
+{
+"word": "perus",
+"core": "pərus",
+"schwa": "pərus",
+"syllables": [
+"pe",
+"rus"
+]
+},
+{
+"word": "perwara",
+"core": "pərwara",
+"schwa": "pərwara",
+"syllables": [
+"per",
+"wa",
+"ra"
+]
+},
+{
+"word": "pesantren",
+"core": "pəsantren",
+"schwa": "pəsantren",
+"syllables": [
+"pe",
+"san",
+"tren"
+]
+},
+{
+"word": "pesuruh",
+"core": "pəsuruh",
+"schwa": "pəsuruh",
+"syllables": [
+"pe",
+"su",
+"ruh"
+]
+},
+{
+"word": "pikirkan",
+"core": "pikirkan",
+"schwa": "pikirkan",
+"syllables": [
+"pi",
+"kir",
+"kan"
+]
+},
+{
+"word": "pilot",
+"core": "pilot",
+"schwa": "pilot",
+"syllables": [
+"pi",
+"lot"
+]
+},
+{
+"word": "pirenofor",
+"core": "pirenofor",
+"schwa": "pirenofor",
+"syllables": [
+"pi",
+"re",
+"no",
+"for"
+]
+},
+{
+"word": "piring",
+"core": "piriŋ",
+"schwa": "piring",
+"syllables": [
+"pi",
+"ring"
+]
+},
+{
+"word": "pleksus",
+"core": "pleʔsus",
+"schwa": "pleksus",
+"syllables": [
+"plek",
+"sus"
+]
+},
+{
+"word": "polimer",
+"core": "polimer",
+"schwa": "polimer",
+"syllables": [
+"po",
+"li",
+"mer"
+]
+},
+{
+"word": "ponsel",
+"core": "ponsel",
+"schwa": "ponsel",
+"syllables": [
+"pon",
+"sel"
+]
+},
+{
+"word": "potehi",
+"core": "potehi",
+"schwa": "potehi",
+"syllables": [
+"po",
+"te",
+"hi"
+]
+},
+{
+"word": "prakiraan",
+"core": "prakiraan",
+"schwa": "prakiraan",
+"syllables": [
+"pra",
+"ki",
+"ra",
+"an"
+]
+},
+{
+"word": "prehistori",
+"core": "prehistori",
+"schwa": "prehistori",
+"syllables": [
+"pre",
+"his",
+"to",
+"ri"
+]
+},
+{
+"word": "preparasi",
+"core": "preparasi",
+"schwa": "preparasi",
+"syllables": [
+"pre",
+"pa",
+"ra",
+"si"
+]
+},
+{
+"word": "presbiter",
+"core": "presbiter",
+"schwa": "presbiter",
+"syllables": [
+"pres",
+"bi",
+"ter"
+]
+},
+{
+"word": "primer",
+"core": "primer",
+"schwa": "primer",
+"syllables": [
+"pri",
+"mer"
+]
+},
+{
+"word": "privasi",
+"core": "prifasi",
+"schwa": "privasi",
+"syllables": [
+"pri",
+"va",
+"si"
+]
+},
+{
+"word": "pun",
+"core": "pun",
+"schwa": "pun",
+"syllables": [
+"pun"
+]
+},
+{
+"word": "putih",
+"core": "putih",
+"schwa": "putih",
+"syllables": [
+"pu",
+"tih"
+]
+},
+{
+"word": "racun",
+"core": "ratʃun",
+"schwa": "racun",
+"syllables": [
+"ra",
+"cun"
+]
+},
+{
+"word": "ramalan",
+"core": "ramalan",
+"schwa": "ramalan",
+"syllables": [
+"ra",
+"ma",
+"lan"
+]
+},
+{
+"word": "rapi",
+"core": "rapi",
+"schwa": "rapi",
+"syllables": [
+"ra",
+"pi"
+]
+},
+{
+"word": "rebahkan",
+"core": "rebahkan",
+"schwa": "rebahkan",
+"syllables": [
+"re",
+"bah",
+"kan"
+]
+},
+{
+"word": "regu",
+"core": "rəgu",
+"schwa": "rəgu",
+"syllables": [
+"re",
+"gu"
+]
+},
+{
+"word": "rekonstruksi",
+"core": "rekonstruʔsi",
+"schwa": "rekonstruksi",
+"syllables": [
+"re",
+"kon",
+"struk",
+"si"
+]
+},
+{
+"word": "relawan",
+"core": "relawan",
+"schwa": "relawan",
+"syllables": [
+"re",
+"la",
+"wan"
+]
+},
+{
+"word": "remiten",
+"core": "remiten",
+"schwa": "remiten",
+"syllables": [
+"re",
+"mi",
+"ten"
+]
+},
+{
+"word": "rengiat",
+"core": "rəŋiat",
+"schwa": "rəngiat",
+"syllables": [
+"ren",
+"gi",
+"at"
+]
+},
+{
+"word": "reorganisasi",
+"core": "reorganisasi",
+"schwa": "reorganisasi",
+"syllables": [
+"re",
+"or",
+"ga",
+"ni",
+"sa",
+"si"
+]
+},
+{
+"word": "repelan",
+"core": "repelan",
+"schwa": "repelan",
+"syllables": [
+"re",
+"pel",
+"an"
+]
+},
+{
+"word": "resistensi",
+"core": "resistensi",
+"schwa": "resistensi",
+"syllables": [
+"re",
+"sis",
+"ten",
+"si"
+]
+},
+{
+"word": "restoran",
+"core": "restoran",
+"schwa": "restoran",
+"syllables": [
+"res",
+"to",
+"ran"
+]
+},
+{
+"word": "retas",
+"core": "rətas",
+"schwa": "rətas",
+"syllables": [
+"re",
+"tas"
+]
+},
+{
+"word": "ribut",
+"core": "ribut",
+"schwa": "ribut",
+"syllables": [
+"ri",
+"but"
+]
+},
+{
+"word": "ritase",
+"core": "ritasə",
+"schwa": "ritasə",
+"syllables": [
+"ri",
+"ta",
+"se"
+]
+},
+{
+"word": "rusak",
+"core": "rusaʔ",
+"schwa": "rusak",
+"syllables": [
+"ru",
+"sak"
+]
+},
+{
+"word": "sagu",
+"core": "sagu",
+"schwa": "sagu",
+"syllables": [
+"sa",
+"gu"
+]
+},
+{
+"word": "sakelar",
+"core": "sakəlar",
+"schwa": "sakəlar",
+"syllables": [
+"sa",
+"ke",
+"lar"
+]
+},
+{
+"word": "salah",
+"core": "salah",
+"schwa": "salah",
+"syllables": [
+"sa",
+"lah"
+]
+},
+{
+"word": "salam",
+"core": "salam",
+"schwa": "salam",
+"syllables": [
+"sal",
+"am"
+]
+},
+{
+"word": "santai",
+"core": "santaɪ",
+"schwa": "santai",
+"syllables": [
+"san",
+"tai"
+]
+},
+{
+"word": "sebelumnya",
+"core": "səbəlumɲa",
+"schwa": "səbəlumnya",
+"syllables": [
+"se",
+"bel",
+"um",
+"nya"
+]
+},
+{
+"word": "sebenarnya",
+"core": "səbənarɲa",
+"schwa": "səbənarnya",
+"syllables": [
+"se",
+"be",
+"narn",
+"ya"
+]
+},
+{
+"word": "sedari",
+"core": "sədari",
+"schwa": "sədari",
+"syllables": [
+"se",
+"da",
+"ri"
+]
+},
+{
+"word": "sedelinggam",
+"core": "sədəliŋgam",
+"schwa": "sədəlinggam",
+"syllables": [
+"se",
+"del",
+"in",
+"ggam"
+]
+},
+{
+"word": "seekor",
+"core": "səekor",
+"schwa": "səekor",
+"syllables": [
+"se",
+"e",
+"kor"
+]
+},
+{
+"word": "segala",
+"core": "səgala",
+"schwa": "səgala",
+"syllables": [
+"se",
+"ga",
+"la"
+]
+},
+{
+"word": "sekjen",
+"core": "seʔdʒen",
+"schwa": "sekjen",
+"syllables": [
+"sek",
+"jen"
+]
+},
+{
+"word": "sekolah",
+"core": "səkolah",
+"schwa": "səkolah",
+"syllables": [
+"se",
+"ko",
+"lah"
+]
+},
+{
+"word": "selamat",
+"core": "səlamat",
+"schwa": "səlamat",
+"syllables": [
+"se",
+"la",
+"mat"
+]
+},
+{
+"word": "selari",
+"core": "səlari",
+"schwa": "səlari",
+"syllables": [
+"se",
+"la",
+"ri"
+]
+},
+{
+"word": "sengkek",
+"core": "səŋkeʔ",
+"schwa": "səngkek",
+"syllables": [
+"sen",
+"gkek"
+]
+},
+{
+"word": "senjang",
+"core": "sendʒaŋ",
+"schwa": "senjang",
+"syllables": [
+"sen",
+"jang"
+]
+},
+{
+"word": "sepatu",
+"core": "səpatu",
+"schwa": "səpatu",
+"syllables": [
+"se",
+"pa",
+"tu"
+]
+},
+{
+"word": "sepit",
+"core": "səpit",
+"schwa": "səpit",
+"syllables": [
+"se",
+"pit"
+]
+},
+{
+"word": "serbak",
+"core": "sərbaʔ",
+"schwa": "sərbak",
+"syllables": [
+"ser",
+"bak"
+]
+},
+{
+"word": "setumpak",
+"core": "sətumpaʔ",
+"schwa": "sətumpak",
+"syllables": [
+"se",
+"tum",
+"pak"
+]
+},
+{
+"word": "singa",
+"core": "siŋa",
+"schwa": "singa",
+"syllables": [
+"sin",
+"ga"
+]
+},
+{
+"word": "singkat",
+"core": "siŋkat",
+"schwa": "singkat",
+"syllables": [
+"sin",
+"gkat"
+]
+},
+{
+"word": "sistole",
+"core": "sistole",
+"schwa": "sistole",
+"syllables": [
+"sis",
+"to",
+"le"
+]
+},
+{
+"word": "skep",
+"core": "skep",
+"schwa": "skep",
+"syllables": [
+"skep"
+]
+},
+{
+"word": "skor",
+"core": "skor",
+"schwa": "skor",
+"syllables": [
+"skor"
+]
+},
+{
+"word": "skuter",
+"core": "skutər",
+"schwa": "skutər",
+"syllables": [
+"sku",
+"ter"
+]
+},
+{
+"word": "slang",
+"core": "slaŋ",
+"schwa": "slang",
+"syllables": [
+"slang"
+]
+},
+{
+"word": "status",
+"core": "status",
+"schwa": "status",
+"syllables": [
+"sta",
+"tus"
+]
+},
+{
+"word": "stensil",
+"core": "stensil",
+"schwa": "stensil",
+"syllables": [
+"sten",
+"sil"
+]
+},
+{
+"word": "steroid",
+"core": "steroid",
+"schwa": "steroid",
+"syllables": [
+"ste",
+"ro",
+"id"
+]
+},
+{
+"word": "sumpit",
+"core": "sumpit",
+"schwa": "sumpit",
+"syllables": [
+"sum",
+"pit"
+]
+},
+{
+"word": "supletoar",
+"core": "suplətoar",
+"schwa": "suplətoar",
+"syllables": [
+"sup",
+"le",
+"to",
+"ar"
+]
+},
+{
+"word": "suporter",
+"core": "suportər",
+"schwa": "suportər",
+"syllables": [
+"su",
+"por",
+"ter"
+]
+},
+{
+"word": "tabelaris",
+"core": "tabəlaris",
+"schwa": "tabəlaris",
+"syllables": [
+"ta",
+"be",
+"la",
+"ris"
+]
+},
+{
+"word": "tahanan",
+"core": "tahanan",
+"schwa": "tahanan",
+"syllables": [
+"tah",
+"an",
+"an"
+]
+},
+{
+"word": "tamar",
+"core": "tamar",
+"schwa": "tamar",
+"syllables": [
+"ta",
+"mar"
+]
+},
+{
+"word": "tambahkan",
+"core": "tambahkan",
+"schwa": "tambahkan",
+"syllables": [
+"tam",
+"bah",
+"kan"
+]
+},
+{
+"word": "teknologi",
+"core": "teʔnologi",
+"schwa": "teknologi",
+"syllables": [
+"tek",
+"no",
+"lo",
+"gi"
+]
+},
+{
+"word": "teliti",
+"core": "təliti",
+"schwa": "təliti",
+"syllables": [
+"te",
+"li",
+"ti"
+]
+},
+{
+"word": "tembok",
+"core": "temboʔ",
+"schwa": "tembok",
+"syllables": [
+"tem",
+"bok"
+]
+},
+{
+"word": "tempuling",
+"core": "təmpuliŋ",
+"schwa": "təmpuling",
+"syllables": [
+"tem",
+"pu",
+"ling"
+]
+},
+{
+"word": "tenang",
+"core": "tənaŋ",
+"schwa": "tənang",
+"syllables": [
+"ten",
+"ang"
+]
+},
+{
+"word": "tenggeran",
+"core": "teŋgeran",
+"schwa": "tenggeran",
+"syllables": [
+"ten",
+"gge",
+"ran"
+]
+},
+{
+"word": "teorema",
+"core": "təorema",
+"schwa": "təorema",
+"syllables": [
+"te",
+"o",
+"re",
+"ma"
+]
+},
+{
+"word": "tepuk",
+"core": "təpuʔ",
+"schwa": "təpuk",
+"syllables": [
+"te",
+"puk"
+]
+},
+{
+"word": "tepus",
+"core": "təpus",
+"schwa": "təpus",
+"syllables": [
+"te",
+"pus"
+]
+},
+{
+"word": "terantai",
+"core": "tərantaɪ",
+"schwa": "tərantai",
+"syllables": [
+"ter",
+"an",
+"tai"
+]
+},
+{
+"word": "terapi",
+"core": "terapi",
+"schwa": "terapi",
+"syllables": [
+"te",
+"ra",
+"pi"
+]
+},
+{
+"word": "teratologi",
+"core": "təratologi",
+"schwa": "təratologi",
+"syllables": [
+"te",
+"ra",
+"to",
+"lo",
+"gi"
+]
+},
+{
+"word": "terbang",
+"core": "tərbaŋ",
+"schwa": "tərbang",
+"syllables": [
+"ter",
+"bang"
+]
+},
+{
+"word": "terbayang",
+"core": "tərbajaŋ",
+"schwa": "tərbayang",
+"syllables": [
+"ter",
+"ba",
+"yang"
+]
+},
+{
+"word": "teringinkan",
+"core": "təriŋinkan",
+"schwa": "təringinkan",
+"syllables": [
+"ter",
+"in",
+"gin",
+"kan"
+]
+},
+{
+"word": "teriyaki",
+"core": "tərijaki",
+"schwa": "təriyaki",
+"syllables": [
+"te",
+"ri",
+"ya",
+"ki"
+]
+},
+{
+"word": "terkelat",
+"core": "tərkəlat",
+"schwa": "tərkəlat",
+"syllables": [
+"ter",
+"ke",
+"lat"
+]
+},
+{
+"word": "terkonstruksi",
+"core": "tərkonstruʔsi",
+"schwa": "tərkonstruksi",
+"syllables": [
+"ter",
+"kon",
+"struk",
+"si"
+]
+},
+{
+"word": "terkutuk",
+"core": "tərkutuʔ",
+"schwa": "tərkutuk",
+"syllables": [
+"ter",
+"ku",
+"tuk"
+]
+},
+{
+"word": "termotivasi",
+"core": "tərmotifasi",
+"schwa": "tərmotivasi",
+"syllables": [
+"ter",
+"mo",
+"ti",
+"va",
+"si"
+]
+},
+{
+"word": "ternak",
+"core": "tərnaʔ",
+"schwa": "tərnak",
+"syllables": [
+"ter",
+"nak"
+]
+},
+{
+"word": "terpetik",
+"core": "tərpətiʔ",
+"schwa": "tərpətik",
+"syllables": [
+"ter",
+"pe",
+"tik"
+]
+},
+{
+"word": "tersalin",
+"core": "tərsalin",
+"schwa": "tərsalin",
+"syllables": [
+"ter",
+"sa",
+"lin"
+]
+},
+{
+"word": "tersangkut",
+"core": "tərsaŋkut",
+"schwa": "tərsangkut",
+"syllables": [
+"ter",
+"san",
+"gkut"
+]
+},
+{
+"word": "tersebut",
+"core": "tərsəbut",
+"schwa": "tərsəbut",
+"syllables": [
+"ter",
+"se",
+"but"
+]
+},
+{
+"word": "tertinggal",
+"core": "tərtiŋgal",
+"schwa": "tərtinggal",
+"syllables": [
+"ter",
+"tin",
+"ggal"
+]
+},
+{
+"word": "tewaskan",
+"core": "təwaskan",
+"schwa": "təwaskan",
+"syllables": [
+"te",
+"was",
+"kan"
+]
+},
+{
+"word": "tikus",
+"core": "tikus",
+"schwa": "tikus",
+"syllables": [
+"ti",
+"kus"
+]
+},
+{
+"word": "tinggal",
+"core": "tiŋgal",
+"schwa": "tinggal",
+"syllables": [
+"tin",
+"ggal"
+]
+},
+{
+"word": "tinggallah",
+"core": "tiŋgallah",
+"schwa": "tinggallah",
+"syllables": [
+"tin",
+"ggal",
+"lah"
+]
+},
+{
+"word": "tisu",
+"core": "tisu",
+"schwa": "tisu",
+"syllables": [
+"ti",
+"su"
+]
+},
+{
+"word": "titik",
+"core": "titiʔ",
+"schwa": "titik",
+"syllables": [
+"ti",
+"tik"
+]
+},
+{
+"word": "traktir",
+"core": "traʔtir",
+"schwa": "traktir",
+"syllables": [
+"trak",
+"tir"
+]
+},
+{
+"word": "transien",
+"core": "transien",
+"schwa": "transien",
+"syllables": [
+"tran",
+"si",
+"en"
+]
+},
+{
+"word": "trayek",
+"core": "trajeʔ",
+"schwa": "trayek",
+"syllables": [
+"tra",
+"yek"
+]
+},
+{
+"word": "tsarisme",
+"core": "tsarismə",
+"schwa": "tsarismə",
+"syllables": [
+"tsa",
+"ris",
+"me"
+]
+},
+{
+"word": "tuli",
+"core": "tuli",
+"schwa": "tuli",
+"syllables": [
+"tu",
+"li"
+]
+},
+{
+"word": "tumbang",
+"core": "tumbaŋ",
+"schwa": "tumbang",
+"syllables": [
+"tum",
+"bang"
+]
+},
+{
+"word": "tungsten",
+"core": "tuŋsten",
+"schwa": "tungsten",
+"syllables": [
+"tun",
+"gsten"
+]
+},
+{
+"word": "turne",
+"core": "turne",
+"schwa": "turne",
+"syllables": [
+"tur",
+"ne"
+]
+},
+{
+"word": "uang",
+"core": "uaŋ",
+"schwa": "uang",
+"syllables": [
+"u",
+"ang"
+]
+},
+{
+"word": "ulat",
+"core": "ulat",
+"schwa": "ulat",
+"syllables": [
+"u",
+"lat"
+]
+},
+{
+"word": "ureter",
+"core": "uretər",
+"schwa": "uretər",
+"syllables": [
+"u",
+"re",
+"ter"
+]
+},
+{
+"word": "verifikasi",
+"core": "ferifikasi",
+"schwa": "verifikasi",
+"syllables": [
+"ve",
+"ri",
+"fi",
+"ka",
+"si"
+]
+},
+{
+"word": "veteriner",
+"core": "feteriner",
+"schwa": "veteriner",
+"syllables": [
+"ve",
+"te",
+"ri",
+"ner"
+]
+},
+{
+"word": "vonis",
+"core": "fonis",
+"schwa": "vonis",
+"syllables": [
+"vo",
+"nis"
+]
+},
+{
+"word": "warteg",
+"core": "wartəg",
+"schwa": "wartəg",
+"syllables": [
+"war",
+"teg"
+]
+},
+{
+"word": "waru",
+"core": "waru",
+"schwa": "waru",
+"syllables": [
+"wa",
+"ru"
+]
+},
+{
+"word": "watak",
+"core": "wataʔ",
+"schwa": "watak",
+"syllables": [
+"wa",
+"tak"
+]
+},
+{
+"word": "wesel",
+"core": "wesəl",
+"schwa": "wesəl",
+"syllables": [
+"we",
+"sel"
+]
+},
+{
+"word": "wisata",
+"core": "wisata",
+"schwa": "wisata",
+"syllables": [
+"wi",
+"sa",
+"ta"
+]
+},
+{
+"word": "zimogen",
+"core": "zimogen",
+"schwa": "zimogen",
+"syllables": [
+"zi",
+"mo",
+"gen"
+]
+},
+{
+"word": "zonder",
+"core": "zondər",
+"schwa": "zondər",
+"syllables": [
+"zon",
+"der"
+]
+}
+],
+"sentences": [
+{
+"text": "Aku menerjemahkan kalimat ini dua kali.",
+"normalized": "Aku menerjemahkan kalimat ini dua kali.",
+"core": "aku mənərdʒəmahkan kalimat ini dua kali.",
+"core_no_colloc": "aku mənərdʒəmahkan kalimat ini dua kali.",
+"core_abbr": "aku mənərdʒəmahkan kalimat ini dua kali."
+},
+{
+"text": "Aku mendapati dompet dan karcis comuterku dicuri saat aku tertidur di kereta.",
+"normalized": "Aku mendapati dompet dan karcis comuterku dicuri saat aku tertidur di kereta.",
+"core": "aku məndapati dompet dan kartʃis tʃomuterku ditʃuri saat aku tərtidur di kəreta.",
+"core_no_colloc": "aku məndapati dompet dan kartʃis tʃomuterku ditʃuri saat aku tərtidur di kəreta.",
+"core_abbr": "aku məndapati dompet dan kartʃis tʃomuterku ditʃuri saat aku tərtidur di kəreta."
+},
+{
+"text": "Balai kota tidak jauh dari sini.",
+"normalized": "Balai kota tidak jauh dari sini.",
+"core": "balaɪ kota tidaʔ dʒauh dari sini.",
+"core_no_colloc": "balaɪ kota tidaʔ dʒauh dari sini.",
+"core_abbr": "balaɪ kota tidaʔ dʒauh dari sini."
+},
+{
+"text": "Tidak ada bunga mawar di taman.",
+"normalized": "Tidak ada bunga mawar di taman.",
+"core": "tidaʔ ada buŋa mawar di taman.",
+"core_no_colloc": "tidaʔ ada buŋa mawar di taman.",
+"core_abbr": "tidaʔ ada buŋa mawar di taman."
+},
+{
+"text": "Yin itu feminin dan yang itu maskulin.",
+"normalized": "Yin itu feminin dan yang itu maskulin.",
+"core": "jin itu feminin dan jaŋ itu maskulin.",
+"core_no_colloc": "jin itu feminin dan jaŋ itu maskulin.",
+"core_abbr": "jin itu feminin dan jaŋ itu maskulin."
+},
+{
+"text": "Lagu ini menceritakan tentang seseorang yang naik ke puncak gunung dan melihat banyak pohon cemara di sekelilingnya.",
+"normalized": "Lagu ini menceritakan tentang seseorang yang naik ke puncak gunung dan melihat banyak pohon cemara di sekelilingnya.",
+"core": "lagu ini məntʃəritakan təntaŋ səsəoraŋ jaŋ naɪʔ kə puntʃaʔ gunuŋ dan məlihat baɲaʔ pohon tʃəmara di səkəliliŋɲa.",
+"core_no_colloc": "lagu ini məntʃəritakan təntaŋ səsəoraŋ jaŋ naɪʔ kə puntʃaʔ gunuŋ dan məlihat baɲaʔ pohon tʃəmara di səkəliliŋɲa.",
+"core_abbr": "lagu ini məntʃəritakan təntaŋ səsəoraŋ jaŋ naɪʔ kə puntʃaʔ gunuŋ dan məlihat baɲaʔ pohon tʃəmara di səkəliliŋɲa."
+},
+{
+"text": "Malam hari itu gelap, jadi bahaya.",
+"normalized": "Malam hari itu gelap, jadi bahaya.",
+"core": "malam hari itu gəlap, dʒadi bahaja.",
+"core_no_colloc": "malam hari itu gəlap, dʒadi bahaja.",
+"core_abbr": "malam hari itu gəlap, dʒadi bahaja."
+},
+{
+"text": "Di mana saya bisa menaiki sebuah bus?",
+"normalized": "Di mana saya bisa menaiki sebuah bus?",
+"core": "di mana saja bisa mənaɪki səbuah bus?",
+"core_no_colloc": "di mana saja bisa mənaɪki səbuah bus?",
+"core_abbr": "di mana saja bisa mənaɪki səbuah bus?"
+},
+{
+"text": "Aku hanya berbaring di pantai dan melihat orang-orang berenang.",
+"normalized": "Aku hanya berbaring di pantai dan melihat orang-orang berenang.",
+"core": "aku haɲa bərbariŋ di pantaɪ dan məlihat oraŋ-oraŋ bərənaŋ.",
+"core_no_colloc": "aku haɲa bərbariŋ di pantaɪ dan məlihat oraŋ-oraŋ bərənaŋ.",
+"core_abbr": "aku haɲa bərbariŋ di pantaɪ dan məlihat oraŋ-oraŋ bərənaŋ."
+},
+{
+"text": "\"Mau pergi ke bioskop tidak?\" \"Ya, ayo.\"",
+"normalized": "\"Mau pergi ke bioskop tidak?\" \"Ya, ayo.\"",
+"core": "\"maʊ pərgi kə bioskop tidaʔ?\" \"ja, ajo.\"",
+"core_no_colloc": "\"maʊ pərgi kə bioskop tidaʔ?\" \"ja, ajo.\"",
+"core_abbr": "\"maʊ pərgi kə bioskop tidaʔ?\" \"ja, ajo.\""
+},
+{
+"text": "Grup itu sedang sangat aktif saat ini.",
+"normalized": "Grup itu sedang sangat aktif saat ini.",
+"core": "grup itu sədaŋ saŋat aʔtif saat ini.",
+"core_no_colloc": "grup itu sədaŋ saŋat aʔtif saat ini.",
+"core_abbr": "grup itu sədaŋ saŋat aʔtif saat ini."
+},
+{
+"text": "Pengetahuan tidak punya musuh kecuali orang yang tidak peduli.",
+"normalized": "Pengetahuan tidak punya musuh kecuali orang yang tidak peduli.",
+"core": "pəŋətahuan tidaʔ puɲa musuh kətʃuali oraŋ jaŋ tidaʔ pəduli.",
+"core_no_colloc": "pəŋətahuan tidaʔ puɲa musuh kətʃuali oraŋ jaŋ tidaʔ pəduli.",
+"core_abbr": "pəŋətahuan tidaʔ puɲa musuh kətʃuali oraŋ jaŋ tidaʔ pəduli."
+},
+{
+"text": "Mary menolak bahwa dia mencuri uangnya.",
+"normalized": "Mary menolak bahwa dia mencuri uangnya.",
+"core": "marj mənolaʔ bahwa dia məntʃuri uaŋɲa.",
+"core_no_colloc": "marj mənolaʔ bahwa dia məntʃuri uaŋɲa.",
+"core_abbr": "marj mənolaʔ bahwa dia məntʃuri uaŋɲa."
+},
+{
+"text": "Meja yang digunakan Ken itu sudah tua.",
+"normalized": "Meja yang digunakan Ken itu sudah tua.",
+"core": "medʒa jaŋ digunakan ken itu sudah tua.",
+"core_no_colloc": "medʒa jaŋ digunakan ken itu sudah tua.",
+"core_abbr": "medʒa jaŋ digunakan ken itu sudah tua."
+},
+{
+"text": "Kakek saya meninggal tiga tahun yang lalu.",
+"normalized": "Kakek saya meninggal tiga tahun yang lalu.",
+"core": "kakeʔ saja məniŋgal tiga tahun jaŋ lalu.",
+"core_no_colloc": "kakeʔ saja məniŋgal tiga tahun jaŋ lalu.",
+"core_abbr": "kakeʔ saja məniŋgal tiga tahun jaŋ lalu."
+},
+{
+"text": "Kampanyenya sukses dan dia pun terpiliih dalam pemilu.",
+"normalized": "Kampanyenya sukses dan dia pun terpiliih dalam pemilu.",
+"core": "kampaɲeɲa suʔses dan dia pun tərpiliih dalam pəmilu.",
+"core_no_colloc": "kampaɲeɲa suʔses dan dia pun tərpiliih dalam pəmilu.",
+"core_abbr": "kampaɲeɲa suʔses dan dia pun tərpiliih dalam pəmilu."
+},
+{
+"text": "Aku terbantu oleh perbaikan bug yang cepat.",
+"normalized": "Aku terbantu oleh perbaikan bug yang cepat.",
+"core": "aku tərbantu oleh pərbaikan bug jaŋ tʃəpat.",
+"core_no_colloc": "aku tərbantu oleh pərbaikan bug jaŋ tʃəpat.",
+"core_abbr": "aku tərbantu oleh pərbaikan bug jaŋ tʃəpat."
+},
+{
+"text": "Saya ingin membeli dua kilo apel.",
+"normalized": "Saya ingin membeli dua kilo apel.",
+"core": "saja iŋin məmbəli dua kilo apəl.",
+"core_no_colloc": "saja iŋin məmbəli dua kilo apəl.",
+"core_abbr": "saja iŋin məmbəli dua kilo apəl."
+},
+{
+"text": "Kita semua berbicara dengan bahasa inggris.",
+"normalized": "Kita semua berbicara dengan bahasa inggris.",
+"core": "kita səmua bərbitʃara dəŋan bahasa iŋgris.",
+"core_no_colloc": "kita səmua bərbitʃara dəŋan bahasa iŋgris.",
+"core_abbr": "kita səmua bərbitʃara dəŋan bahasa iŋgris."
+},
+{
+"text": "Bahasa Inggris adalah bahasa ibu saya.",
+"normalized": "Bahasa Inggris adalah bahasa ibu saya.",
+"core": "bahasa iŋgris adalah bahasa ibu saja.",
+"core_no_colloc": "bahasa iŋgris adalah bahasa ibu saja.",
+"core_abbr": "bahasa iŋgris adalah bahasa ibu saja."
+},
+{
+"text": "Tom tidak berpikir kalau dia akan bisa menyelesaikan tugas itu seorang diri.",
+"normalized": "Tom tidak berpikir kalau dia akan bisa menyelesaikan tugas itu seorang diri.",
+"core": "tom tidaʔ bərpikir kalaʊ dia akan bisa məɲələsaɪkan tugas itu səoraŋ diri.",
+"core_no_colloc": "tom tidaʔ bərpikir kalaʊ dia akan bisa məɲələsaɪkan tugas itu səoraŋ diri.",
+"core_abbr": "tom tidaʔ bərpikir kalaʊ dia akan bisa məɲələsaɪkan tugas itu səoraŋ diri."
+},
+{
+"text": "Supervisornya hampir tidak populer sama sekali.",
+"normalized": "Supervisornya hampir tidak populer sama sekali.",
+"core": "superfisorɲa hampir tidaʔ populer sama səkali.",
+"core_no_colloc": "superfisorɲa hampir tidaʔ populer sama səkali.",
+"core_abbr": "superfisorɲa hampir tidaʔ populer sama səkali."
+},
+{
+"text": "Dia melewati tes itu dan menjadi seorang imam",
+"normalized": "Dia melewati tes itu dan menjadi seorang imam",
+"core": "dia məlewati tes itu dan məndʒadi səoraŋ imam",
+"core_no_colloc": "dia məlewati tes itu dan məndʒadi səoraŋ imam",
+"core_abbr": "dia məlewati tes itu dan məndʒadi səoraŋ imam"
+},
+{
+"text": "Salah satu tugas utama pemerintah saat itu adalah memberantas angka buta aksara.",
+"normalized": "Salah satu tugas utama pemerintah saat itu adalah memberantas angka buta aksara.",
+"core": "salah satu tugas utama pəmərintah saat itu adalah məmbərantas aŋka buta aʔsara.",
+"core_no_colloc": "salah satu tugas utama pəmərintah saat itu adalah məmbərantas aŋka buta aʔsara.",
+"core_abbr": "salah satu tugas utama pəmərintah saat itu adalah məmbərantas aŋka buta aʔsara."
+},
+{
+"text": "Bolehkah kalau saya diskusikan dengan istri saya?",
+"normalized": "Bolehkah kalau saya diskusikan dengan istri saya?",
+"core": "bolehkah kalaʊ saja diskusikan dəŋan istri saja?",
+"core_no_colloc": "bolehkah kalaʊ saja diskusikan dəŋan istri saja?",
+"core_abbr": "bolehkah kalaʊ saja diskusikan dəŋan istri saja?"
+},
+{
+"text": "Tom tidak memiliki keinginan untuk menikahi Mary.",
+"normalized": "Tom tidak memiliki keinginan untuk menikahi Mary.",
+"core": "tom tidaʔ məmiliki kəiŋinan untuʔ mənikahi marj.",
+"core_no_colloc": "tom tidaʔ məmiliki kəiŋinan untuʔ mənikahi marj.",
+"core_abbr": "tom tidaʔ məmiliki kəiŋinan untuʔ mənikahi marj."
+},
+{
+"text": "Bila kamu tidak tahu bahwa aku seperti itu maka kamu tidak mengenalku.",
+"normalized": "Bila kamu tidak tahu bahwa aku seperti itu maka kamu tidak mengenalku.",
+"core": "bila kamu tidaʔ tahu bahwa aku səpərti itu maka kamu tidaʔ məŋenalku.",
+"core_no_colloc": "bila kamu tidaʔ tahu bahwa aku səpərti itu maka kamu tidaʔ məŋenalku.",
+"core_abbr": "bila kamu tidaʔ tahu bahwa aku səpərti itu maka kamu tidaʔ məŋenalku."
+},
+{
+"text": "\"Kenapa kamu enggak belajar bahasa Esperanto?\" \"Aku enggak tertarik sama bahasa Esperanto. Itu aja.\"",
+"normalized": "\"Kenapa kamu enggak belajar bahasa Esperanto?\" \"Aku enggak tertarik sama bahasa Esperanto. Itu aja.\"",
+"core": "\"kənapa kamu əŋgaʔ bəladʒar bahasa esperanto?\" \"aku əŋgaʔ tərtariʔ sama bahasa esperanto. itu adʒa.\"",
+"core_no_colloc": "\"kənapa kamu əŋgaʔ bəladʒar bahasa esperanto?\" \"aku əŋgaʔ tərtariʔ sama bahasa esperanto. itu adʒa.\"",
+"core_abbr": "\"kənapa kamu əŋgaʔ bəladʒar bahasa esperanto?\" \"aku əŋgaʔ tərtariʔ sama bahasa esperanto. itu adʒa.\""
+},
+{
+"text": "Dia masih tidur ketika aku menelepon.",
+"normalized": "Dia masih tidur ketika aku menelepon.",
+"core": "dia masih tidur kətika aku məneləpon.",
+"core_no_colloc": "dia masih tidur kətika aku məneləpon.",
+"core_abbr": "dia masih tidur kətika aku məneləpon."
+},
+{
+"text": "Aku tidak tahu tepatnya di mana aku dilahirkan?",
+"normalized": "Aku tidak tahu tepatnya di mana aku dilahirkan?",
+"core": "aku tidaʔ tahu təpatɲa di mana aku dilahirkan?",
+"core_no_colloc": "aku tidaʔ tahu təpatɲa di mana aku dilahirkan?",
+"core_abbr": "aku tidaʔ tahu təpatɲa di mana aku dilahirkan?"
+},
+{
+"text": "Tom tidak terbiasa dengan kehidupan kota.",
+"normalized": "Tom tidak terbiasa dengan kehidupan kota.",
+"core": "tom tidaʔ tərbiasa dəŋan kəhidupan kota.",
+"core_no_colloc": "tom tidaʔ tərbiasa dəŋan kəhidupan kota.",
+"core_abbr": "tom tidaʔ tərbiasa dəŋan kəhidupan kota."
+},
+{
+"text": "\"Baik\", kata orang itu, \"Saya tidak percaya, tetapi tidak ada salahnya berharap. Saya berharap saya tahu siapa saya.\"",
+"normalized": "\"Baik\", kata orang itu, \"Saya tidak percaya, tetapi tidak ada salahnya berharap. Saya berharap saya tahu siapa saya.\"",
+"core": "\"baɪʔ\", kata oraŋ itu, \"saja tidaʔ pərtʃaja, tətapi tidaʔ ada salahɲa bərharap. saja bərharap saja tahu siapa saja.\"",
+"core_no_colloc": "\"baɪʔ\", kata oraŋ itu, \"saja tidaʔ pərtʃaja, tətapi tidaʔ ada salahɲa bərharap. saja bərharap saja tahu siapa saja.\"",
+"core_abbr": "\"baɪʔ\", kata oraŋ itu, \"saja tidaʔ pərtʃaja, tətapi tidaʔ ada salahɲa bərharap. saja bərharap saja tahu siapa saja.\""
+},
+{
+"text": "Tom berkata dia tahu mengapa kamu tidak menang.",
+"normalized": "Tom berkata dia tahu mengapa kamu tidak menang.",
+"core": "tom bərkata dia tahu məŋapa kamu tidaʔ mənaŋ.",
+"core_no_colloc": "tom bərkata dia tahu məŋapa kamu tidaʔ mənaŋ.",
+"core_abbr": "tom bərkata dia tahu məŋapa kamu tidaʔ mənaŋ."
+},
+{
+"text": "Kita makan makaroni keju untuk makan siang.",
+"normalized": "Kita makan makaroni keju untuk makan siang.",
+"core": "kita makan makaroni kedʒu untuʔ makan siaŋ.",
+"core_no_colloc": "kita makan makaroni kedʒu untuʔ makan siaŋ.",
+"core_abbr": "kita makan makaroni kedʒu untuʔ makan siaŋ."
+},
+{
+"text": "Aku baru saja pergi ke bank.",
+"normalized": "Aku baru saja pergi ke bank.",
+"core": "aku baru sadʒa pərgi kə banʔ.",
+"core_no_colloc": "aku baru sadʒa pərgi kə banʔ.",
+"core_abbr": "aku baru sadʒa pərgi kə banʔ."
+},
+{
+"text": "Istri Anda ada di kantor Anda.",
+"normalized": "Istri Anda ada di kantor Anda.",
+"core": "istri anda ada di kantor anda.",
+"core_no_colloc": "istri anda ada di kantor anda.",
+"core_abbr": "istri anda ada di kantor anda."
+},
+{
+"text": "Tom meletakkan kartu-kartunya di atas meja.",
+"normalized": "Tom meletakkan kartu-kartunya di atas meja.",
+"core": "tom mələtaʔkan kartu-kartuɲa di atas medʒa.",
+"core_no_colloc": "tom mələtaʔkan kartu-kartuɲa di atas medʒa.",
+"core_abbr": "tom mələtaʔkan kartu-kartuɲa di atas medʒa."
+},
+{
+"text": "Saya yakin tidak ada yang perlu ditakuti.",
+"normalized": "Saya yakin tidak ada yang perlu ditakuti.",
+"core": "saja jakin tidaʔ ada jaŋ pərlu ditakuti.",
+"core_no_colloc": "saja jakin tidaʔ ada jaŋ pərlu ditakuti.",
+"core_abbr": "saja jakin tidaʔ ada jaŋ pərlu ditakuti."
+},
+{
+"text": "Bersatu kita teguh, bercerai kita runtuh.",
+"normalized": "Bersatu kita teguh, bercerai kita runtuh.",
+"core": "bərsatu kita təguh, bərtʃəraɪ kita runtuh.",
+"core_no_colloc": "bərsatu kita təguh, bərtʃəraɪ kita runtuh.",
+"core_abbr": "bərsatu kita təguh, bərtʃəraɪ kita runtuh."
+},
+{
+"text": "Ada banyak gedung tinggi di kota itu.",
+"normalized": "Ada banyak gedung tinggi di kota itu.",
+"core": "ada baɲaʔ gəduŋ tiŋgi di kota itu.",
+"core_no_colloc": "ada baɲaʔ gəduŋ tiŋgi di kota itu.",
+"core_abbr": "ada baɲaʔ gəduŋ tiŋgi di kota itu."
+},
+{
+"text": "Apa yang kau katakan pada Paula?",
+"normalized": "Apa yang kau katakan pada Paula?",
+"core": "apa jaŋ kaʊ katakan pada paula?",
+"core_no_colloc": "apa jaŋ kaʊ katakan pada paula?",
+"core_abbr": "apa jaŋ kaʊ katakan pada paula?"
+},
+{
+"text": "Jangan malu-malu, kamu pasti akan suka dengan hasilnya.",
+"normalized": "Jangan malu-malu, kamu pasti akan suka dengan hasilnya.",
+"core": "dʒaŋan malu-malu, kamu pasti akan suka dəŋan hasilɲa.",
+"core_no_colloc": "dʒaŋan malu-malu, kamu pasti akan suka dəŋan hasilɲa.",
+"core_abbr": "dʒaŋan malu-malu, kamu pasti akan suka dəŋan hasilɲa."
+},
+{
+"text": "Tom seorang penjelajah waktu; dia datang dari masa lalu.",
+"normalized": "Tom seorang penjelajah waktu; dia datang dari masa lalu.",
+"core": "tom səoraŋ pəndʒəladʒah waʔtu; dia dataŋ dari masa lalu.",
+"core_no_colloc": "tom səoraŋ pəndʒəladʒah waʔtu; dia dataŋ dari masa lalu.",
+"core_abbr": "tom səoraŋ pəndʒəladʒah waʔtu; dia dataŋ dari masa lalu."
+},
+{
+"text": "Aku ingin menjadi ayah yang baik.",
+"normalized": "Aku ingin menjadi ayah yang baik.",
+"core": "aku iŋin məndʒadi ajah jaŋ baɪʔ.",
+"core_no_colloc": "aku iŋin məndʒadi ajah jaŋ baɪʔ.",
+"core_abbr": "aku iŋin məndʒadi ajah jaŋ baɪʔ."
+},
+{
+"text": "Latihan otot kalau baru mulai itu berat.",
+"normalized": "Latihan otot kalau baru mulai itu berat.",
+"core": "latihan otot kalaʊ baru mulaɪ itu bərat.",
+"core_no_colloc": "latihan otot kalaʊ baru mulaɪ itu bərat.",
+"core_abbr": "latihan otot kalaʊ baru mulaɪ itu bərat."
+},
+{
+"text": "Jutaan tahun yang lalu, paus merupakan hewan darat.",
+"normalized": "Jutaan tahun yang lalu, paus merupakan hewan darat.",
+"core": "dʒutaan tahun jaŋ lalu, paus mərupakan hewan darat.",
+"core_no_colloc": "dʒutaan tahun jaŋ lalu, paus mərupakan hewan darat.",
+"core_abbr": "dʒutaan tahun jaŋ lalu, paus mərupakan hewan darat."
+},
+{
+"text": "Aku sering membantu Tom melakukan itu.",
+"normalized": "Aku sering membantu Tom melakukan itu.",
+"core": "aku səriŋ məmbantu tom məlakukan itu.",
+"core_no_colloc": "aku səriŋ məmbantu tom məlakukan itu.",
+"core_abbr": "aku səriŋ məmbantu tom məlakukan itu."
+},
+{
+"text": "Ayo keluar dan duduk di halaman.",
+"normalized": "Ayo keluar dan duduk di halaman.",
+"core": "ajo kəluar dan duduʔ di halaman.",
+"core_no_colloc": "ajo kəluar dan duduʔ di halaman.",
+"core_abbr": "ajo kəluar dan duduʔ di halaman."
+},
+{
+"text": "Istri saya meninggal tiga tahun yang lalu.",
+"normalized": "Istri saya meninggal tiga tahun yang lalu.",
+"core": "istri saja məniŋgal tiga tahun jaŋ lalu.",
+"core_no_colloc": "istri saja məniŋgal tiga tahun jaŋ lalu.",
+"core_abbr": "istri saja məniŋgal tiga tahun jaŋ lalu."
+},
+{
+"text": "Siapa yang sedang anda tunggu l",
+"normalized": "Siapa yang sedang anda tunggu l",
+"core": "siapa jaŋ sədaŋ anda tuŋgu l",
+"core_no_colloc": "siapa jaŋ sədaŋ anda tuŋgu l",
+"core_abbr": "siapa jaŋ sədaŋ anda tuŋgu èl"
+},
+{
+"text": "Saya ingin tahu, bilakah Tom bercadang untuk menyelesaikan kerjanya itu.",
+"normalized": "Saya ingin tahu, bilakah Tom bercadang untuk menyelesaikan kerjanya itu.",
+"core": "saja iŋin tahu, bilakah tom bərtʃadaŋ untuʔ məɲələsaɪkan kərdʒaɲa itu.",
+"core_no_colloc": "saja iŋin tahu, bilakah tom bərtʃadaŋ untuʔ məɲələsaɪkan kərdʒaɲa itu.",
+"core_abbr": "saja iŋin tahu, bilakah tom bərtʃadaŋ untuʔ məɲələsaɪkan kərdʒaɲa itu."
+},
+{
+"text": "Dia ngotot mengatakan bahwa analisanya tepat.",
+"normalized": "Dia ngotot mengatakan bahwa analisanya tepat.",
+"core": "dia ŋotot məŋatakan bahwa analisaɲa təpat.",
+"core_no_colloc": "dia ŋotot məŋatakan bahwa analisaɲa təpat.",
+"core_abbr": "dia ŋotot məŋatakan bahwa analisaɲa təpat."
+},
+{
+"text": "Saya lebih suka Pepsi daripada Coca-Cola.",
+"normalized": "Saya lebih suka Pepsi daripada Coca-Cola.",
+"core": "saja ləbih suka pepsi daripada tʃotʃa-tʃola.",
+"core_no_colloc": "saja ləbih suka pepsi daripada tʃotʃa-tʃola.",
+"core_abbr": "saja ləbih suka pepsi daripada tʃotʃa-tʃola."
+},
+{
+"text": "Saya ingin naik ke puncak gunung Kitadake.",
+"normalized": "Saya ingin naik ke puncak gunung Kitadake.",
+"core": "saja iŋin naɪʔ kə puntʃaʔ gunuŋ kitadake.",
+"core_no_colloc": "saja iŋin naɪʔ kə puntʃaʔ gunuŋ kitadake.",
+"core_abbr": "saja iŋin naɪʔ kə puntʃaʔ gunuŋ kitadake."
+},
+{
+"text": "Pizza favorit saya adalah pizza pepperoni.",
+"normalized": "Pizza favorit saya adalah pizza pepperoni.",
+"core": "pizza faforit saja adalah pizza pepperoni.",
+"core_no_colloc": "pizza faforit saja adalah pizza pepperoni.",
+"core_abbr": "pizza faforit saja adalah pizza pepperoni."
+},
+{
+"text": "Harta yang dimiliki warga kampung tersebut dibajak oleh bajak laut.",
+"normalized": "Harta yang dimiliki warga kampung tersebut dibajak oleh bajak laut.",
+"core": "harta jaŋ dimiliki warga kampuŋ tərsəbut dibadʒaʔ oleh badʒaʔ laut.",
+"core_no_colloc": "harta jaŋ dimiliki warga kampuŋ tərsəbut dibadʒaʔ oleh badʒaʔ laut.",
+"core_abbr": "harta jaŋ dimiliki warga kampuŋ tərsəbut dibadʒaʔ oleh badʒaʔ laut."
+},
+{
+"text": "Dia terlilit hutang, dan harus berpisah dengan rumahnya.",
+"normalized": "Dia terlilit hutang, dan harus berpisah dengan rumahnya.",
+"core": "dia tərlilit hutaŋ, dan harus bərpisah dəŋan rumahɲa.",
+"core_no_colloc": "dia tərlilit hutaŋ, dan harus bərpisah dəŋan rumahɲa.",
+"core_abbr": "dia tərlilit hutaŋ, dan harus bərpisah dəŋan rumahɲa."
+},
+{
+"text": "Kerjakan soal kelima di papan tulis.",
+"normalized": "Kerjakan soal kelima di papan tulis.",
+"core": "kərdʒakan soal kəlima di papan tulis.",
+"core_no_colloc": "kərdʒakan soal kəlima di papan tulis.",
+"core_abbr": "kərdʒakan soal kəlima di papan tulis."
+},
+{
+"text": "Katakan aku alasan kenapa ia tidak hadir.",
+"normalized": "Katakan aku alasan kenapa ia tidak hadir.",
+"core": "katakan aku alasan kənapa ia tidaʔ hadir.",
+"core_no_colloc": "katakan aku alasan kənapa ia tidaʔ hadir.",
+"core_abbr": "katakan aku alasan kənapa ia tidaʔ hadir."
+},
+{
+"text": "Jim harus segera dibawa ke rumah sakit.",
+"normalized": "Jim harus segera dibawa ke rumah sakit.",
+"core": "dʒim harus səgəra dibawa kə rumah sakit.",
+"core_no_colloc": "dʒim harus səgəra dibawa kə rumah sakit.",
+"core_abbr": "dʒim harus səgəra dibawa kə rumah sakit."
+}
+]
+}
