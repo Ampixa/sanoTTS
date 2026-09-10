@@ -240,8 +240,9 @@
 
   <h2 id="live">Synthesize live in your browser</h2>
   <p class="note">Type anything. The text is phonemized by <b>espeak-ng compiled to
-  WebAssembly</b> (the same 275&nbsp;KB port that runs on the chip) and spoken by that
-  voice's own neural stack &mdash; all client-side, no server. Pick a voice:</p>
+  WebAssembly</b> (the same 275&nbsp;KB port that runs on the chip; Chinese uses a
+  <b>448&nbsp;KB pinyin lexicon</b> instead) and spoken by that voice's own neural stack
+  &mdash; all client-side, no server. Pick a voice:</p>
 
   <div class="mascots" id="mascots"></div>
 
@@ -421,7 +422,10 @@
   language &mdash; conversational text, deliberately a different domain from the corpus these
   voices were distilled on. The <b>sample</b> buttons synthesize that language on this page, right
   now, through the same runtime as the picker above. Where a language ships in two sizes, both are
-  playable.</p>
+  playable. Chinese is the one exception: written Chinese has no spaces, so word error rate means
+  nothing there and the figure is <b>character</b> error rate over the same 16 Tatoeba sentences,
+  with traditional and simplified folded together. On held-out FLORES that voice scores 0.199
+  against its teacher&rsquo;s 0.188 &mdash; the voice it replaced scored 0.468.</p>
   <table class="langtable">
     <thead>
       <tr><th>Language</th><th class="lt-m">WER</th><th>Sample</th></tr>
@@ -504,8 +508,8 @@
       </tr>
       <tr>
         <td class="lt-lang">Chinese &#x1F1E8;&#x1F1F3;</td>
-        <td class="lt-m none" data-h="WER">&mdash;</td>
-        <td class="lt-samp"><button class="samp" data-voice="chinese" title="synthesize a sentence of Chinese live, right now">&#9654; 1.50M</button><span class="sampnote"></span></td>
+        <td class="lt-m" data-h="WER">0.024<span class="alt">CER, not WER</span></td>
+        <td class="lt-samp"><button class="samp" data-voice="chinese-xiaoya" title="synthesize a sentence of Chinese live, right now">&#9654; 1.55M</button><span class="sampnote"></span></td>
       </tr>
     </tbody>
   </table>
@@ -560,7 +564,24 @@ const VOICES = [
   {key:"indonesian",label:"Indonesian",params:"1.46M", flag:"\uD83C\uDDEE\uD83C\uDDE9", live:true, emj:"\uD83E\uDDA7"},
   {key:"nepali",   label:"Nepali",     params:"1.47M", flag:"\uD83C\uDDF3\uD83C\uDDF5", live:true, emj:"\uD83E\uDD9D"},
   {key:"hindi",    label:"Hindi",      params:"1.50M", flag:"\uD83C\uDDEE\uD83C\uDDF3", live:true, emj:"\uD83E\uDD9A"},
-  {key:"chinese",  label:"Chinese",    params:"1.50M", flag:"\uD83C\uDDE8\uD83C\uDDF3", live:true, emj:"\uD83D\uDC3C"},
+  // Chinese. This REPLACES the 1.50M espeak-cmn voice that used to sit here
+  // (web/voices/chinese/, distilled from zh_CN-huayan-medium). Both were
+  // measured on held-out FLORES with folded CER: the old one 0.468, retaining
+  // 0.19x of its teacher; this one 0.199, retaining 0.94x
+  // (experiments/evidence/zh-xiaoya-distill-20260909.json). Shipping a voice
+  // we have measured at 0.468 next to its own 2.35x-better replacement would
+  // need a reason, and there isn't one -- they are the same language, the same
+  // runtime and the same download budget, and the picker gives no way to tell
+  // a visitor which of two "Chinese" tiles to press. The old bundle stays on
+  // Hugging Face and GitHub, untouched, so a deployed older copy of this page
+  // keeps working; nothing is deleted underneath it.
+  //
+  // Its front end is not espeak: `phoneme_type` is "pinyin", so the ids come
+  // from web/g2p-lazy/zh/ (a lexicon, no model) and not from snt_g2p.wasm.
+  // `pinyin:true` is the page-level statement of that; synthVoice checks it
+  // against meta.json rather than trusting it.
+  {key:"chinese-xiaoya", group:"chinese", label:"Chinese", params:"1.55M", exact:1554284,
+    flag:"\uD83C\uDDE8\uD83C\uDDF3", live:true, emj:"\uD83D\uDC3C", pinyin:true},
   {key:"mcu",      label:"English",    params:"567k",  flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83E\uDD16",
     espeakVoice:"en-us", g2pSlot:0, lengthScale:1.0},
   // Different architecture and a different frontend contract from every voice
@@ -1113,6 +1134,18 @@ async function synthNano(key, text){
 function splitChunks(text){
   const MAX = 120, MIN = 40;
   const sents = text.match(/[^.!?।。！？]+[.!?।。！？]*\s*/g) || [text];
+  // A full stop between two digits is a decimal point, not the end of a
+  // sentence. Without this "3.5" is cut into "3." and "5" before the
+  // phonemizer ever sees it, and the voice says 三 ... 五 instead of 三点五 --
+  // which the Chinese voice makes obvious and every other voice has quietly
+  // done to "$3.50" all along. Provably inert for any text with no
+  // digit-dot-digit in it, which is every default sentence on this page.
+  for(let i = sents.length - 2; i >= 0; i--){
+    if(/\p{Nd}\.$/u.test(sents[i].trimEnd()) && /^\s*\p{Nd}/u.test(sents[i + 1])){
+      sents[i] = sents[i].trimEnd() + sents[i + 1];
+      sents.splice(i + 1, 1);
+    }
+  }
   const chunks = [];
   for (let s of sents){
     s = s.trim();
@@ -1243,6 +1276,37 @@ function ruLexicon(){
 // -- gated at 852,668/852,668 ids and 1977/1977 sentences identical to piper's
 // own output (experiments/evidence/ar-tashkeel-port-20260908.json). It costs
 // 2.4 MB, which is why it is behind this promise and not in the page load.
+// CHINESE. The teacher, zh_CN-xiao_ya-medium, is not an espeak voice: its
+// phoneme_type is "pinyin" and piper reaches that 85-symbol inventory with
+// g2pW, a 158.8M-parameter BERT shipped as a 152 MB ONNX file -- fifty times
+// the voice it serves. pypkg replaced it with a lexicon (pypkg/sanotts/zh_g2p.py,
+// 358 KB of pypinyin tables and no model) and web/g2p-lazy/zh/ is that same
+// code and the same tables in JavaScript: 448 KB gzipped, fetched only when
+// Chinese is actually synthesized.
+//
+// The gate is not "close". Both sides are deterministic lookups over tables
+// that inflate to the same sha256, so anything but an exact match is a porting
+// bug: 2,151/2,151 texts and 333,166/333,166 ids identical to sanotts.zh_g2p,
+// and the number expansion 223,896/223,896 identical to unicode_rbnf itself
+// (experiments/evidence/zh-g2p-web-port-20260910.json and
+// experiments/evidence/zh-number-expansion-web-20260910.json).
+//
+// Unlike Russian, nothing is compiled into the wasm module here and
+// setG2PVoice is never called for this voice -- the ids are computed in
+// JavaScript from the voice's own phoneme_id_map, which travels in meta.json.
+let zhG2PPromise = null;
+function zhG2P(){
+  if(!zhG2PPromise){
+    zhG2PPromise = (async () => {
+      const mod = await import("./g2p-lazy/zh/zh_g2p.mjs?v=20260910");
+      // fetch is passed explicitly rather than left to a default parameter: a
+      // bare `fetch` reference detached from window throws "Illegal
+      // invocation" in some engines.
+      return await mod.loadZhG2P("g2p-lazy/zh/", (u, o) => fetch(u, o));
+    })().catch(e => { zhG2PPromise = null; throw e; });
+  }
+  return zhG2PPromise;
+}
 let tashkeelPromise = null;
 function tashkeel(){
   if(!tashkeelPromise){
@@ -1259,6 +1323,21 @@ function tashkeel(){
 
 async function synthVoice(key, text){
   const bundle = await loadVoiceBundle(key);
+  const pinyin = bundle.meta.phoneme_type === "pinyin";
+  const v = VOICES.find(x => x.key === key);
+  if(pinyin !== !!(v && v.pinyin))
+    throw new Error(key + ": meta.json phoneme_type is " +
+      JSON.stringify(bundle.meta.phoneme_type) + ", which the voice table disagrees with");
+  let ids, idSource = "espeak-ng wasm";
+  if(pinyin){
+    // No espeak at all on this path: no setG2PVoice, no snt_g2p.wasm. The id
+    // map is the teacher's own, carried in meta.json beside the weights.
+    if(!bundle.meta.phoneme_id_map)
+      throw new Error(key + ": meta.json says phoneme_type pinyin but carries no phoneme_id_map");
+    const zh = await zhG2P();
+    ids = zh.textToIds(text, bundle.meta.phoneme_id_map).ids;
+    idSource = "pinyin lexicon";
+  } else {
   if(bundle.meta.espeak_voice === "ar"){
     const diacritizer = await tashkeel();
     text = diacritizer.diacritize(text);
@@ -1268,7 +1347,8 @@ async function synthVoice(key, text){
     const ru = await ruLexicon();
     await ru.prepare(G2P, text);   // must run for every text, after set_voice
   }
-  const ids = g2pIds(text);
+  ids = g2pIds(text);
+  }
   const frontP=toHeap(Voice,bundle.front), decP=toHeap(Voice,bundle.dec);
   const idsP=toHeap(Voice,new Uint8Array(ids.buffer,0,ids.length*4));
   const outP=Voice._malloc(VOICE_OUT_CAP*4);
@@ -1279,7 +1359,7 @@ async function synthVoice(key, text){
   if(n>=0){ pcm=new Float32Array(n); pcm.set(Voice.HEAPF32.subarray(outP>>2,(outP>>2)+n)); }
   [frontP,decP,idsP,outP].forEach(p=>Voice._free(p));
   if(n<0) throw new Error("snt_voice_synthesize returned "+n);
-  return {pcm, ids, wall, sr:bundle.meta.sample_rate||SR};
+  return {pcm, ids, wall, sr:bundle.meta.sample_rate||SR, idSource};
 }
 // Trellis-RIFT lane. The phoneme path is NOT the Piper id table the other
 // voices use: espeak-ng emits IPA with stress marks and ties, trellis_frontend
@@ -1339,12 +1419,13 @@ async function synth(){
     const doChunk = t => voice.trellis ? synthTrellis(t)
                        : voice.nano ? synthNano(voice.key, t)
                        : voice.key==="mcu" ? synthMcu(t) : synthVoice(voice.key, t);
-    let player=null, ttfu=null, totalIds=0, totalWall=0;
+    let player=null, ttfu=null, totalIds=0, totalWall=0, idSource="espeak-ng wasm";
     const pcms=[];
     for (let i = 0; i < chunks.length; i++){
       setState("synthesizing " + (i+1) + "/" + chunks.length + "\u2026"); await uiBreath();
       const r = await doChunk(chunks[i]);
       totalIds += r.ids.length; totalWall += r.wall; pcms.push(r.pcm); lastSr = r.sr;
+      if(r.idSource) idSource = r.idSource;
       if (!player){                       // first audio: start playing NOW
         player = makeStreamPlayer(r.sr);
         ttfu = (performance.now() - tStart) / 1000;
@@ -1360,7 +1441,7 @@ async function synth(){
     lastPcm = new Float32Array(total);
     let off = 0; for (const p of pcms){ lastPcm.set(p, off); off += p.length; }
     const secs = total/lastSr, rtf = totalWall/secs;
-    $("phon").textContent = totalIds + " ids (espeak-ng wasm)";
+    $("phon").textContent = totalIds + " ids (" + idSource + ")";
     $("dur").textContent = secs.toFixed(2) + " s @ " + (lastSr/1000).toFixed(2) + " kHz";
     $("time").textContent = ttfu.toFixed(2) + " s to first audio (incl. download) \u00B7 "
                          + totalWall.toFixed(2) + " s compute";

@@ -1,0 +1,35 @@
+{
+ "source": "pypkg/sanotts/g2p_data/zh_pinyin/*.xz",
+ "source_manifest": "pypkg/sanotts/g2p_data/zh_pinyin/MANIFEST.json",
+ "generated_by": "tools/build_zh_g2p_web_assets.py",
+ "style": "TONE3, neutral tone as 5, u-umlaut as v",
+ "licence": "MIT",
+ "container": "gzip (DecompressionStream('gzip'))",
+ "files": {
+  "chars": {
+   "file": "chars.txt.gz",
+   "gzip_bytes": 172080,
+   "raw_bytes": 395174,
+   "raw_sha256": "59731bd1fcee681102978e67607aeb973605c4022f72340b720897fc02f02019",
+   "lines": 41923
+  },
+  "phrases": {
+   "file": "phrases.txt.gz",
+   "gzip_bytes": 98448,
+   "raw_bytes": 231041,
+   "raw_sha256": "1414e92fc0c82e4b900fc9fbc7321068cf26c12a9485519534f003fa5e2279f1",
+   "lines": 8756
+  },
+  "phrase_keys": {
+   "file": "phrase_keys.txt.gz",
+   "gzip_bytes": 177177,
+   "raw_bytes": 387636,
+   "raw_sha256": "78375fe24381d3f9971e64ab86fec8e531f17cbd985ce2760d0253b294d21db8",
+   "lines": 38355
+  }
+ },
+ "gzip_bytes_total": 447705,
+ "raw_bytes_total": 1013851,
+ "xz_bytes_total": 358508,
+ "note": "raw_sha256 is the sha256 of the DECOMPRESSED table, and is the value pypkg records for the same payload; zh_g2p.mjs checks it after inflating."
+}
