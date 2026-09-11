@@ -241,7 +241,7 @@ SCOREQ from 3.70 to 4.16.
 | Hindi हिन्दी | Hindi | 1.50 M | — | — |
 | Vietnamese Tiếng Việt | Vietnamese | 1.57 M | 1.53 | 0.468 |
 | Indonesian Bahasa | Indonesian | 1.56 M | 1.71 | 0.256 |
-| Chinese 中文 | Chinese | 1.50 M | — | — |
+| Chinese 中文 | Chinese | 1.55 M | — | 0.262 † |
 
 **Two different questions, and neither column answers the other.** SCOREQ is a
 no-reference quality predictor — how it sounds. WER is Whisper word error rate —
@@ -249,6 +249,14 @@ whether the words arrive. A voice can score well on one and badly on the other,
 and on the two voices where we have both, the second number is much less
 flattering: Indonesian reads 0.256 word error, so the words do arrive, and
 still scores 1.71 against amy's 4.13.
+
+† Chinese WER is not the same measurement as the others. Mandarin is not
+written with spaces, so there are no word tokens to compare until a segmenter
+invents them — this figure segments both sides with jieba, which means part of
+it is the segmenter disagreeing with itself rather than the voice being wrong.
+The comparable Chinese number is character error rate: **0.201** on the same 24
+held-out sentences, against the teacher's 0.188. The voice it replaced scored
+0.468.
 
 An empty cell means unmeasured, not zero. The English SCOREQ figures share one
 eval set; the Indonesian and Vietnamese ones come from a different set (24
