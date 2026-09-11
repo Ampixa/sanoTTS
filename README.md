@@ -212,12 +212,12 @@ SCOREQ from 3.70 to 4.16.
 
 | Language | Voice | Params | SCOREQ | WER |
 | --- | --- | ---: | :---: | :---: |
-| English 🇺🇸 | amy | 1.45 M | 4.13 | — |
-| | kristin | 1.40 M | 4.09 | — |
-| | hfc | 1.83 M | 3.94 | — |
+| English 🇺🇸 | amy | 1.45 M | 4.13 | 0.058 ‡ |
+| | kristin | 1.40 M | 4.09 | 0.171 ‡ |
+| | hfc | 1.83 M | 3.94 | 0.069 ‡ |
 | | amy-small | 1.08 M | 3.70 | — |
-| | heart (24 kHz) | 2.27 M | 3.48 | — |
-| | heart-nano (int8, 24 kHz) | 294 k | 2.29 | — |
+| | heart (24 kHz) | 2.27 M | 3.48 | 0.080 ‡ |
+| | heart-nano (int8, 24 kHz) | 294 k | 2.29 | 0.083 ‡ |
 | | robot (on-device, int8) | 567 k | — | — |
 | German 🇩🇪 | German | 1.57 M | — | 0.099 |
 | | German small | 512 k | — | 0.145 |
@@ -249,6 +249,17 @@ whether the words arrive. A voice can score well on one and badly on the other,
 and on the two voices where we have both, the second number is much less
 flattering: Indonesian reads 0.256 word error, so the words do arrive, and
 still scores 1.71 against amy's 4.13.
+
+‡ English WER is measured on a different set from the other languages: 24
+diverse held-out English sentences, the same ones the SCOREQ column uses, rather
+than the 16 Tatoeba sentences. Corpus WER — total errors over total words —
+which is why it is not the mean of the per-clip figures.
+
+Worth reading across that row rather than down it. **heart-nano at 294 k scores
+0.083 against heart's 0.080 at 2.27 M** — the same words arrive from a model 7.7
+times smaller — while SCOREQ separates them 2.29 against 3.48. That is the whole
+point of carrying both columns: shrinking the model cost almost nothing in
+intelligibility and a great deal in how it sounds.
 
 † Chinese WER is not the same measurement as the others. Mandarin is not
 written with spaces, so there are no word tokens to compare until a segmenter
