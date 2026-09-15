@@ -1,0 +1,188 @@
+{
+ "row_id": "000002_i400",
+ "n_tokens": 71,
+ "frames": 427,
+ "samples": 109056,
+ "seed": 3701943533470052915,
+ "freeze_durs": 0,
+ "got_frames": 428,
+ "got_samples": 109312,
+ "corr_vs_fixture": 0.83492,
+ "arena_peak": 171824,
+ "elapsed_us": 36708,
+ "tensors": {
+  "ids": {
+   "file": "ids.i32",
+   "dtype": "i32",
+   "shape": [
+    71
+   ]
+  },
+  "durs": {
+   "file": "durs.i32",
+   "dtype": "i32",
+   "shape": [
+    71
+   ]
+  },
+  "dur_hidden": {
+   "file": "dur_hidden.f32",
+   "dtype": "f32",
+   "shape": [
+    26,
+    71
+   ]
+  },
+  "tok_hidden": {
+   "file": "tok_hidden.f32",
+   "dtype": "f32",
+   "shape": [
+    31,
+    71
+   ]
+  },
+  "frame_hidden": {
+   "file": "frame_hidden.f32",
+   "dtype": "f32",
+   "shape": [
+    31,
+    428
+   ]
+  },
+  "mel": {
+   "file": "mel.f32",
+   "dtype": "f32",
+   "shape": [
+    100,
+    428
+   ]
+  },
+  "noise": {
+   "file": "noise.f32",
+   "dtype": "f32",
+   "shape": [
+    4,
+    428
+   ]
+  },
+  "stem": {
+   "file": "stem.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    428
+   ]
+  },
+  "trunk_b0": {
+   "file": "trunk_b0.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    428
+   ]
+  },
+  "trunk_b1": {
+   "file": "trunk_b1.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    428
+   ]
+  },
+  "trunk_b2": {
+   "file": "trunk_b2.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    428
+   ]
+  },
+  "trunk_b3": {
+   "file": "trunk_b3.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    428
+   ]
+  },
+  "spec_re": {
+   "file": "spec_re.f32",
+   "dtype": "f32",
+   "shape": [
+    513,
+    428
+   ]
+  },
+  "spec_im": {
+   "file": "spec_im.f32",
+   "dtype": "f32",
+   "shape": [
+    513,
+    109312
+   ]
+  },
+  "pcm": {
+   "file": "pcm.f32",
+   "dtype": "f32",
+   "shape": [
+    -1405710320
+   ]
+  }
+ },
+ "text": "The teacher model needs stable timing without sounding rushed or clipped.",
+ "phonemes": "\u00f0\u0259 t\u02c8i\u02a7\u0259\u0279 m\u02c8\u0251d\u1d4al n\u02c8idz st\u02c8Ab\u1d4al t\u02c8Im\u026a\u014b w\u026a\u00f0\u02c8Wt s\u02c8Wnd\u026a\u014b \u0279\u02c8\u028c\u0283t \u0254\u0279 kl\u02c8\u026apt.",
+ "duration_s": 4.554666666666667,
+ "pcm_peak": 0.3169570863246918,
+ "seed_lo": 2869522995,
+ "seed_hi": 861925895,
+ "packs": {
+  "ids": "u8",
+  "durs": "u8",
+  "pcm": "i16",
+  "mel": "u8",
+  "spec_logmag": "u8",
+  "spec_phase": "u8",
+  "hidden": "i8"
+ },
+ "scales": {
+  "dur_hidden": {
+   "scale": 0.03483547751359114
+  },
+  "tok_hidden": {
+   "scale": 0.01158813885816439
+  },
+  "frame_hidden": {
+   "scale": 0.14547088202529065
+  },
+  "stem": {
+   "scale": 0.02748277431397926
+  },
+  "trunk_b0": {
+   "scale": 0.0243934871643547
+  },
+  "trunk_b1": {
+   "scale": 0.02605254819074015
+  },
+  "trunk_b2": {
+   "scale": 0.02837710493192898
+  },
+  "trunk_b3": {
+   "scale": 0.02808799142912617
+  },
+  "noise": {
+   "scale": 0.02956201147845411
+  },
+  "mel": {
+   "lo": -16.308584213256836,
+   "hi": 4.240503311157227
+  },
+  "spec_logmag": {
+   "lo": -23.025850929940457,
+   "hi": 4.139107691905833
+  },
+  "spec_phase": {
+   "lo": -3.1415795459240288,
+   "hi": 3.1415263662497264
+  }
+ }
+}

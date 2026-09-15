@@ -1,0 +1,188 @@
+{
+ "row_id": "000007_i1400",
+ "n_tokens": 107,
+ "frames": 629,
+ "samples": 160768,
+ "seed": 14351038112024617452,
+ "freeze_durs": 0,
+ "got_frames": 626,
+ "got_samples": 160000,
+ "corr_vs_fixture": 0.286801,
+ "arena_peak": 220928,
+ "elapsed_us": 62693,
+ "tensors": {
+  "ids": {
+   "file": "ids.i32",
+   "dtype": "i32",
+   "shape": [
+    107
+   ]
+  },
+  "durs": {
+   "file": "durs.i32",
+   "dtype": "i32",
+   "shape": [
+    107
+   ]
+  },
+  "dur_hidden": {
+   "file": "dur_hidden.f32",
+   "dtype": "f32",
+   "shape": [
+    26,
+    107
+   ]
+  },
+  "tok_hidden": {
+   "file": "tok_hidden.f32",
+   "dtype": "f32",
+   "shape": [
+    31,
+    107
+   ]
+  },
+  "frame_hidden": {
+   "file": "frame_hidden.f32",
+   "dtype": "f32",
+   "shape": [
+    31,
+    626
+   ]
+  },
+  "mel": {
+   "file": "mel.f32",
+   "dtype": "f32",
+   "shape": [
+    100,
+    626
+   ]
+  },
+  "noise": {
+   "file": "noise.f32",
+   "dtype": "f32",
+   "shape": [
+    4,
+    626
+   ]
+  },
+  "stem": {
+   "file": "stem.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    626
+   ]
+  },
+  "trunk_b0": {
+   "file": "trunk_b0.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    626
+   ]
+  },
+  "trunk_b1": {
+   "file": "trunk_b1.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    626
+   ]
+  },
+  "trunk_b2": {
+   "file": "trunk_b2.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    626
+   ]
+  },
+  "trunk_b3": {
+   "file": "trunk_b3.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    626
+   ]
+  },
+  "spec_re": {
+   "file": "spec_re.f32",
+   "dtype": "f32",
+   "shape": [
+    513,
+    626
+   ]
+  },
+  "spec_im": {
+   "file": "spec_im.f32",
+   "dtype": "f32",
+   "shape": [
+    513,
+    160000
+   ]
+  },
+  "pcm": {
+   "file": "pcm.f32",
+   "dtype": "f32",
+   "shape": [
+    -1405710320
+   ]
+  }
+ },
+ "text": "Please read item 120 with a calm pause, then continue with the next phrase.  Variant 2.",
+ "phonemes": "pl\u02c8iz \u0279\u02c8id \u02c8IT\u0259m w\u02c8\u028cn h\u02c8\u028cnd\u0279\u0259d tw\u02c8\u025bnti w\u026a\u00f0 \u0250 k\u02c8\u0251m p\u02c8\u0254z, \u00f0\u02c8\u025bn k\u0259nt\u02c8\u026anju w\u026a\u00f0 \u00f0\u0259 n\u02c8\u025bkst f\u0279\u02c8Az. v\u02c8\u025b\u0279i\u0259nt t\u02c8u.",
+ "duration_s": 6.666666666666667,
+ "pcm_peak": 0.3985450267791748,
+ "seed_lo": 3109151212,
+ "seed_hi": 3341361440,
+ "packs": {
+  "ids": "u8",
+  "durs": "u8",
+  "pcm": "i16",
+  "mel": "u8",
+  "spec_logmag": "u8",
+  "spec_phase": "u8",
+  "hidden": "i8"
+ },
+ "scales": {
+  "dur_hidden": {
+   "scale": 0.04005398712758943
+  },
+  "tok_hidden": {
+   "scale": 0.011825408522538312
+  },
+  "frame_hidden": {
+   "scale": 0.14630014314426212
+  },
+  "stem": {
+   "scale": 0.02681440818966843
+  },
+  "trunk_b0": {
+   "scale": 0.025240774229755552
+  },
+  "trunk_b1": {
+   "scale": 0.0261283634215828
+  },
+  "trunk_b2": {
+   "scale": 0.027908820805587167
+  },
+  "trunk_b3": {
+   "scale": 0.0279993729328546
+  },
+  "noise": {
+   "scale": 0.029003851057037594
+  },
+  "mel": {
+   "lo": -16.271472930908203,
+   "hi": 3.9438042640686035
+  },
+  "spec_logmag": {
+   "lo": -23.025850929940457,
+   "hi": 4.176931350129792
+  },
+  "spec_phase": {
+   "lo": -3.141581418447714,
+   "hi": 3.1415787969154847
+  }
+ }
+}

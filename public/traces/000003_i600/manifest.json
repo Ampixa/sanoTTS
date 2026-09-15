@@ -1,0 +1,188 @@
+{
+ "row_id": "000003_i600",
+ "n_tokens": 80,
+ "frames": 480,
+ "samples": 122624,
+ "seed": 1119747897820563745,
+ "freeze_durs": 0,
+ "got_frames": 477,
+ "got_samples": 121856,
+ "corr_vs_fixture": 0.409143,
+ "arena_peak": 183984,
+ "elapsed_us": 34331,
+ "tensors": {
+  "ids": {
+   "file": "ids.i32",
+   "dtype": "i32",
+   "shape": [
+    80
+   ]
+  },
+  "durs": {
+   "file": "durs.i32",
+   "dtype": "i32",
+   "shape": [
+    80
+   ]
+  },
+  "dur_hidden": {
+   "file": "dur_hidden.f32",
+   "dtype": "f32",
+   "shape": [
+    26,
+    80
+   ]
+  },
+  "tok_hidden": {
+   "file": "tok_hidden.f32",
+   "dtype": "f32",
+   "shape": [
+    31,
+    80
+   ]
+  },
+  "frame_hidden": {
+   "file": "frame_hidden.f32",
+   "dtype": "f32",
+   "shape": [
+    31,
+    477
+   ]
+  },
+  "mel": {
+   "file": "mel.f32",
+   "dtype": "f32",
+   "shape": [
+    100,
+    477
+   ]
+  },
+  "noise": {
+   "file": "noise.f32",
+   "dtype": "f32",
+   "shape": [
+    4,
+    477
+   ]
+  },
+  "stem": {
+   "file": "stem.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    477
+   ]
+  },
+  "trunk_b0": {
+   "file": "trunk_b0.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    477
+   ]
+  },
+  "trunk_b1": {
+   "file": "trunk_b1.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    477
+   ]
+  },
+  "trunk_b2": {
+   "file": "trunk_b2.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    477
+   ]
+  },
+  "trunk_b3": {
+   "file": "trunk_b3.f32",
+   "dtype": "f32",
+   "shape": [
+    62,
+    477
+   ]
+  },
+  "spec_re": {
+   "file": "spec_re.f32",
+   "dtype": "f32",
+   "shape": [
+    513,
+    477
+   ]
+  },
+  "spec_im": {
+   "file": "spec_im.f32",
+   "dtype": "f32",
+   "shape": [
+    513,
+    121856
+   ]
+  },
+  "pcm": {
+   "file": "pcm.f32",
+   "dtype": "f32",
+   "shape": [
+    -1405710320
+   ]
+  }
+ },
+ "text": "Please read item 88 with a calm pause, then continue with the next phrase.",
+ "phonemes": "pl\u02c8iz \u0279\u02c8id \u02c8IT\u0259m \u02c8ATi \u02c8At w\u026a\u00f0 \u0250 k\u02c8\u0251m p\u02c8\u0254z, \u00f0\u02c8\u025bn k\u0259nt\u02c8\u026anju w\u026a\u00f0 \u00f0\u0259 n\u02c8\u025bkst f\u0279\u02c8Az.",
+ "duration_s": 5.077333333333334,
+ "pcm_peak": 0.3060738146305084,
+ "seed_lo": 3348482337,
+ "seed_hi": 260711623,
+ "packs": {
+  "ids": "u8",
+  "durs": "u8",
+  "pcm": "i16",
+  "mel": "u8",
+  "spec_logmag": "u8",
+  "spec_phase": "u8",
+  "hidden": "i8"
+ },
+ "scales": {
+  "dur_hidden": {
+   "scale": 0.04006231488205317
+  },
+  "tok_hidden": {
+   "scale": 0.012001314501124105
+  },
+  "frame_hidden": {
+   "scale": 0.14569667005163478
+  },
+  "stem": {
+   "scale": 0.026541403898103968
+  },
+  "trunk_b0": {
+   "scale": 0.025359942218450112
+  },
+  "trunk_b1": {
+   "scale": 0.026343131628562146
+  },
+  "trunk_b2": {
+   "scale": 0.027570326497235637
+  },
+  "trunk_b3": {
+   "scale": 0.026108135388592097
+  },
+  "noise": {
+   "scale": 0.027620711664515216
+  },
+  "mel": {
+   "lo": -16.13549041748047,
+   "hi": 3.930260181427002
+  },
+  "spec_logmag": {
+   "lo": -23.025850929940457,
+   "hi": 4.220316484462455
+  },
+  "spec_phase": {
+   "lo": -3.141549211043643,
+   "hi": 3.141566812763525
+  }
+ }
+}

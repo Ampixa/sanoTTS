@@ -1,0 +1,33 @@
+{
+ "key": "heartnano",
+ "runtime": "snt_nano",
+ "lineage": "en_us_e13b",
+ "module": "snt_nano_heartnano.js",
+ "export_name": "SaanoNanoHeartNano",
+ "weights": "int8",
+ "front": "front_q8.bin",
+ "dec": "model_q8.bin",
+ "front_bytes": 109296,
+ "dec_bytes": 235936,
+ "front_sha256": "5553ae5abf37c18d31c0b64ea791785b30e7a08cc32c07bff8bb2ab4aae0b94b",
+ "dec_sha256": "4a6cdf0d0bf1996aa2c056298265ea8dd0c200c9025cba4a9b04e0e987bea88c",
+ "sample_rate": 24000,
+ "hop": 256,
+ "n_fft": 1024,
+ "mel_channels": 100,
+ "vocab_size": 62,
+ "frontend": "misaki-normalized espeak-ng IPA, character-level 62-symbol vocabulary (web/trellis_frontend.js)",
+ "params": 294279,
+ "param_breakdown": {
+  "duration": 22858,
+  "acoustic": 65299,
+  "decoder": 206122
+ },
+ "checkpoints": {
+  "duration": "artifacts/kokoro-corpus-af_heart-20260821/runs/e12-nano-duration/duration-student.pt",
+  "acoustic": "artifacts/kokoro-corpus-af_heart-20260821/runs/e13-armb-acoustic/latent-student.pt",
+  "decoder": "artifacts/kokoro-corpus-af_heart-20260821/runs/e13-armb-decoder/tiny-vocos-student.pt"
+ },
+ "golden_fixture": "mcu/test/fixtures/en_us_e13b",
+ "exported": "2026-09-02 on k2 via tools/export_e12_nano_q8.py"
+}
