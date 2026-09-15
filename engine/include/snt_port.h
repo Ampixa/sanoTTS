@@ -5,7 +5,7 @@
  * list and why the split is sound. The repository as a whole is GPL-3.0,
  * because the grapheme-to-phoneme layer embeds espeak-ng. This file does not.
  */
-/* snt_port.h -- the COMPLETE porting surface of saanotts-mcu.
+/* snt_port.h -- the COMPLETE porting surface of the sanoTTS MCU engine.
  *
  * A port provides the symbols below (or accepts the weak/scalar
  * defaults) and must pass test/golden_main.c bit-exactness afterwards.

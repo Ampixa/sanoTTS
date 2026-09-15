@@ -88,7 +88,7 @@ export default function App() {
   return (
     <div>
       <div id="topbar">
-        <span className="wordmark">sano<span className="tts">TTS</span></span>
+        <a className="wordmark" href="https://ampixa.github.io/sanoTTS/" target="_blank" rel="noreferrer">sano<span className="tts">TTS</span></a>
         <span className="dim">{PARAMS.total.toLocaleString()} params · traced live</span>
         <span className="spacer" />
         <label className="dim" htmlFor="rowsel">sentence</label>
@@ -115,23 +115,12 @@ export default function App() {
           ))}
           <div id="footer" style={{ padding: "26px 7% 60px" }}>
             <p>
-              <b className="accent">provenance.</b> Every tensor shown is a trace of
-              the shipped int8 <b>en_us_e13b</b> weights running the same C99 the
-              ESP32 executes, dumped stage-by-stage by the host tracer in this
-              branch (<code>engine/trace/</code>) and validated against the
-              repository's golden fixtures (min Pearson corr 0.981 over 8 rows,
-              gate 0.98). The live demo runs the prebuilt WASM module from the
-              main repository.
+              <b className="accent">provenance.</b> every tensor on this page is
+              traced from the actual on-device model, stage by stage, and
+              validated against golden test vectors. the live demo runs the
+              same engine compiled for the browser.
             </p>
-            <p>
-              evaluation numbers are reported in <i>sanoTTS: A Complete
-              Sub-300K-Parameter Neural Text-to-Speech System for
-              Microcontroller-Class Hardware</i> and cross-checked against the{" "}
-              <code>saanotts</code> / <code>sanoTTS</code> /{" "}
-              <code>saanotts-embedded</code> repositories. Sentences are the first
-              eight rows of the held-out 249-sentence evaluation subset.
-            </p>
-            <p className="faint">ampixa · sanotts-viz branch · static build, no cookies, no tracking</p>
+            <p className="faint">ampixa · sanotts viz · static build, no cookies, no tracking</p>
           </div>
         </div>
 

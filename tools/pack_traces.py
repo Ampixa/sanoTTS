@@ -22,6 +22,7 @@ Pure stdlib. No numpy.
 """
 import json
 import math
+import os
 import struct
 import sys
 from pathlib import Path
@@ -40,11 +41,13 @@ VOCAB = ["<pad>", "<bos>", "<eos>"] + [
 ]
 assert len(VOCAB) == 62
 
-# Sentence texts for the eight golden rows, from the repo's evaluation record
-# (experiments/evidence/e12-nano-final-250k-20260822.json -> rows_meta.rows).
+# Sentence texts for the eight golden rows, from the internal evaluation
+# record (rows_meta.rows). Override with SANOTTS_EVIDENCE if it lives elsewhere.
 EVIDENCE = Path(
-    "/home/sannux/ampixa/saanotts/experiments/evidence/"
-    "e12-nano-final-250k-20260822.json"
+    os.environ.get(
+        "SANOTTS_EVIDENCE",
+        str(Path(__file__).resolve().parent / "evidence" / "rows.json"),
+    )
 )
 
 

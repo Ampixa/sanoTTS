@@ -4,17 +4,16 @@
  * here, never from literals scattered in components.
  *
  * evidence keys:
- *   [meta]    public/engine/meta.json (shipped voice manifest, master branch)
- *   [audit]   saanotts docs/e12-nano-checkpoint-audit.json
- *   [e13]     saanotts experiments/e13-substitution-reallocation-sub300k-20260823.json
- *   [lanes]   saanotts docs/HANDOFF-sub300k-and-harmonic-source-20260827.md,
- *             docs/e12-nano-final-characterisation.md
+ *   [meta]    shipped voice manifest (public/engine/meta.json)
+ *   [audit]   internal checkpoint audit notes
+ *   [e13]     internal sub-300K reallocation experiment notes
+ *   [lanes]   internal training-lane handoff + characterisation docs
  *   [wer]     paper Table 6 (ljtest150, four recognizers)
  *   [mos]     paper Table 7 (screened in-sample pilot, 31/44 sessions)
- *   [mcu]     saanotts mcu/ports/esp32s3/measurements/04-parallel-head-spec-COM5.log
- *             (RTF 0.185327, E12-nano 294,642) and saanotts-embedded README (R7 567,008)
- *   [fe]      saanotts docs/e12-nano-frontend-without-spacy.md
- *   [trace]   this branch: engine trace vs golden fixtures, min corr 0.981
+ *   [mcu]     internal ESP32-S3 measurement logs (RTF 0.185327, E12-nano
+ *             294,642) and embedded-port notes (R7 567,008)
+ *   [fe]      internal frontend notes
+ *   [trace]   engine traces vs golden fixtures, min corr 0.981
  */
 
 export const PARAMS = {
@@ -128,6 +127,6 @@ export const TRAINING = {
 } as const;
 
 export const EVIDENCE_NOTE =
-  "All values above are cross-checked against the repos listed in each group; " +
-  "tensors on this site are int8 device-math traces of the shipped en_us_e13b " +
-  "weights, validated against the golden fixtures (min corr 0.981 ≥ 0.98 gate).";
+  "All values above are cross-checked against the internal sources listed in each group; " +
+  "tensors on this site are traces of the shipped on-device weights, " +
+  "validated against golden test vectors (min corr 0.981 ≥ 0.98 gate).";

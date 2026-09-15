@@ -84,6 +84,7 @@ export function TensorCanvas({
         im.data[i * 4 + 2] = rgb[2]; im.data[i * 4 + 3] = 255;
       }
     }
+    cx.putImageData(im, 0, 0);
     return off;
   }, [data, rows, cols, stride, mode, lo, hi, absmax]);
 

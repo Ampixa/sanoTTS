@@ -46,7 +46,8 @@ code { font-family: inherit; font-size: 0.95em; background: var(--accent-soft); 
   backdrop-filter: blur(4px);
   font-size: 13px;
 }
-#topbar .wordmark { font-weight: bold; font-size: 16px; letter-spacing: -0.5px; }
+#topbar .wordmark { font-weight: bold; font-size: 16px; letter-spacing: -0.5px; color: var(--ink); text-decoration: none; }
+#topbar a.wordmark:hover .tts { text-decoration: underline; }
 #topbar .wordmark .tts { color: var(--accent); }
 #topbar select {
   font-family: var(--mono);
