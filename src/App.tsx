@@ -88,7 +88,7 @@ export default function App() {
   return (
     <div>
       <div id="topbar">
-        <a className="wordmark" href="https://ampixa.github.io/sanoTTS/" target="_blank" rel="noreferrer">sano<span className="tts">TTS</span></a>
+        <a className="wordmark" href="https://ampixa.github.io/sanotts-viz/" target="_blank" rel="noreferrer">sano<span className="tts">TTS</span></a>
         <span className="dim">{PARAMS.total.toLocaleString()} params · traced live</span>
         <span className="spacer" />
         <label className="dim" htmlFor="rowsel">sentence</label>
@@ -120,7 +120,7 @@ export default function App() {
               runtime is validated against bit-exact golden test vectors. The
               live demo runs the same engine compiled for the browser.
             </p>
-            <p className="faint">ampixa · sanotts viz · static build, no cookies, no tracking</p>
+            <p className="faint">ampixa · sanotts viz · GPL-3.0 · static build, no cookies, no tracking</p>
           </div>
         </div>
 

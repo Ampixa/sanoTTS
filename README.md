@@ -1,10 +1,10 @@
 # sanoTTS — Inside a 294,279-Parameter TTS System
 
-An interactive, scroll-driven walkthrough of **sanoTTS**, a complete neural
-text-to-speech system small enough to run on microcontroller-class hardware
-(e.g. ESP32-S3). Every tensor shown on the page is a real intermediate value
-captured from the shipped int8 model while it synthesized an actual sentence —
-no mock-ups, no stand-in data.
+**Distill your own tiny voice.** An interactive, scroll-driven walkthrough of
+**sanoTTS**, a complete neural text-to-speech system small enough to run on
+microcontroller-class hardware (e.g. ESP32-S3). Every tensor shown on the page
+is a real intermediate value captured from the shipped int8 model while it
+synthesized an actual sentence — no mock-ups, no stand-in data.
 
 ![Demo](public/assets/site.gif)
 
@@ -79,4 +79,9 @@ The build is fully static: no cookies, no tracking, no server-side component.
 
 ## License
 
-See the repository for license information.
+This project is open source under the
+[GNU General Public License v3.0](LICENSE) (GPL-3.0). sanoTTS builds on the
+work of [Piper](https://github.com/rhasspy/piper) and
+[eSpeak NG](https://github.com/espeak-ng/espeak-ng).
+
+**Distill your own tiny voice:** <https://github.com/Ampixa/sanoTTS>

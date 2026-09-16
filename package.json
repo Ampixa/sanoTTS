@@ -2,6 +2,7 @@
   "name": "sanotts-viz",
   "private": true,
   "version": "0.1.0",
+  "license": "GPL-3.0-only",
   "type": "module",
   "description": "Interactive visualization of the sanoTTS sub-300K neural TTS pipeline (sanotts-viz branch)",
   "scripts": {
