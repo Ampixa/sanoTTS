@@ -1,0 +1,69 @@
+{
+ "row_id": "000006_i1200",
+ "n_tokens": 99,
+ "frames": 614,
+ "samples": 156928,
+ "seed": 16250164440165621818,
+ "freeze_durs": 0,
+ "got_frames": 612,
+ "got_samples": 156416,
+ "corr_vs_fixture": 0.541579,
+ "arena_peak": 217456,
+ "elapsed_us": 49204,
+ "text": "The teacher model must handle unfamiliar wording without sounding rushed or clipped.  Variant 2.",
+ "phonemes": "\u00f0\u0259 t\u02c8i\u02a7\u0259\u0279 m\u02c8\u0251d\u1d4al m\u02c8\u028cst h\u02c8\u00e6nd\u0259l \u02cc\u028cnf\u0259m\u02c8\u026ali\u0259\u0279 w\u02c8\u025c\u0279d\u026a\u014b w\u026a\u00f0\u02c8Wt s\u02c8Wnd\u026a\u014b \u0279\u02c8\u028c\u0283t \u0254\u0279 kl\u02c8\u026apt. v\u02c8\u025b\u0279i\u0259nt t\u02c8u.",
+ "duration_s": 6.517333333333333,
+ "pcm_peak": 0.38132503628730774,
+ "seed_lo": 365011002,
+ "seed_hi": 3783536246,
+ "packs": {
+  "ids": "u8",
+  "durs": "u8",
+  "pcm": "i16",
+  "mel": "u8",
+  "spec_logmag": "u8",
+  "spec_phase": "u8",
+  "hidden": "i8"
+ },
+ "scales": {
+  "dur_hidden": {
+   "scale": 0.037755095113919473
+  },
+  "tok_hidden": {
+   "scale": 0.011562187840619425
+  },
+  "frame_hidden": {
+   "scale": 0.1468292746956893
+  },
+  "stem": {
+   "scale": 0.02706158442760077
+  },
+  "trunk_b0": {
+   "scale": 0.024261960833091435
+  },
+  "trunk_b1": {
+   "scale": 0.026052903002641334
+  },
+  "trunk_b2": {
+   "scale": 0.027313326287457324
+  },
+  "trunk_b3": {
+   "scale": 0.026405439602108453
+  },
+  "noise": {
+   "scale": 0.026661264614796076
+  },
+  "mel": {
+   "lo": -16.34710121154785,
+   "hi": 4.274875164031982
+  },
+  "spec_logmag": {
+   "lo": -23.025850929940457,
+   "hi": 4.382778734631531
+  },
+  "spec_phase": {
+   "lo": -3.1415862870103872,
+   "hi": 3.1415896575522573
+  }
+ }
+}

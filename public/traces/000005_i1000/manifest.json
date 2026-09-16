@@ -1,0 +1,69 @@
+{
+ "row_id": "000005_i1000",
+ "n_tokens": 90,
+ "frames": 583,
+ "samples": 148992,
+ "seed": 11009205998741855493,
+ "freeze_durs": 0,
+ "got_frames": 583,
+ "got_samples": 148992,
+ "corr_vs_fixture": 0.976366,
+ "arena_peak": 210272,
+ "elapsed_us": 48351,
+ "text": "The acoustic student needs natural pauses without sounding rushed or clipped.  Variant 2.",
+ "phonemes": "\u00f0i \u0259k\u02c8ust\u026ak st\u02c8ud\u1d4ant n\u02c8idz n\u02c8\u00e6\u02a7\u0259\u0279\u1d4al p\u02c8\u0254z\u1d7bz w\u026a\u00f0\u02c8Wt s\u02c8Wnd\u026a\u014b \u0279\u02c8\u028c\u0283t \u0254\u0279 kl\u02c8\u026apt. v\u02c8\u025b\u0279i\u0259nt t\u02c8u.",
+ "duration_s": 6.208,
+ "pcm_peak": 0.3436874449253082,
+ "seed_lo": 3457916165,
+ "seed_hi": 2563280518,
+ "packs": {
+  "ids": "u8",
+  "durs": "u8",
+  "pcm": "i16",
+  "mel": "u8",
+  "spec_logmag": "u8",
+  "spec_phase": "u8",
+  "hidden": "i8"
+ },
+ "scales": {
+  "dur_hidden": {
+   "scale": 0.03777162296565499
+  },
+  "tok_hidden": {
+   "scale": 0.011633573554632232
+  },
+  "frame_hidden": {
+   "scale": 0.14668910709891733
+  },
+  "stem": {
+   "scale": 0.02695293877068467
+  },
+  "trunk_b0": {
+   "scale": 0.024952006152295692
+  },
+  "trunk_b1": {
+   "scale": 0.026088515604574848
+  },
+  "trunk_b2": {
+   "scale": 0.02682291053411529
+  },
+  "trunk_b3": {
+   "scale": 0.025293083641472765
+  },
+  "noise": {
+   "scale": 0.031717465618463954
+  },
+  "mel": {
+   "lo": -16.326414108276367,
+   "hi": 3.856813430786133
+  },
+  "spec_logmag": {
+   "lo": -23.025850929940457,
+   "hi": 4.278606444627236
+  },
+  "spec_phase": {
+   "lo": -3.141585163495996,
+   "hi": 3.1415847889919024
+  }
+ }
+}

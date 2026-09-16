@@ -1,0 +1,69 @@
+{
+ "row_id": "000004_i800",
+ "n_tokens": 85,
+ "frames": 573,
+ "samples": 146432,
+ "seed": 13979674133059659223,
+ "freeze_durs": 0,
+ "got_frames": 574,
+ "got_samples": 146688,
+ "corr_vs_fixture": 0.304191,
+ "arena_peak": 208032,
+ "elapsed_us": 47632,
+ "text": "The assistant should avoid metallic noise without sounding rushed or clipped.  Variant 2.",
+ "phonemes": "\u00f0i \u0259s\u02c8\u026ast\u1d4ant \u0283\u02cc\u028ad \u0259v\u02c8Yd m\u0259t\u02c8\u00e6l\u026ak n\u02c8Yz w\u026a\u00f0\u02c8Wt s\u02c8Wnd\u026a\u014b \u0279\u02c8\u028c\u0283t \u0254\u0279 kl\u02c8\u026apt. v\u02c8\u025b\u0279i\u0259nt t\u02c8u.",
+ "duration_s": 6.112,
+ "pcm_peak": 0.32661932706832886,
+ "seed_lo": 2025645527,
+ "seed_hi": 3254896526,
+ "packs": {
+  "ids": "u8",
+  "durs": "u8",
+  "pcm": "i16",
+  "mel": "u8",
+  "spec_logmag": "u8",
+  "spec_phase": "u8",
+  "hidden": "i8"
+ },
+ "scales": {
+  "dur_hidden": {
+   "scale": 0.03788956694715605
+  },
+  "tok_hidden": {
+   "scale": 0.011668482164698324
+  },
+  "frame_hidden": {
+   "scale": 0.1465683734323096
+  },
+  "stem": {
+   "scale": 0.027546204919890155
+  },
+  "trunk_b0": {
+   "scale": 0.02419220368693194
+  },
+  "trunk_b1": {
+   "scale": 0.026055294697678935
+  },
+  "trunk_b2": {
+   "scale": 0.031373200454111176
+  },
+  "trunk_b3": {
+   "scale": 0.029186599836574765
+  },
+  "noise": {
+   "scale": 0.028904847272737757
+  },
+  "mel": {
+   "lo": -16.3382511138916,
+   "hi": 3.8840079307556152
+  },
+  "spec_logmag": {
+   "lo": -23.025850929940457,
+   "hi": 4.323346306490925
+  },
+  "spec_phase": {
+   "lo": -3.1415593226669363,
+   "hi": 3.141577860653505
+  }
+ }
+}

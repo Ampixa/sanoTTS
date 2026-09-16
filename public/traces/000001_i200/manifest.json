@@ -1,0 +1,69 @@
+{
+ "row_id": "000001_i200",
+ "n_tokens": 73,
+ "frames": 415,
+ "samples": 105984,
+ "seed": 2236265385529901705,
+ "freeze_durs": 0,
+ "got_frames": 416,
+ "got_samples": 106240,
+ "corr_vs_fixture": 0.72089,
+ "arena_peak": 168848,
+ "elapsed_us": 27048,
+ "text": "The acoustic student should speak clearly without sounding rushed or clipped.",
+ "phonemes": "\u00f0i \u0259k\u02c8ust\u026ak st\u02c8ud\u1d4ant \u0283\u02cc\u028ad sp\u02c8ik kl\u02c8\u026a\u0279li w\u026a\u00f0\u02c8Wt s\u02c8Wnd\u026a\u014b \u0279\u02c8\u028c\u0283t \u0254\u0279 kl\u02c8\u026apt.",
+ "duration_s": 4.426666666666667,
+ "pcm_peak": 0.332161009311676,
+ "seed_lo": 402850441,
+ "seed_hi": 520671109,
+ "packs": {
+  "ids": "u8",
+  "durs": "u8",
+  "pcm": "i16",
+  "mel": "u8",
+  "spec_logmag": "u8",
+  "spec_phase": "u8",
+  "hidden": "i8"
+ },
+ "scales": {
+  "dur_hidden": {
+   "scale": 0.03493286493256336
+  },
+  "tok_hidden": {
+   "scale": 0.011752771580313135
+  },
+  "frame_hidden": {
+   "scale": 0.14511673093780758
+  },
+  "stem": {
+   "scale": 0.027704449150505968
+  },
+  "trunk_b0": {
+   "scale": 0.02494453069731945
+  },
+  "trunk_b1": {
+   "scale": 0.026055724602045974
+  },
+  "trunk_b2": {
+   "scale": 0.02730039161021315
+  },
+  "trunk_b3": {
+   "scale": 0.02601134870934674
+  },
+  "noise": {
+   "scale": 0.03249673768291323
+  },
+  "mel": {
+   "lo": -16.33962059020996,
+   "hi": 3.6920673847198486
+  },
+  "spec_logmag": {
+   "lo": -23.025850929940457,
+   "hi": 3.967868879357323
+  },
+  "spec_phase": {
+   "lo": -3.141587410524393,
+   "hi": 3.1415922790851116
+  }
+ }
+}

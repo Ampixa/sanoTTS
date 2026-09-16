@@ -1,0 +1,69 @@
+{
+ "row_id": "000008_i1600",
+ "n_tokens": 92,
+ "frames": 609,
+ "samples": 155648,
+ "seed": 6093641443730306605,
+ "freeze_durs": 0,
+ "got_frames": 608,
+ "got_samples": 155392,
+ "corr_vs_fixture": 0.849098,
+ "arena_peak": 216464,
+ "elapsed_us": 46390,
+ "text": "The assistant needs reliable pronunciation without sounding rushed or clipped.  Variant 3.",
+ "phonemes": "\u00f0i \u0259s\u02c8\u026ast\u1d4ant n\u02c8idz \u0279\u0259l\u02c8I\u0259b\u1d4al p\u0279\u0259n\u02cc\u028cnsi\u02c8A\u0283\u0259n w\u026a\u00f0\u02c8Wt s\u02c8Wnd\u026a\u014b \u0279\u02c8\u028c\u0283t \u0254\u0279 kl\u02c8\u026apt. v\u02c8\u025b\u0279i\u0259nt \u03b8\u0279\u02c8i.",
+ "duration_s": 6.474666666666667,
+ "pcm_peak": 0.3408429026603699,
+ "seed_lo": 2317661741,
+ "seed_hi": 1418786459,
+ "packs": {
+  "ids": "u8",
+  "durs": "u8",
+  "pcm": "i16",
+  "mel": "u8",
+  "spec_logmag": "u8",
+  "spec_phase": "u8",
+  "hidden": "i8"
+ },
+ "scales": {
+  "dur_hidden": {
+   "scale": 0.03787716167179618
+  },
+  "tok_hidden": {
+   "scale": 0.011650413040101058
+  },
+  "frame_hidden": {
+   "scale": 0.14570269246739664
+  },
+  "stem": {
+   "scale": 0.027579977756410134
+  },
+  "trunk_b0": {
+   "scale": 0.024492134259441706
+  },
+  "trunk_b1": {
+   "scale": 0.026052508767195573
+  },
+  "trunk_b2": {
+   "scale": 0.028261860524575542
+  },
+  "trunk_b3": {
+   "scale": 0.02726879082326814
+  },
+  "noise": {
+   "scale": 0.03231700762050358
+  },
+  "mel": {
+   "lo": -16.256444931030273,
+   "hi": 3.7685964107513428
+  },
+  "spec_logmag": {
+   "lo": -23.025850929940457,
+   "hi": 4.25233154513641
+  },
+  "spec_phase": {
+   "lo": -3.141563067717223,
+   "hi": 3.1415787969159696
+  }
+ }
+}
