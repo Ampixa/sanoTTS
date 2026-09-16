@@ -149,6 +149,7 @@ int main(int argc, char **argv) {
 
     static unsigned char arena[768 * 1024] __attribute__((aligned(16)));
     double min_corr = 2.0;
+    int n_skip = 0;
     mkdir(out, 0755);
 
     for (int r = 0; r < n_rows; r++) {
@@ -188,6 +189,7 @@ int main(int argc, char **argv) {
         int rc = snt_nano_synthesize(&cfg, ids, n_ids, pcm_cb, &sink, &st);
         if (rc != 0) {
             printf("[trace] %-14s rc=%d -- SKIP\n", rows[r].row_id, rc);
+            n_skip++;
             free(ids); free(durs); free(gold); free(sink.buf);
             continue;
         }
@@ -239,7 +241,8 @@ int main(int argc, char **argv) {
                 st.arena_peak, (long long)st.elapsed_us,
                 n_ids, n_ids, n_ids, n_ids,
                 st.frames, st.frames, st.frames, st.frames, st.frames,
-                st.frames, st.frames, st.frames, st.frames, st.samples);
+                st.frames, st.frames, st.frames, st.frames, st.frames,
+                st.samples);
             fclose(jf);
         }
         printf("[trace] %-14s N=%d T=%d pcm=%zu corr=%.6f arena=%zu\n",
@@ -250,5 +253,14 @@ int main(int argc, char **argv) {
     printf("[trace] done. min corr vs fixture = %.6f %s\n", min_corr,
            min_corr >= 0.98 ? "(PASS, >= 0.98)" : "(BELOW GOLDEN GATE 0.98)");
     free(front); free(dec);
+    if (n_skip) {
+        fprintf(stderr, "[trace] FAIL: %d row(s) skipped\n", n_skip);
+        return 1;
+    }
+    if (freeze && min_corr < 0.98) {
+        fprintf(stderr, "[trace] FAIL: min corr %.6f below golden gate 0.98\n",
+                min_corr);
+        return 1;
+    }
     return 0;
 }

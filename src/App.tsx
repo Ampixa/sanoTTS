@@ -34,13 +34,13 @@ export default function App() {
   const explainRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<(HTMLElement | null)[]>([]);
 
-  /* trace index → sentence list, then first row */
+  /* trace index → sentence list; the rowId effect below performs the
+   * initial row load (setRows sets rowId to the first row) */
   useEffect(() => {
     loadIndex().then((ix) => {
       setRows(ix.rows, ix.vocab);
-      loadRow(ix.rows[0].row_id, ix.rows[0]).then((t) => setTrace(t, false));
     }).catch((e) => console.error(e));
-  }, [setRows, setTrace]);
+  }, [setRows]);
 
   /* row switching */
   useEffect(() => {
@@ -88,7 +88,7 @@ export default function App() {
   return (
     <div>
       <div id="topbar">
-        <a className="wordmark" href="https://ampixa.github.io/sanotts-viz/" target="_blank" rel="noreferrer">sano<span className="tts">TTS</span></a>
+        <a className="wordmark" href="https://ampixa.github.io/sanoTTS/sanotts-viz/" target="_blank" rel="noreferrer">sano<span className="tts">TTS</span></a>
         <span className="dim">{PARAMS.total.toLocaleString()} params · traced live</span>
         <span className="spacer" />
         <label className="dim" htmlFor="rowsel">sentence</label>

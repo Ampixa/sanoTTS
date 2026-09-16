@@ -91,7 +91,9 @@ def main() -> int:
         for row in ev.get("rows_meta", {}).get("rows", []):
             texts[row["row_id"]] = row["text"]
     else:
-        print(f"warn: {EVIDENCE} not found; texts will be empty", file=sys.stderr)
+        raise SystemExit(
+            f"{EVIDENCE} not found; set SANOTTS_EVIDENCE to a valid rows file"
+        )
 
     index_rows = []
     for row_dir in sorted(TRACES.iterdir()):
@@ -155,6 +157,10 @@ def main() -> int:
             },
             "scales": scales,
         })
+        # the raw-trace tensor descriptors point at the .f32/.i32 files
+        # deleted below (and carry trace-driver shapes); the packed files are
+        # described by "packs"/"scales" instead
+        man.pop("tensors", None)
         (row_dir / "manifest.json").write_text(json.dumps(man, indent=1))
 
         # drop the heavy float intermediates once packed

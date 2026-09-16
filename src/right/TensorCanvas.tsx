@@ -217,8 +217,8 @@ export function TensorCanvas({
     void dpr;
     const pwCss = rect.width - ((M.l + M.r + cbSpace) / cv.width) * rect.width;
     const x = e.clientX - rect.left - (M.l / cv.width) * rect.width;
-    const y = e.clientY - rect.top - (M.t / cv.width) * rect.height;
-    const phCss = rect.height - ((M.t + M.b) / cv.width) * rect.height;
+    const y = e.clientY - rect.top - (M.t / cv.height) * rect.height;
+    const phCss = rect.height - ((M.t + M.b) / cv.height) * rect.height;
     const c = Math.floor((x / pwCss) * cols);
     let r = Math.floor((y / phCss) * rows);
     if (flipY) r = rows - 1 - r;

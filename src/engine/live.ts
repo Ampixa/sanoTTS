@@ -79,7 +79,9 @@ export async function synthesizeLive(input: LiveInput): Promise<LiveResult> {
   const [M, blobs] = await Promise.all([loadModule(), loadBlobs()]);
 
   const nIds = input.ids.length;
-  const outCap = 2_400_000; // floats; worst case for 207 tokens × 80 frames
+  // floats; per-token durations clamp to NANO_DUR_MAX_DURATION (80) frames,
+  // each frame emits NANO_HOP (256) samples → nIds × 80 × 256 covers any input
+  const outCap = nIds * 80 * 256;
   const arenaSize = 768 * 1024;
 
   const pFront = M._malloc(blobs.front.length);

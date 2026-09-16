@@ -18,7 +18,7 @@ export function RegulatorFan() {
   /* cycle the highlighted token, but only while this stage is mounted */
   useEffect(() => {
     if (!N) return;
-    const t = setInterval(() => setHi((h) => (h + 1) % Math.max(1, Math.min(N - 2, 24)) + 1 - 1), 1500);
+    const t = setInterval(() => setHi((h) => (h % Math.max(1, Math.min(N - 2, 24))) + 1), 1500);
     return () => clearInterval(t);
   }, [N]);
 

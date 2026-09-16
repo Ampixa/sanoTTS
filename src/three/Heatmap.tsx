@@ -2,7 +2,7 @@
  * Heatmap — a [rows × cols] tensor on a DataTexture plane (mel, spectrum).
  * Hover maps the UV back to a cell and reports the dequantized value.
  */
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import { minmax, rampHot, rampPhase, rampSigned } from "./ramp";
@@ -56,6 +56,9 @@ export function Heatmap({
     tex.minFilter = THREE.NearestFilter;
     return { texture: tex, lo, hi, absmax };
   }, [data, rows, cols, tcols, stride, mode]);
+
+  /* free the GPU texture when it is replaced or the mesh unmounts */
+  useEffect(() => () => texture.dispose(), [texture]);
 
   const w = width ?? cols * 0.012;
   const h = (w * rows) / cols;

@@ -1,8 +1,17 @@
 name: Deploy site to GitHub Pages
 
+# Single Pages deployment for this repo (GitHub allows only one Pages site
+# per repo, and each deploy replaces the whole site), so both sites ship in
+# one artifact:
+#   web/  -> https://ampixa.github.io/sanoTTS/             (WASM demo, as before)
+#   dist/ -> https://ampixa.github.io/sanoTTS/sanotts-viz/ (this viz site)
+# The viz app is built with vite base "./" (relative paths), so it works
+# unchanged under the /sanotts-viz/ subpath. Replaces the old pages.yml,
+# which deployed web/ alone and would have clobbered the viz subpath.
+
 on:
   push:
-    branches: [sanotts-viz]
+    branches: [master, sanotts-viz]
   workflow_dispatch:
 
 permissions:
@@ -10,13 +19,17 @@ permissions:
   pages: write
   id-token: write
 
+# One live deployment at a time; don't cancel an in-flight publish.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,8 +43,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build viz site
         run: npm run build
+
+      - name: Assemble site (web demo at root, viz at sanotts-viz/)
+        run: |
+          mkdir -p _site/sanotts-viz
+          cp -r web/. _site/
+          cp -r dist/. _site/sanotts-viz/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -39,15 +58,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: _site
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
