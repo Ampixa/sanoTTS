@@ -10,36 +10,37 @@ export function SpectrumCh() {
       <h2>1,026 numbers per frame: magnitude <i>and phase</i>.</h2>
 
       <p>
-        The final LayerNorm and a 62→1026 conv head turn the trunk's output into a
-        full linear spectrum each frame: <b>513 log-magnitudes and 513 phases</b>,
-        one per STFT bin. Bins are {hzPerBin.toFixed(1)} Hz apart, 0 Hz to{" "}
-        {(512 * hzPerBin / 1000).toFixed(0)} kHz; DC and Nyquist magnitudes are
-        pinned to zero by construction.
+        A final LayerNorm and a {ARCH.dec.dim}→{ARCH.head.out.toLocaleString()}{" "}
+        projection turn the trunk's output into a full linear spectrum each
+        frame: <b>{ARCH.head.bins} log-magnitudes and {ARCH.head.bins} phases</b>,
+        one per STFT bin. Bins are {hzPerBin.toFixed(1)} Hz apart, spanning 0 Hz
+        to {(512 * hzPerBin / 1000).toFixed(0)} kHz; DC and Nyquist magnitudes
+        are pinned to zero by construction.
       </p>
 
-      <h3>why phase is the hard part</h3>
+      <h3>Why phase is the hard part</h3>
       <p>
-        Classical pipelines throw phase away and rebuild it with Griffin–Lim.
-        sanoTTS <b>predicts phase directly</b> — the mel carries no phase, so the
-        decoder's noise conditioning is what makes phase plausible at all. The
-        phase heatmap looks like static; the structure lives in how it changes
-        frame to frame.
+        Classical pipelines throw phase away and rebuild it with iterative
+        algorithms like Griffin–Lim. sanoTTS <b>predicts phase directly</b> — the
+        mel carries no phase at all, so the decoder's noise conditioning is what
+        makes a plausible phase possible. The phase heatmap looks like static;
+        the structure lives in how it changes frame to frame.
       </p>
 
-      <h3>this sentence</h3>
+      <h3>This sentence</h3>
       {trace && (
         <p className="small">
-          [513×{trace.T}] ×2 = {(1026 * trace.T).toLocaleString()} numbers per
-          utterance. Drag across the log-magnitude heatmap: the line plot below
-          shows that exact frame's spectrum — the narrow crimson peaks are pitch
-          harmonics, spaced by the voice's fundamental.
+          [{ARCH.head.bins}×{trace.T}] ×2 = {(ARCH.head.out * trace.T).toLocaleString()}{" "}
+          numbers per utterance. Drag across the log-magnitude heatmap: the line
+          plot below shows that exact frame's spectrum — the narrow crimson peaks
+          are pitch harmonics, spaced by the voice's fundamental.
         </p>
       )}
 
       <div className="lookright">
-        two heatmaps (magnitude with a real Hz axis, phase), and a draggable frame
-        cursor with a live per-frame spectrum plot. Press play and the cursor
-        follows the audio.
+        Two heatmaps (magnitude with a real Hz axis, phase), and a draggable
+        frame cursor with a live per-frame spectrum plot. Press play and the
+        cursor follows the audio.
       </div>
     </div>
   );

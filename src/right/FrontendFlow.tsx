@@ -4,7 +4,6 @@
  * worked example; the phoneme string and ids are the real per-sentence trace.
  */
 import { useViz } from "../data/store";
-import { FRONTEND } from "../data/paperFacts";
 
 const EXAMPLE_TOKENS: [string, string][] = [
   ["The", "DT"], ["acoustic", "JJ"], ["student", "NN"], ["should", "MD"],
@@ -56,7 +55,7 @@ export function FrontendFlow() {
         </div>
       </div>
 
-      <Arrow label={`gold lexicon ${FRONTEND.goldEntries.toLocaleString()} (790 tag-keyed) · silver ${FRONTEND.silverEntries.toLocaleString()} · espeak-ng fallback`} />
+      <Arrow label="gold lexicon (tag-keyed entries) · silver lexicon · espeak-ng fallback" />
       <div style={{ ...box, wordBreak: "break-all", lineHeight: 1.9 }}>
         <span className="faint">phonemes — </span>
         <b className="accent">{trace.manifest.phonemes}</b>

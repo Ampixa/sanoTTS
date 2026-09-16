@@ -115,10 +115,10 @@ export default function App() {
           ))}
           <div id="footer" style={{ padding: "26px 7% 60px" }}>
             <p>
-              <b className="accent">provenance.</b> every tensor on this page is
-              traced from the actual on-device model, stage by stage, and
-              validated against golden test vectors. the live demo runs the
-              same engine compiled for the browser.
+              <b className="accent">Provenance.</b> Every tensor on this page is
+              traced from the actual on-device model, stage by stage, and the
+              runtime is validated against bit-exact golden test vectors. The
+              live demo runs the same engine compiled for the browser.
             </p>
             <p className="faint">ampixa · sanotts viz · static build, no cookies, no tracking</p>
           </div>

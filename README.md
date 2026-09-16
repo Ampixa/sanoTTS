@@ -1,96 +1,82 @@
-# sanoTTS Visualization
+# sanoTTS — Inside a 294,279-Parameter TTS System
 
-Visualization of the complete **sanoTTS en_us_e13b** text-to-speech pipeline.
+An interactive, scroll-driven walkthrough of **sanoTTS**, a complete neural
+text-to-speech system small enough to run on microcontroller-class hardware
+(e.g. ESP32-S3). Every tensor shown on the page is a real intermediate value
+captured from the shipped int8 model while it synthesized an actual sentence —
+no mock-ups, no stand-in data.
 
-Every tensor visualized on the page comes from a real inference trace of the shipped int8 engine.
+![Demo](public/assets/site.gif)
 
-## Run
+## What the site shows
+
+The page follows the full synthesis pipeline, stage by stage:
+
+```text
+Text
+ ↓   rule-based frontend (Misaki G2P, zero learned parameters)
+Phoneme IDs
+ ↓   duration predictor (22,858 params)
+Durations
+ ↓   dual-rate acoustic model (65,299 params)
+Mel spectrogram (100 channels)
+ ↓   waveform decoder (206,122 params, ConvNeXt-style + iSTFT head)
+PCM audio (24 kHz)
+```
+
+Along the way you can:
+
+- Inspect the real phoneme→id chain, predicted durations, hidden states, mel
+  spectrograms, decoder activations, spectra, and the final waveform.
+- Play the traced audio and scrub a cursor across every visualization in sync.
+- See the full parameter budget, the controlled quality lanes, the evaluation
+  evidence (ASR word error rate, MOS pilot, objective metrics), and the
+  microcontroller deployment numbers.
+- **Run the actual engine in your browser** — the same int8 C99 inference code
+  the ESP32 compiles, built to WebAssembly — and verify that it reproduces the
+  shipped trace sample-for-sample.
+
+## Run locally
+
+Requires Node.js 18+.
 
 ```bash
 npm install
 npm run dev
 ```
 
-## What you can explore
+Then open the printed local URL (default <http://localhost:5173>).
 
-The visualization walks through the complete synthesis pipeline:
+## Build
 
-```text
-Text
- ↓
-Phoneme IDs
- ↓
-Duration Predictor
- ↓
-Acoustic Model
- ↓
-Mel Spectrogram
- ↓
-Waveform Decoder
- ↓
-PCM Audio
+```bash
+npm run build    # type-check + production bundle in dist/
+npm run preview  # serve the production build locally
 ```
 
-Each stage shows the actual intermediate data produced by the model, including:
+The build is fully static: no cookies, no tracking, no server-side component.
 
-* Phoneme IDs and frontend processing
-* Predicted durations
-* Acoustic hidden states
-* Mel spectrograms
-* Decoder representations
-* Spectrum
-* Generated waveform
-* Audio playback
+## How to read the page
 
-## Interaction
+- **Left column** — the story. Scrolling it is the only thing that moves the
+  pipeline stage on the right.
+- **Right panel** — an interactive workbench for the current stage: hover
+  tensors for exact values, drag cursors, press play, run the model. It never
+  scrolls or switches stages on its own.
+- **Top bar** — the crimson schematic always shows where you are in the chain
+  and provides explicit navigation, plus a sentence selector that swaps the
+  loaded trace.
 
-The page uses a two-panel layout:
+## Data provenance
 
-* **Left:** the scrollytelling explanation. Scrolling moves through the pipeline.
-* **Right:** an interactive workbench for the current stage.
+- Walkthrough tensors are precomputed traces of the shipped int8 engine,
+  loaded from `public/traces/`.
+- Live inference runs `public/engine/snt_nano_heartnano.wasm`, compiled from
+  the same portable C99 runtime that targets the microcontroller.
+- All headline figures (parameter counts, SCOREQ lanes, WER, MOS, board RTF)
+  come from the sanoTTS paper; `src/data/paperFacts.ts` maps each displayed
+  number to the section or table where it is reported.
 
-The workbench supports tensor inspection, hover and cursor interactions, waveform playback, and live model execution without changing the current stage.
+## License
 
-The pipeline bar at the top shows the current stage and provides explicit navigation.
-
-## Live inference
-
-The site includes the browser version of the sanoTTS int8 engine compiled to WebAssembly.
-
-The **Run Live** section performs actual inference in the browser and allows its output to be compared with the recorded trace.
-
-## Data
-
-The visualization uses precomputed inference traces for the walkthrough and the WebAssembly engine for live inference.
-
-Traces are loaded from:
-
-```text
-public/traces/
-```
-
-The browser engine and voice data are provided in:
-
-```text
-public/engine/
-```
-
-## Project structure
-
-```text
-src/
-├── chapters/       # Scrollytelling chapters
-├── right/          # Pipeline and tensor visualizations
-├── three/          # 3D pipeline overview
-├── data/            # Trace loading and application state
-├── audio/           # WebAudio playback
-└── engine/          # Browser WASM inference
-
-public/
-├── traces/          # Precomputed inference traces
-└── engine/          # WASM engine and voice data
-
-tools/
-├── run_traces.sh    # Generate inference traces
-└── pack_traces.py   # Prepare traces for the browser
-``
+See the repository for license information.

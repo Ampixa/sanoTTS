@@ -16,18 +16,11 @@
  "n_fft": 1024,
  "mel_channels": 100,
  "vocab_size": 62,
- "frontend": "misaki-normalized espeak-ng IPA, character-level 62-symbol vocabulary (web/trellis_frontend.js)",
+ "frontend": "misaki-normalized espeak-ng IPA, character-level 62-symbol vocabulary",
  "params": 294279,
  "param_breakdown": {
   "duration": 22858,
   "acoustic": 65299,
   "decoder": 206122
- },
- "checkpoints": {
-  "duration": "artifacts/kokoro-corpus-af_heart-20260821/runs/e12-nano-duration/duration-student.pt",
-  "acoustic": "artifacts/kokoro-corpus-af_heart-20260821/runs/e13-armb-acoustic/latent-student.pt",
-  "decoder": "artifacts/kokoro-corpus-af_heart-20260821/runs/e13-armb-decoder/tiny-vocos-student.pt"
- },
- "golden_fixture": "mcu/test/fixtures/en_us_e13b",
- "exported": "2026-09-02 on k2 via tools/export_e12_nano_q8.py"
+ }
 }

@@ -8,12 +8,12 @@ export function Hero() {
     <div id="hero">
       <h1 className="wordmark">sano<span className="tts">TTS</span></h1>
       <p className="tagline">
-        a complete neural text-to-speech system in <b>{PARAMS.total.toLocaleString()} parameters</b>,
-        built to run on the class of chip inside a sensor node.
+        A complete neural text-to-speech system in <b>{PARAMS.total.toLocaleString()} parameters</b> —
+        small enough to run on the class of chip inside a sensor node.
       </p>
 
       <div className="howto">
-        <b>how to read this page.</b> The left column is the story — scrolling it is
+        <b>How to read this page.</b> The left column is the story — scrolling it is
         the only thing that moves the pipeline stage on the right. The right
         panel is a workbench: hover any tensor, drag cursors, press play, run the
         model — it will never scroll or switch stages on its own. The crimson bar
@@ -25,28 +25,30 @@ export function Hero() {
         <Stat label="frontend params" value="0" accent />
         <Stat label="fp32 size" value={`${(PARAMS.total * 4 / 1e6).toFixed(2)} MB`} />
         <Stat label="SCOREQ (n=249)" value={OBJECTIVE.scoreq.toFixed(2)} />
-        <Stat label="WER vs recordings" value={`+${WER.delta.toFixed(2)} pt`} />
+        <Stat label="WER gap vs teacher" value={`+${WER.delta.toFixed(2)} pt`} />
       </StatRow>
 
-      <h3>what you are looking at</h3>
+      <h3>What you are looking at</h3>
       <p>
-        Everything drawn here is a <b>real intermediate tensor</b> from the shipped
-        int8 model, traced while it synthesized the sentence selected above. No
-        schematic mock-ups, no stand-in data: the C99 that produced these numbers
-        is the same code the ESP32 firmware compiles.
+        Every stage of a real TTS pipeline, drawn from the inside: text becomes
+        phoneme ids, ids become durations, durations become a mel spectrogram,
+        and the spectrogram becomes a 24&nbsp;kHz waveform. Everything rendered
+        here is a <b>real intermediate tensor</b> from the shipped int8 model,
+        captured while it synthesized the sentence selected above. No schematic
+        mock-ups and no stand-in data — the C99 that produced these numbers is
+        the same code the ESP32 firmware compiles.
       </p>
       {trace && (
         <p className="small">
-          currently loaded: <b className="accent">{trace.info.row_id}</b> —{" "}
+          Currently loaded: <b className="accent">{trace.info.row_id}</b> —{" "}
           "{trace.info.text.slice(0, 80)}{trace.info.text.length > 80 ? "…" : ""}"
           {" "}→ {trace.N} tokens, {trace.T} frames, {trace.pcm.length.toLocaleString()} samples.
-          The rule frontend reproduces the reference phoneme ids bit-for-bit on{" "}
-          {(FRONTEND.rulesFw.bitIdentical * 100).toFixed(1)}% of {FRONTEND.rulesFw.n}{" "}
-          held-out rows (segmentally identical on{" "}
-          {(FRONTEND.rulesFw.segmentalIdentical * 100).toFixed(1)}%).
+          The rule-based frontend replaced a{" "}
+          {FRONTEND.neuralTagger.toLocaleString()}-parameter learned tagger with no
+          measurable quality change (SCOREQ, {FRONTEND.swapN} held-out sentences).
         </p>
       )}
-      <p className="small faint">scroll to begin the walkthrough ↓</p>
+      <p className="small faint">Scroll to begin the walkthrough ↓</p>
     </div>
   );
 }

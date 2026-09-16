@@ -3,3 +3,5 @@ dist/
 *.log
 .DS_Store
 engine/trace/nano_trace
+# owner-only evidence trail — never publish
+.provenance.local.md

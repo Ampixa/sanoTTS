@@ -63,7 +63,7 @@ export function BudgetChart() {
           int8 export: {(MCU.weightsBytes / 1024).toFixed(1)} KiB of weights · arena peak {(MCU.arenaPeakBytes / 1024).toFixed(1)} KiB
         </text>
         <text x={30} y={y0 + 164} fontSize={10} fill="#888" fontFamily={MONO}>
-          counts verified against meta.json + blob offsets by tools/verify_facts.py
+          counts cross-checked against the shipped voice manifest + weight-blob offsets
         </text>
       </svg>
     </div>
@@ -108,7 +108,7 @@ export function EvidenceChart() {
       <div>
         <div className="viz-title" style={{ padding: "0 0 4px" }}>WER % — {WER.set} <span className="dim">(n={WER.n}, four recognizers)</span></div>
         <table className="facts">
-          <thead><tr><th>recognizer</th><th>recordings</th><th>sanoTTS</th><th>Δ</th></tr></thead>
+          <thead><tr><th>recognizer</th><th>teacher (Kokoro)</th><th>sanoTTS</th><th>Δ</th></tr></thead>
           <tbody>
             {WER.rows.map((r) => (
               <tr key={r.asr}>
@@ -165,7 +165,7 @@ export function DeployChart() {
           weights ({weightsKiB.toFixed(1)} KiB int8) are read straight from memory-mapped flash — only the arena lives in SRAM
         </text>
 
-        <text x={24} y={106} fontSize={12} fontFamily={MONO} fill="#111">measured RTF (board logs)</text>
+        <text x={24} y={106} fontSize={12} fontFamily={MONO} fill="#111">measured RTF (physical boards)</text>
         <text x={24} y={126} fontSize={11} fontFamily={MONO} fill="#111">
           {MCU.s3.name} @{MCU.s3.clock}: <tspan fill="#DC143C" fontWeight="bold">{MCU.s3.rtf}</tspan>
           <tspan fill="#888" fontSize={9.5}> — earlier {MCU.s3.configParams.toLocaleString()}-param config</tspan>
