@@ -403,8 +403,13 @@ export class SanoTTS {
   }
 
   /** @private — the snt_nano synthesis path. */
-  async _synthesizeNano(text, bundle, { assetBase, maxSeconds }) {
+  async _synthesizeNano(text, bundle, { assetBase, maxSeconds, lengthScale }) {
     const N = await this._loadNanoModule(bundle.meta, assetBase);
+    // 0 selects the model's own pace. The module keeps the value between calls,
+    // so every call sets it; a module built before this export existed ignores it.
+    if (typeof N._snt_nano_wasm_set_length_scale === 'function') {
+      N._snt_nano_wasm_set_length_scale(lengthScale === undefined ? 0 : lengthScale);
+    }
     const frontend = await this._nanoFrontend(assetBase);
     const { ids } = frontend.textToIds(text);
     const ids32 = Int32Array.from(ids);
@@ -473,7 +478,7 @@ export class SanoTTS {
     // Which runtime a voice needs is a property of the voice, recorded in its
     // own meta.json, so adding a lineage needs no change here.
     if (bundle.meta.runtime === 'snt_nano') {
-      return this._synthesizeNano(text, bundle, { assetBase: this._assetBase, maxSeconds });
+      return this._synthesizeNano(text, bundle, { assetBase: this._assetBase, maxSeconds, lengthScale });
     }
 
     const sampleRate = bundle.meta.sample_rate || 22050;
