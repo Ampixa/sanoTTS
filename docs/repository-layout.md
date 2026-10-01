@@ -81,7 +81,8 @@ index.
 ## Documentation Policy
 
 - `README.md` states current capabilities and directs readers.
-- `docs/README.md` is the documentation index.
+- `docs/README.md` is the documentation index *(internal: it indexes research
+  records that are not mirrored publicly)*.
 - Current how-to material lives in undated guide files.
 - Architecture decisions and experiment records retain their dates.
 - `GOAL.md` is a historical lab ledger until it is split by dated sections; it
