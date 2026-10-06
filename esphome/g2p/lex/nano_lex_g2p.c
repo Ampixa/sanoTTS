@@ -3880,7 +3880,32 @@ static int nlg_resolve_tokens(uint16_t start, uint16_t count)
     return NANO_LEX_OK;
 }
 
-/* misaki/en.py: G2P.__call__, with fallback = None. */
+static nano_lex_g2p_fallback_t g_fallback;
+
+void nano_lex_g2p_set_fallback(nano_lex_g2p_fallback_t fallback)
+{
+    g_fallback = fallback;
+}
+
+static int nlg_fallback(const uint16_t *text, uint16_t length, nlg_ps_t *ps)
+{
+    uint8_t phones[NLG_MAX_WORD * 4];
+    nlg_sb_t sb;
+    int count, i;
+    if (!g_fallback) return NANO_LEX_OK;
+    count = g_fallback(text, length, phones, sizeof phones);
+    if (count < 0) return count;
+    if (count == 0) return NANO_LEX_OK;
+    if ((size_t)count > sizeof phones) return NANO_LEX_E_CAP;
+    nlg_sb_begin(&sb);
+    for (i = 0; i < count; ++i) {
+        if (!phones[i] || phones[i] > NANO_LEX_PH_COUNT) return NANO_LEX_E_INTERNAL;
+        nlg_sb_push(&sb, phones[i]);
+    }
+    return nlg_sb_finish(&sb, ps);
+}
+
+/* misaki/en.py: G2P.__call__, with an optional unknown-word fallback. */
 static int nlg_resolve(void)
 {
     nlg_ctx_t ctx;
@@ -3904,6 +3929,10 @@ static int nlg_resolve(void)
                                       &ps, &rating);
                 if (rc != NANO_LEX_OK) {
                     return rc;
+                }
+                if (!ps.present) {
+                    rc = nlg_fallback(g_ws.cp + t->text_off, t->text_len, &ps);
+                    if (rc != NANO_LEX_OK) return rc;
                 }
                 t->ps = ps;
                 t->rating = rating;
@@ -3941,6 +3970,11 @@ static int nlg_resolve(void)
                     rc = nlg_lexicon_call(&merged, &ctx, g_ws.merge_cp, mlen, &ps, &rating);
                     if (rc != NANO_LEX_OK) {
                         return rc;
+                    }
+                    /* Preserve dictionary compounds before predicting a single word. */
+                    if (!ps.present && right - left == 1) {
+                        rc = nlg_fallback(g_ws.merge_cp, mlen, &ps);
+                        if (rc != NANO_LEX_OK) return rc;
                     }
                     if (ps.present) {
                         nlg_sb_t sb;
@@ -3987,8 +4021,7 @@ static int nlg_resolve(void)
                             }
                             tk->rating = 3;
                         } else {
-                            /* No neural fallback here; nano_g2p.py with
-                             * fallback=None leaves the token unresolved too. */
+                            /* Neither dictionary nor fallback resolved this token. */
                             unresolved = 1;
                         }
                     }

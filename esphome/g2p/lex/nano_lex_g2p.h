@@ -66,6 +66,15 @@ extern "C" {
  */
 int nano_lex_g2p_text_to_ids(const char *text, int32_t *out, int cap);
 
+/* Optional unknown-word pronunciation, tried after dictionary/stem lookup.
+ * Input is a non-NUL-terminated UTF-16 word; output uses NLG_PH_* codes from
+ * nano_lex_tables.h. Return a count <= capacity, 0 if unsupported, or a
+ * negative NANO_LEX error. NULL restores dictionary-only behavior.
+ * Set only while no conversion is running; the frontend is not reentrant. */
+typedef int (*nano_lex_g2p_fallback_t)(const uint16_t *word, size_t length,
+                                     uint8_t *phones, size_t capacity);
+void nano_lex_g2p_set_fallback(nano_lex_g2p_fallback_t fallback);
+
 /* Human-readable name for a code from this module. Never NULL, including for
  * codes it does not recognise. */
 const char *nano_lex_g2p_strerror(int rc);
@@ -78,9 +87,9 @@ size_t nano_lex_g2p_workspace_bytes(void);
 
 /* Counters describing the last nano_lex_g2p_text_to_ids() or
  * nano_lex_g2p_text_to_phonemes() call. `oov_words` is the one that matters:
- * this port has no neural fallback, so a word that is in neither dictionary
- * and survives no stemmer contributes no phonemes at all. That is a defined,
- * countable outcome rather than a silent skip -- read it and log it. */
+ * a word unresolved by dictionaries, stemming, and the optional callback
+ * contributes no phonemes at all. That is a defined, countable outcome rather
+ * than a silent skip -- read it and log it. */
 typedef struct {
     uint16_t tokens;          /* tokens after retokenize() */
     uint16_t lexicon_words;   /* word groups the lexicon was asked about */

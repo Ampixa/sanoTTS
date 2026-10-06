@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "nano_lex_g2p.h"
+#include "nano_lex_tables.h"
 
 #define LINE_MAX_BYTES 8192
 #define ID_CAP         4096
@@ -72,6 +73,84 @@ static void check(int condition, const char *what)
     } else {
         printf("ok   %s\n", what);
     }
+}
+
+/* A deterministic pronunciation provider keeps these tests independent of any
+ * external G2P model. It can also return malformed results to check the API. */
+static int fallback_calls;
+static int fallback_result = 1;
+static uint8_t fallback_phone = NLG_PH_0062;
+static uint16_t fallback_word[64];
+static size_t fallback_length;
+static size_t fallback_capacity;
+
+static int test_fallback(const uint16_t *word, size_t length,
+                         uint8_t *phones, size_t capacity)
+{
+    fallback_calls++;
+    fallback_length = length;
+    fallback_capacity = capacity;
+    if (length <= sizeof fallback_word / sizeof fallback_word[0]) {
+        memcpy(fallback_word, word, length * sizeof *word);
+    }
+    if (capacity) phones[0] = fallback_phone;
+    return fallback_result;
+}
+
+static void fallback_selftest(void)
+{
+    static const uint16_t word[] = {'Z', 'o', 'g', 'b', 'l', 'i', 'p'};
+    int32_t before[32], ids[32];
+    nano_lex_g2p_stats_t st;
+    int full, rc, i;
+
+    rc = nano_lex_g2p_text_to_ids("Zogblip", ids, 32);
+    check(rc == NANO_LEX_E_NO_SYMBOLS, "fallback is disabled by default");
+    full = nano_lex_g2p_text_to_ids("mother-in-law", before, 32);
+    nano_lex_g2p_set_fallback(test_fallback);
+    rc = nano_lex_g2p_text_to_ids("mother-in-law", ids, 32);
+    check(full > 0 && rc == full &&
+          memcmp(before, ids, (size_t)full * sizeof *ids) == 0 && !fallback_calls,
+          "dictionary compounds take precedence over fallback");
+
+    rc = nano_lex_g2p_text_to_ids("Zogblip", ids, 32);
+    check(fallback_calls == 1 && fallback_length == 7 &&
+          memcmp(fallback_word, word, sizeof word) == 0,
+          "fallback receives the unresolved word as UTF-16");
+    check(rc == 3 && ids[0] == NANO_LEX_ID_BOS &&
+          ids[1] == NLG_PH_0062 + 2 && ids[2] == NANO_LEX_ID_EOS,
+          "fallback phonemes become framed model ids");
+    nano_lex_g2p_get_stats(&st);
+    check(st.oov_words == 0, "a successful fallback resolves the OOV word");
+
+    fallback_calls = 0;
+    rc = nano_lex_g2p_text_to_ids("ZogblipQuxwob", ids, 32);
+    check(rc == 4 && fallback_calls == 2 &&
+          ids[1] == NLG_PH_0062 + 2 && ids[2] == NLG_PH_0062 + 2,
+          "unresolved groups fall back one word at a time");
+
+    fallback_result = 0;
+    rc = nano_lex_g2p_text_to_ids("Zogblip", ids, 32);
+    nano_lex_g2p_get_stats(&st);
+    check(rc == NANO_LEX_E_NO_SYMBOLS && st.oov_words == 1,
+          "unsupported words remain unresolved");
+    fallback_result = NANO_LEX_E_ARENA;
+    ids[0] = -12345;
+    rc = nano_lex_g2p_text_to_ids("Zogblip", ids, 32);
+    check(rc == NANO_LEX_E_ARENA && ids[0] == -12345,
+          "fallback errors propagate without writing ids");
+    fallback_result = (int)fallback_capacity + 1;
+    rc = nano_lex_g2p_text_to_ids("Zogblip", ids, 32);
+    check(rc == NANO_LEX_E_CAP, "an oversized fallback count is rejected");
+    fallback_result = 1;
+    for (i = 0; i < 2; i++) {
+        fallback_phone = i ? NANO_LEX_PH_COUNT + 1 : 0;
+        rc = nano_lex_g2p_text_to_ids("Zogblip", ids, 32);
+        check(rc == NANO_LEX_E_INTERNAL, "an invalid fallback phoneme is rejected");
+    }
+    nano_lex_g2p_set_fallback(NULL);
+    rc = nano_lex_g2p_text_to_ids("Zogblip", ids, 32);
+    check(rc == NANO_LEX_E_NO_SYMBOLS, "NULL restores dictionary-only behavior");
 }
 
 static int selftest(void)
@@ -186,6 +265,8 @@ static int selftest(void)
         check(distinct, "every error code has its own non-NULL message");
         check(nano_lex_g2p_strerror(-999) != NULL, "an unknown code still names itself");
     }
+
+    fallback_selftest();
 
     printf("\nworkspace %zu bytes\n", nano_lex_g2p_workspace_bytes());
     printf("%s (%d failures)\n", failures ? "SELFTEST FAILED" : "SELFTEST PASSED", failures);

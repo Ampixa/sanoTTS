@@ -33,7 +33,7 @@ nano_lex_g2p.o: nano_lex_g2p.c nano_lex_g2p.h nano_lex_tables.h
 nano_lex_tables.o: nano_lex_tables.c nano_lex_tables.h
 	$(CC) $(CSTD) -Os -c -o $@ $<
 
-test_nano_lex_g2p.o: test_nano_lex_g2p.c nano_lex_g2p.h
+test_nano_lex_g2p.o: test_nano_lex_g2p.c nano_lex_g2p.h nano_lex_tables.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 selftest: $(BIN)
