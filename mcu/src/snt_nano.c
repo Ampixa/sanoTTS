@@ -102,7 +102,7 @@
 #define MELS NANO_MELS
 #define EK NANO_EMBED_KERNEL          /* mel embedding kernel, 7 */
 #define DWK NANO_DW_KERNEL            /* ConvNeXt depthwise kernel, 7 */
-#define LENGTH_SCALE 1.0f             /* the nano renders at length_scale 1.0 */
+#define LENGTH_SCALE 1.0f             /* default length_scale: the model's own pace */
 #define DC_POLE 0.9973f
 #define MAG_CLIP 100.0f
 #define LN_EPS 1e-6f                  /* nn.LayerNorm(eps=1e-6) */
@@ -1192,6 +1192,11 @@ int g_nano_prof_on = 0;
      DOFF_B##i##_PW0_W8, DOFF_B##i##_PW0_SCALE, DOFF_B##i##_PW0_BIAS, \
      DOFF_B##i##_PW1_W8, DOFF_B##i##_PW1_SCALE, DOFF_B##i##_PW1_BIAS, DOFF_B##i##_GAMMA_F32}
 
+/* 0 selects LENGTH_SCALE. Set through snt_nano_set_length_scale(). */
+static float g_length_scale;
+
+void snt_nano_set_length_scale(float length_scale) { g_length_scale = length_scale; }
+
 int snt_nano_synthesize(const snt_nano_config *cfg,
                         const int32_t *phoneme_ids, int n_ids,
                         snt_nano_pcm_cb cb, void *user,
@@ -1286,6 +1291,7 @@ int snt_nano_synthesize(const snt_nano_config *cfg,
     }
     static int durs[MAX_TOKENS_RT];
     {
+        const float length_scale = g_length_scale > 0.0f ? g_length_scale : LENGTH_SCALE;
         const float *os = FF(NOFF_DUR_OUT_SCALE);
         const float *ob = FF(NOFF_DUR_OUT_BIAS);
         const nano_w_t *w8 = stage_w(FQ(NOFF_DUR_OUT_W8), NANO_DUR_OUT_N16);
@@ -1294,7 +1300,7 @@ int snt_nano_synthesize(const snt_nano_config *cfg,
             float s_act = quant_gather(S, H, NANO_DUR_OUT_N16);
             nano_matvec(NANO_ACTBUF(S), w8, S->acc32, 1, NANO_DUR_OUT_N16);
             float logd = s_act * os[0] * (float)S->acc32[0] + ob[0];
-            float d = roundf(fmaxf(expf(logd), 1.0f) * LENGTH_SCALE);
+            float d = roundf(fmaxf(expf(logd), 1.0f) * length_scale);
             if (d < 1.0f) d = 1.0f;
             if (d > (float)NANO_DUR_MAX_DURATION) d = (float)NANO_DUR_MAX_DURATION;
             durs[t] = (int)d;
