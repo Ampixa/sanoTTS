@@ -2260,6 +2260,10 @@ static int nlg_get_number(const nlg_word_t *word_in, uint8_t currency, int is_he
                         return rc;
                     }
                 }
+                /* One fractional digit denotes tenths, not cents. */
+                if (npairs == 1 && n == 1) {
+                    v *= 10;
+                }
                 amounts[npairs++] = v;
                 seg_start = (uint16_t)(k + 1);
             }
