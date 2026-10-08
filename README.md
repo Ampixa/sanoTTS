@@ -39,6 +39,14 @@ synthesizes your text live in the browser. No server, no upload: text goes
 through an espeak-ng-in-WASM phonemizer and that voice's own neural stack, all
 client-side.
 
+## Inside sanoTTS
+
+**[ampixa.github.io/sanotts-anatomy](https://ampixa.github.io/sanotts-anatomy/)**
+— an interactive walkthrough of the 294,279-parameter **heart-nano** pipeline.
+Every stage of the deployed int8 model is rendered from real intermediate
+tensors captured during the synthesis of an actual sentence — a transparent,
+reproducible look at how the voice works from the inside.
+
 ## Install & use
 
 | Platform | Install | Then |
