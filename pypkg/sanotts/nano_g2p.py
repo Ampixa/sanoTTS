@@ -22,7 +22,7 @@ one is measured against (see docs/nano-espeak-free-frontend.md).
 
 Provenance of the vendored data is in `g2p_data/NOTICE.md`. In short: the
 dictionaries are misaki's own `us_gold.json` / `us_silver.json` (Apache-2.0,
-byte-identical to the misaki 0.9.4 wheel that built the packs), and the OOV
+with corrections documented in NOTICE.md), and the OOV
 model is PeterReid/graphemes_to_phonemes_en_us (Apache-2.0), trained on those
 same dictionaries rather than distilled from espeak.
 
