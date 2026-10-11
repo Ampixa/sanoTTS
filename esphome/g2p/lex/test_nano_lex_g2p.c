@@ -153,6 +153,31 @@ static void fallback_selftest(void)
     check(rc == NANO_LEX_E_NO_SYMBOLS, "NULL restores dictionary-only behavior");
 }
 
+static void currency_selftest(void)
+{
+    static const struct { const char *text; const char *spoken; } cases[] = {
+        {"$3.5", "three dollars and fifty cents"},
+        {"$0.5", "fifty cents"},
+        {"$.5", "fifty cents"},
+        {"$1.2", "one dollar and twenty cents"},
+        {"$-0.5", "minus fifty cents"},
+        {"$3.0", "three dollars"},
+        {"$3.05", "three dollars and five cents"},
+        {"$3.50", "three dollars and fifty cents"},
+        {"$1.01", "one dollar and one cent"},
+    };
+    int32_t actual[128], expected[128];
+    size_t i;
+    for (i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+        char what[128];
+        int n = nano_lex_g2p_text_to_ids(cases[i].text, actual, 128);
+        int m = nano_lex_g2p_text_to_ids(cases[i].spoken, expected, 128);
+        snprintf(what, sizeof what, "%s matches %s", cases[i].text, cases[i].spoken);
+        check(n > 0 && n == m &&
+              memcmp(actual, expected, (size_t)n * sizeof *actual) == 0, what);
+    }
+}
+
 static int selftest(void)
 {
     static int32_t ids[ID_CAP];
@@ -266,6 +291,7 @@ static int selftest(void)
         check(nano_lex_g2p_strerror(-999) != NULL, "an unknown code still names itself");
     }
 
+    currency_selftest();
     fallback_selftest();
 
     printf("\nworkspace %zu bytes\n", nano_lex_g2p_workspace_bytes());
