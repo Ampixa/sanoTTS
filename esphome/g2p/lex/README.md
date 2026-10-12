@@ -275,10 +275,12 @@ both of the two Home Assistant rows where the C and the neural Python differ.
 
 ## Licence
 
-The dictionary data in `nano_lex_tables.c` is misaki's `us_gold.json` and
+The dictionary data in `nano_lex_tables.c` is derived from misaki's `us_gold.json` and
 `us_silver.json` — **Apache-2.0**, © hexgrad and the misaki contributors,
-pinned at commit `e820629b96334db28227df37f280e4836d46fadb`, byte-identical to
-the copies in the misaki 0.9.4 wheel that built the nano packs. Full provenance,
+pinned at commit `e820629b96334db28227df37f280e4836d46fadb`. The gold dictionary
+includes a local `lived` → `lˈɪvd` correction; only the silver dictionary remains
+byte-identical to its upstream blob and the copy in the misaki 0.9.4 wheel
+that built the nano packs. Full provenance,
 with sha256 for every file, is in
 [`pypkg/sanotts/g2p_data/NOTICE.md`](../../../pypkg/sanotts/g2p_data/NOTICE.md);
 the licence text is

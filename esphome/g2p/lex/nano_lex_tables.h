@@ -2,7 +2,7 @@
  *
  * Regenerate with:   python3 esphome/g2p/lex/gen_lex_tables.py
  * Verify with:       python3 esphome/g2p/lex/gen_lex_tables.py --check
- * Generated:         2026-09-09
+ * Generated:         2026-10-10
  *
  * misaki's American English pronunciation dictionaries, packed for
  * in-place lookup out of flash. Every array in nano_lex_tables.c is
@@ -15,16 +15,16 @@
  *
  * SOURCES (sha256 at generation time):
  *   pypkg/sanotts/g2p_data/us_gold.json
- *     dc414872a49a28ae6c141463d502fd945f3b2fde040484fdc47d00cc4612686f
- *     3000469 B, 90201 entries
+ *     76de90360b1174b14137de0ed4bb2396a3ae5feb15167e737a20a24ee4a0ced2
+ *     3000491 B, 90202 entries
  *   pypkg/sanotts/g2p_data/us_silver.json
  *     de8f67be911bb6c659187b4a65fd966b6a30e56350e0f790d763210b053ac475
  *     3099517 B, 93361 entries
  *
  * PACKED SIZE:
- *   gold     90201 entries -> blob  1451195 B + index   45104 B =  1496299 B
+ *   gold     90202 entries -> blob  1451413 B + index   45104 B =  1496517 B
  *   silver   93361 entries -> blob  1501167 B + index   46684 B =  1547851 B
- *   total   3044150 B
+ *   total   3044368 B
  */
 
 #ifndef NANO_LEX_TABLES_H

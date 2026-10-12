@@ -246,6 +246,16 @@ static int selftest(void)
         check(same, "\"The front door is unlocked.\" matches the Python oracle's ids");
     }
 
+    /* A missing past-tense entry otherwise inherits the default for "live". */
+    {
+        char phonemes[128];
+        rc = nano_lex_g2p_text_to_phonemes("The boy lived in a little house.",
+                                          phonemes, sizeof phonemes);
+        check(rc > 0 && strcmp(phonemes,
+                              "ðə bˈY lˈɪvd ɪn ɐ lˈɪTᵊl hˈWs.") == 0,
+              "lived uses the short vowel without a verb tag");
+    }
+
     /* The remaining error paths, so none of them is only reachable in theory. */
     {
         static char big[NANO_LEX_MAX_CHARS + 64];

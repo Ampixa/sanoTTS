@@ -23,13 +23,12 @@ sha256 in the matching `MANIFEST.json`.
   `License :: OSI Approved :: Apache Software License` classifier on the
   `misaki` PyPI release.
 - **Copyright:** hexgrad and the misaki contributors.
-- **sha256:**
+- **Upstream sha256:**
   - `us_gold.json` — `dc414872a49a28ae6c141463d502fd945f3b2fde040484fdc47d00cc4612686f` (3,000,469 B, 90,201 entries)
   - `us_silver.json` — `de8f67be911bb6c659187b4a65fd966b6a30e56350e0f790d763210b053ac475` (3,099,517 B, 93,361 entries)
-- **Modifications:** none. Both files are byte-identical to the upstream blobs
-  and to the copies inside the installed `misaki` 0.9.4 wheel that produced the
-  nano training and eval packs, which is why the vendored lookup and the
-  training reference are the same table rather than two tables that agree today.
+- **Modifications:** added `lived` → `lˈɪvd` to `us_gold.json` so the past tense
+  does not inherit the adjective pronunciation of `live`. `us_silver.json` is
+  unchanged.
 - **Not vendored:** `gb_gold.json` and `gb_silver.json`. The nano voices are
   American English and the British tables would add 6.5 MB nothing reads.
 
