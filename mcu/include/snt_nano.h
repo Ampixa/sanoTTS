@@ -44,6 +44,14 @@ typedef struct {
 /* Called with each finished PCM run. Return non-zero to abort. */
 typedef int (*snt_nano_pcm_cb)(const float *pcm, int n, void *user);
 
+/* Speaking rate for later snt_nano_synthesize calls: a divisor applied to every
+ * duration the duration student predicts. 0 (the initial value) and any
+ * non-positive or NaN value select the model's own pace, 1.0; above 1 is
+ * slower, below 1 is faster. Has no effect when cfg->dur_override is set.
+ * File-scope state like the rest of the core's per-call state, so it is not
+ * safe to change while another thread is synthesizing. */
+void snt_nano_set_length_scale(float length_scale);
+
 /* 0 on success. Negative values are hard errors (see snt_nano.c). */
 int snt_nano_synthesize(const snt_nano_config *cfg,
                         const int32_t *phoneme_ids, int n_ids,

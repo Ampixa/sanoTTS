@@ -54,7 +54,7 @@ FORCE:
 # current -- which is the exact failure this is here to prevent.
 NANO_BINS = snt_nano_golden_test snt_nano_fastmath_test snt_nano_f32act_test \
             snt_nano_wf32_test snt_nano_bench snt_nano_bench_prof \
-            snt_nano_glue_bench
+            snt_nano_glue_bench snt_nano_length_scale_test snt_nano_length_scale_wf32_test
 $(NANO_STAMP): FORCE
 	@printf '%s %s\n' "$(NANO_MODEL)" "$(NANO_GOLDEN)" > $@.tmp
 	@if ! cmp -s $@.tmp $@ 2>/dev/null; then \
@@ -68,6 +68,25 @@ snt_nano_golden_test: $(NANO_SRC) $(NANO_HDR) $(NANO_STAMP)
 
 test-nano: snt_nano_golden_test
 	./snt_nano_golden_test $(NANO_GOLDEN)
+
+# The runtime speaking rate (snt_nano_set_length_scale): default-path identity,
+# frame counts that follow the rate, and frozen durations that ignore it. Same
+# fixture and lineage header as the gate above.
+NANO_LS_SRC = src/snt_nano.c src/snt_kernels_ref.c ports/host/snt_port_host.c test/nano_length_scale_main.c
+
+snt_nano_length_scale_test: $(NANO_LS_SRC) $(NANO_HDR) $(NANO_STAMP)
+	$(CC) $(CFLAGS) -I$(NANO_MODEL) $(filter %.c,$^) -lm -o $@
+
+.PHONY: test-nano-length-scale test-nano-length-scale-wf32
+test-nano-length-scale: snt_nano_length_scale_test
+	./snt_nano_length_scale_test $(NANO_GOLDEN)
+
+# The float32-weight lineages (the browser `heart` voice), as for test-nano-wf32.
+snt_nano_length_scale_wf32_test: $(NANO_LS_SRC) $(NANO_HDR) $(NANO_STAMP)
+	$(CC) $(CFLAGS) -I$(NANO_MODEL) -DSNT_NANO_W_F32 $(filter %.c,$^) -lm -o $@
+
+test-nano-length-scale-wf32: snt_nano_length_scale_wf32_test
+	./snt_nano_length_scale_wf32_test $(NANO_GOLDEN)
 
 # The MCU-shaped math path: LUT gelu/silu, exponent-flip reciprocal and a
 # two-step Newton rsqrt instead of libm. Reported separately because the gap
