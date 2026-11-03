@@ -1,0 +1,77 @@
+sanoTTS English pronunciation test
+
+Use a sanoTTS English voice. Read each example as a complete line, so the voice gets the surrounding words.
+
+PART ONE: LIVE RHYMING WITH GIVE
+
+I live here.
+You live nearby.
+We live together.
+They live in town.
+I still live here.
+I really live here.
+They currently live here.
+They never live alone.
+Do you live here?
+You do live here.
+I do not live there.
+I don't live there.
+They did not live here.
+They will live there.
+They can live here.
+We want to live here.
+
+PART TWO: LIVE RHYMING WITH FIVE
+
+This is a live broadcast.
+The live stream starts soon.
+We are live.
+I am live.
+The stream is live.
+They were live on television.
+We will be live.
+We are not live.
+We are still live.
+We're live on air.
+It isn't live.
+This is actually live.
+We have live music.
+This has live music.
+I have a live broadcast.
+The band is playing live.
+We do live broadcasts.
+I do live interviews.
+
+PART THREE: BOTH MEANINGS IN ONE LINE
+
+I live here, and this is a live broadcast.
+We live together, and we are live on air.
+They live in town and enjoy live music.
+You live nearby, so you can attend the live show.
+We want to live here. We will be live tomorrow.
+I don't live there. I do live interviews here.
+
+PART FOUR: LIVED AND NEARBY WORDS
+
+In these examples, lived should rhyme with give followed by a D sound, not with loved.
+
+He lived in a little house.
+They lived here for years.
+I lived near the station.
+She loved the little house where he lived.
+They are alive.
+The lively conversation continued.
+I read here every day.
+We close the door.
+The close race ended yesterday.
+They use the screen reader.
+
+PART FIVE: A SHORT READING PASSAGE
+
+I live in a little house near the station. My friends live nearby. We have live music in town every Friday. Tonight we are live on air. This is a live broadcast, not a recording. My brother lived here for years, and he loved the music. We want to live here for a long time.
+
+The reporter said that we are still live. I told her that I live nearby. We do live interviews every week. They do not live here, but they enjoy the live shows. The stream is live now, and the next broadcast starts tomorrow.
+
+END OF TEST
+
+The new correction handles clear contexts. It is not a complete English grammar parser. Reading the isolated word live cannot test the distinction, because it has no surrounding context.

@@ -992,6 +992,7 @@ def tokenize(text: str) -> list[Token]:
     if tokens:
         tokens[-1].whitespace = ""
     _retag_verbs(tokens)
+    _retag_live(tokens)
     _retag_that(tokens)
     return tokens
 
@@ -1040,6 +1041,51 @@ def _retag_verbs(tokens: list[Token]) -> None:
         if token.tag not in ("RB", "RBR", "RBS"):
             previous_tag = token.tag
             previous_text = token.text.lower()
+
+
+# Keep this word-specific: applying subject/auxiliary guesses to every homograph
+# would change unrelated dictionary entries. These cues distinguish the present
+# verb ("I live here") from the adjective/adverb ("we are live", "live music").
+_LIVE_SUBJECTS = frozenset(("i", "you", "we", "they"))
+_LIVE_DO = frozenset(("do", "does", "did", "don't", "doesn't", "didn't"))
+# "We do live interviews" is not a verb use of live. Require a clear verb
+# complement before using do as a cue, rather than changing that old default.
+_LIVE_VERB_COMPLEMENTS = frozenset((
+    "here", "there", "alone", "together", "nearby", "in", "at", "with", "near",
+    "on", "by", "under", "without", "for", "to",
+))
+_LIVE_LONG_AUX = frozenset((
+    "am", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "having", "i'm", "you're", "we're", "they're",
+    "he's", "she's", "it's", "that's", "there's", "here's",
+    "isn't", "aren't", "wasn't", "weren't", "haven't", "hasn't", "hadn't",
+))
+_LIVE_ADVERBS = frozenset(("really", "actually", "currently"))
+
+
+def _retag_live(tokens: list[Token]) -> None:
+    """Resolve only clear nearby uses of live, without crossing punctuation.
+
+    At most three intervening adverbs are allowed. Unknown phrases retain the
+    existing tag/default; this is not a general parser or a promise to resolve
+    ambiguous imperatives, quotations or every possible English construction.
+    """
+    for i, token in enumerate(tokens):
+        if token.text.casefold() != "live":
+            continue
+        for j in range(i - 1, max(-1, i - 5), -1):
+            previous = tokens[j]
+            word = previous.text.casefold().replace("\u2019", "'")
+            if previous.tag in ("RB", "RBR", "RBS") or word in _LIVE_ADVERBS:
+                continue
+            if word in _LIVE_LONG_AUX:
+                token.tag = "JJ"
+            elif (word in _LIVE_SUBJECTS
+                  or (word in _LIVE_DO and i + 1 < len(tokens)
+                      and tokens[i + 1].text.casefold() in _LIVE_VERB_COMPLEMENTS)
+                  or previous.tag in ("TO", "MD")):
+                token.tag = "VB"
+            break
 
 
 # --------------------------------------------------------------------------
