@@ -331,3 +331,105 @@ if __name__ == "__main__":
         if name.startswith("test_") and callable(fn):
             fn()
             print(f"PASS {name}")
+
+
+# ---- 0.5.4: cached noise, buffered iSTFT, cropped decoder window ---------
+
+def test_cached_noise_is_bit_identical_to_a_fresh_generator():
+    for seed in (2236265385529901705, 7, 0):
+        nano_rng._PREFIXES.clear()
+        # Growing, shrinking and repeated sizes, so the prefix is reused,
+        # regrown and sliced; sizes with and without a redrawn tail block.
+        for frames in (4, 5, 400, 37, 4001, 5000, 400, 16560):
+            got = nano_rng.seeded_noise(seed, 4, frames)
+            want = nano_rng.seeded_noise_uncached(seed, 4, frames)
+            assert _bits_equal(got, want), (seed, frames)
+    # The cached arrays are read-only and callers get a private copy.
+    first = nano_rng.seeded_noise(5, 4, 100)
+    first[:] = 0.0
+    assert _bits_equal(nano_rng.seeded_noise(5, 4, 100), nano_rng.seeded_noise_uncached(5, 4, 100))
+    assert not nano_rng._PREFIXES[5].normal.flags.writeable
+    for bad in (1, 3):  # fewer than 16 values: torch's scalar path, not implemented
+        try:
+            nano_rng.seeded_noise(5, 4, bad)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"seeded_noise accepted {4 * bad} values")
+
+
+def _depthwise_ref(x, dw_w):
+    dk = dw_w.shape[1]
+    pad = dk // 2
+    xp = np.zeros((x.shape[0], x.shape[1] + 2 * pad), dtype=x.dtype)
+    xp[:, pad : pad + x.shape[1]] = x
+    h = np.zeros_like(x)
+    for k in range(dk):
+        h += dw_w[:, k : k + 1] * xp[:, k : k + x.shape[1]]
+    return h
+
+
+def test_depthwise_bit_identical_with_shipped_kernels():
+    rng = np.random.default_rng(11)
+    for lineage, ext in LINEAGES:
+        _, meta, front, dec = _lineage(lineage, ext)
+        w = nano.NanoWeights(front, dec, meta)
+        dim, dk = meta["NANO_DIM"], meta["NANO_DW_KERNEL"]
+        for b in range(meta["NANO_BLOCKS"]):
+            dw_w = w.dec_f32(f"B{b}_DW_W", dim * dk).reshape(dim, dk)
+            dw_b = w.dec_f32(f"B{b}_DW_B", dim)
+            for t in (1, 2, 3, 7, 20, 200):
+                x = (rng.standard_normal((dim, t)) * 4).astype(np.float32)
+                x[rng.random(x.shape) < 0.1] = 0.0
+                assert _bits_equal(nano._depthwise(x, dw_w) + dw_b[:, None],
+                                   _depthwise_ref(x, dw_w) + dw_b[:, None]), (lineage, b, t)
+
+
+def test_unit_ramp_is_linspace():
+    for n in (1, 2, 3, 73, 207, 1000, 16560):
+        want = np.linspace(0.0, 1.0, n, dtype=np.float32) if n > 1 else np.zeros(1, np.float32)
+        assert _bits_equal(nano._unit_ramp(n), want), n
+        assert not nano._unit_ramp(n).flags.writeable
+
+
+def test_cropped_decoder_window_matches_uncropped():
+    for lineage, ext in LINEAGES:
+        fixture, meta, front, dec = _lineage(lineage, ext)
+        w = nano.NanoWeights(front, dec, meta)
+        ids = np.fromfile(fixture / "r00_ids.bin", dtype=np.int32).astype(np.int64)
+        durs = np.fromfile(fixture / "r00_durs.bin", dtype=np.int32).astype(np.int64)
+        plan, noise = nano._front_end(w, ids, seed=7, durations=durs, length_scale=1.0)
+        total, halo = plan.frames, nano.decoder_halo_frames(meta)
+        mel = nano.acoustic_frames(w, plan, 0, total)
+        for a, b in ((0, 1), (0, 8), (5, 13), (total // 2, total // 2 + 16), (total - 3, total)):
+            lo, hi = max(0, a - halo), min(total, b + halo)
+            full = nano.decoder_forward(w, mel[:, lo:hi], noise[:, lo:hi])[:, a - lo : b - lo]
+            kept = nano.decoder_forward(w, mel[:, lo:hi], noise[:, lo:hi], keep=(a - lo, b - lo))
+            assert kept.shape == full.shape, (lineage, a, b)
+            # Measured: at most 1.05e-5 relative over every start of the three
+            # fixture rows (float32 rounding through four blocks, amplified by
+            # the exp of the magnitude head); the bound is 3x that.
+            rel = np.abs(kept - full) / np.maximum(np.abs(full), 1e-3)
+            assert rel.max() <= 3e-5, (lineage, a, b, float(rel.max()))
+        try:
+            nano.decoder_forward(w, mel[:, :10], noise[:, :10], keep=(4, 11))
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("keep outside the window was accepted")
+
+
+def test_streaming_istft_buffers_stay_small_and_match_istft():
+    rng = np.random.default_rng(5)
+    n_fft, hop, total = 1024, 256, 300
+    spec = (rng.standard_normal((513, total)) + 1j * rng.standard_normal((513, total))).astype(np.complex64)
+    whole = nano.istft(spec, n_fft, hop)
+    ola = nano._StreamingISTFT(n_fft, hop, total)
+    pieces, a, size, widest = [], 0, 1, 0
+    while a < total:
+        b = min(total, a + size)
+        pieces.append(ola.push(spec[:, a:b]))
+        widest = max(widest, ola.out.size)
+        a, size = b, min(64, size * 2)
+    assert _bits_equal(np.concatenate(pieces), whole)
+    assert widest <= 64 * hop + n_fft, widest

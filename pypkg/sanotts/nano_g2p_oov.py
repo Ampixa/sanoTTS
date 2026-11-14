@@ -63,14 +63,22 @@ def _layer_norm(x: np.ndarray, weight: np.ndarray, bias: np.ndarray, eps: float)
     but without their per-call wrapper overhead. Bit-identical to
     `(x - x.mean(-1, keepdims=True)) / np.sqrt(x.var(-1, keepdims=True) + eps)
     * weight + bias`; tests/test_nano_g2p_oov_fast.py checks this."""
-    count = np.intp(x.shape[-1])
+    # In-place division by the Python int count is the same IEEE division of
+    # the same float32 values as numpy's true_divide by an intp count (the
+    # count is exact in float32), without the keyword/casting dispatch.
+    count = x.shape[-1]
     mean = np.add.reduce(x, axis=-1, keepdims=True)
-    np.true_divide(mean, count, out=mean, casting="unsafe")
+    mean /= count
     dev = x - mean
     sq = np.multiply(dev, dev)
     var = np.add.reduce(sq, axis=-1, keepdims=True)
-    np.true_divide(var, count, out=var, casting="unsafe")
-    return dev / np.sqrt(var + eps) * weight + bias
+    var /= count
+    var += eps
+    np.sqrt(var, out=var)
+    out = dev / var
+    out *= weight
+    out += bias
+    return out
 
 
 def _layer_norm_reference(x: np.ndarray, weight: np.ndarray, bias: np.ndarray,
@@ -136,6 +144,16 @@ def _gelu_fast(x: np.ndarray) -> np.ndarray:
 
 
 def _softmax(x: np.ndarray) -> np.ndarray:
+    """softmax over the last axis. maximum.reduce and add.reduce are what
+    x.max() and x.sum() call, minus their Python wrappers; bit-identical to
+    `_softmax_reference` (tests/test_nano_g2p_oov_fast.py)."""
+    shifted = x - np.maximum.reduce(x, axis=-1, keepdims=True)
+    np.exp(shifted, out=shifted)
+    shifted /= np.add.reduce(shifted, axis=-1, keepdims=True)
+    return shifted
+
+
+def _softmax_reference(x: np.ndarray) -> np.ndarray:
     shifted = x - x.max(axis=-1, keepdims=True)
     exp = np.exp(shifted)
     return exp / exp.sum(axis=-1, keepdims=True)
