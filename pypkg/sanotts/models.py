@@ -399,3 +399,84 @@ def decoder_forward(tensors: dict[str, np.ndarray], config: dict[str, Any], late
     audio = np.tanh(audio).astype(np.float32)
     audio = _apply_post_filter(audio, tensors, config)
     return audio
+
+
+# --------------------------------------------------------------------------
+# Streaming the piperlite decoder
+# --------------------------------------------------------------------------
+#
+# The decoder is fully convolutional and its output is exactly HOP samples per
+# latent frame (the three transposed convs upsample 8 * 8 * 4 = 256 with no
+# trim), so output samples [a*HOP, b*HOP) belong to frames [a, b). A sample
+# only depends on frames within the decoder's receptive field, so decoding a
+# window that extends `decoder_halo_frames` past each side of [a, b) and
+# keeping the middle gives the same samples as the whole-utterance pass, to
+# float32 rounding (a matmul over a short window may round differently in the
+# last bit from one over the whole utterance).
+
+def decoder_hop(config: dict[str, Any]) -> int:
+    """Output samples per latent frame (the product of the upsample strides)."""
+    del config  # the strides are fixed by decoder_forward's stage_specs
+    return 8 * 8 * 4
+
+
+def decoder_halo_frames(tensors: dict[str, np.ndarray], config: dict[str, Any]) -> int:
+    """One-sided receptive field of decoder_forward, in latent frames, rounded up.
+
+    Summed layer by layer from the kernel sizes actually stored, each term
+    converted to latent frames at the rate that layer runs at. It is an upper
+    bound: tests/test_nano_stream.py checks it against a measured impulse
+    response and checks that chunked decoding reproduces the full pass.
+    """
+    reach = (tensors["pre.weight"].shape[-1] // 2) * 1.0           # frames, rate 1
+    rate = 1
+    stages = (("up0", 8, 4, "stage0_branches"), ("up1", 8, 4, "stage1_branches"),
+              ("up2", 4, 2, "stage2_branches"))
+    for up_name, stride, padding, branch_key in stages:
+        kernel = tensors[f"{up_name}.weight"].shape[-1]
+        # A transposed-conv output reads inputs up to max(p, k-1-p)/s away.
+        reach += -(-max(padding, kernel - 1 - padding) // stride) / rate
+        rate *= stride
+        branches = config.get(branch_key)
+        if branches is None:
+            branches = [0, 1, 2]
+        bank = max(_BANK_KERNELS[b] // 2 * _BANK_DIL1[b] + _BANK_KERNELS[b] // 2 * _BANK_DIL2[b]
+                   for b in branches)
+        reach += bank / rate
+    reach += (tensors["post.weight"].shape[-1] // 2) / rate
+    layers = int(config.get("post_filter_layers") or 0)
+    if int(config.get("post_filter_channels") or 0) > 0:
+        samples = tensors["post_filter.in_conv.weight"].shape[-1] // 2
+        samples += tensors["post_filter.out_conv.weight"].shape[-1] // 2
+        for layer in range(layers):
+            samples += (tensors[f"post_filter.units.{layer}.conv1.weight"].shape[-1] // 2) * (1 + layer)
+            samples += tensors[f"post_filter.units.{layer}.conv2.weight"].shape[-1] // 2
+        reach += samples / rate
+    return int(np.ceil(reach)) + 1
+
+
+def decoder_stream(tensors: dict[str, np.ndarray], config: dict[str, Any], latent: np.ndarray,
+                   *, first_chunk_frames: int = 8, chunk_frames: int = 128):
+    """decoder_forward(latent), yielded in pieces of whole frames.
+
+    The first piece covers `first_chunk_frames` latent frames; later pieces
+    double up to `chunk_frames`. Their concatenation is decoder_forward's
+    output to float32 rounding.
+    """
+    if first_chunk_frames < 1 or chunk_frames < first_chunk_frames:
+        raise ValueError(
+            f"need 1 <= first_chunk_frames <= chunk_frames, got {first_chunk_frames}, {chunk_frames}")
+    total = int(latent.shape[1])
+    if total < 1:
+        raise ValueError("decoder_stream: empty latent")
+    hop = decoder_hop(config)
+    halo = decoder_halo_frames(tensors, config)
+    a, size = 0, first_chunk_frames
+    while a < total:
+        b = min(total, a + size)
+        lo, hi = max(0, a - halo), min(total, b + halo)
+        audio = decoder_forward(tensors, config, latent[:, lo:hi])
+        if audio.size != (hi - lo) * hop:
+            raise RuntimeError(f"decoder_stream: {audio.size} samples for {hi - lo} frames")
+        yield audio[(a - lo) * hop:(b - lo) * hop]
+        a, size = b, min(chunk_frames, size * 2)
