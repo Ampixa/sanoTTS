@@ -1210,7 +1210,28 @@ class NanoG2P:
             tokens[i].phonemes = apply_stress(tokens[i].phonemes, -0.5)
 
     def __call__(self, text: str) -> tuple[str, list[Token]]:
-        """misaki/en.py: G2P.__call__ (preprocess reduced to a left strip)."""
+        """misaki/en.py: G2P.__call__ (preprocess reduced to a left strip).
+
+        With the neural fallback, the text is first converted with a
+        recording stand-in for the model: words it already knows are
+        answered, the others are collected. If nothing was collected that
+        pass is the result. Otherwise the collected words are decoded in one
+        batch and the text is converted again, now with every answer known,
+        so the result is what one pass with the real model gives (each word's
+        phonemes depend only on the word), with one decoding loop for all of
+        the unknown words instead of one per word.
+        """
+        fallback = self.fallback
+        if isinstance(fallback, _NeuralFallback):
+            model = fallback.model()
+            recorder = _RecordingModel(model)
+            result = self._convert(text, _NeuralFallback(recorder))
+            if not recorder.pending:
+                return result
+            model.prefetch(recorder.pending)
+        return self._convert(text, fallback)
+
+    def _convert(self, text: str, fallback) -> tuple[str, list[Token]]:
         tokens: list[Token | list[Token]] = NanoG2P.retokenize(
             NanoG2P.fold_left(tokenize(text.lstrip()))
         )
@@ -1219,8 +1240,8 @@ class NanoG2P:
             if not isinstance(word, list):
                 if word.phonemes is None:
                     word.phonemes, word.rating = self.lexicon(word, ctx)
-                if word.phonemes is None and self.fallback is not None:
-                    word.phonemes, word.rating = self.fallback(word)
+                if word.phonemes is None and fallback is not None:
+                    word.phonemes, word.rating = fallback(word)
                 ctx = NanoG2P.token_context(ctx, word.phonemes, word)
                 continue
             left, right = 0, len(word)
@@ -1252,13 +1273,13 @@ class NanoG2P:
                         if all(c in SUBTOKEN_JUNKS for c in tk.text):
                             tk.phonemes = ""
                             tk.rating = 3
-                        elif self.fallback is not None:
+                        elif fallback is not None:
                             should_fallback = True
                             break
                     left = 0
             if should_fallback:
                 merged = merge_tokens(word)
-                word[0].phonemes, word[0].rating = self.fallback(merged)
+                word[0].phonemes, word[0].rating = fallback(merged)
                 for other in word[1:]:
                     other.phonemes = ""
                     other.rating = word[0].rating
@@ -1310,6 +1331,23 @@ def _split_for_model(word: str, max_positions: int) -> list[str]:
     return [word[i:i + limit] for i in range(0, len(word), limit)]
 
 
+class _RecordingModel:
+    """Stands in for OOVPhonemizer during NanoG2P's first pass: answers the
+    words the model has memoised and records the rest (answering ''). Only
+    the recorded list is used from that pass whenever it is non-empty."""
+
+    def __init__(self, model: OOVPhonemizer) -> None:
+        self.model = model
+        self.max_positions = model.max_positions
+        self.pending: list[str] = []
+
+    def __call__(self, word: str) -> str:
+        if self.model.memoized(word):
+            return self.model(word)
+        self.pending.append(word)
+        return ""
+
+
 class _NeuralFallback:
     """The OOV path: PeterReid's BART where misaki calls espeak-ng.
 
@@ -1324,6 +1362,11 @@ class _NeuralFallback:
 
     def __init__(self, model: OOVPhonemizer | None = None) -> None:
         self._model = model
+
+    def model(self) -> OOVPhonemizer:
+        if self._model is None:
+            self._model = shared_phonemizer()
+        return self._model
 
     def __call__(self, token: Token) -> tuple[str | None, int | None]:
         text = token.text.strip()

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -126,9 +127,14 @@ class Synthesizer:
             self._max_tokens = int(self.pack.offsets.get(
                 "NANO_DUR_MAX_TOKENS", nano_frontend.DEFAULT_MAX_TOKENS))
             self.phoneme_table = None
+            self._nano_w = None
+            if self.nano_g2p == "lexicon":
+                _warm_english_g2p()
             return
 
         self.phoneme_table = frontend.load_phoneme_table(self.pack.phoneme_config_path)
+        if self.piperlite_g2p == "lexicon":
+            _warm_english_g2p()
 
         self._duration_tensors = self.pack.component_tensors("duration")
         self._duration_config = self.pack.component_config("duration")
@@ -141,6 +147,27 @@ class Synthesizer:
     def sample_rate(self) -> int:
         return self.pack.sample_rate
 
+    def _nano_weights(self):
+        """The voice's dequantised nano layers, built once and reused."""
+        from . import nano  # noqa: PLC0415
+
+        if self._nano_w is None:
+            self._nano_w = nano.NanoWeights(self.pack.front, self.pack.dec, self.pack.offsets)
+        return self._nano_w
+
+    def _nano_scale_seed(self, duration_length_scale, seed) -> tuple[float, int]:
+        scale = float(duration_length_scale) if duration_length_scale is not None else 1.0
+        if scale <= 0.0:
+            raise ValueError(f"duration_length_scale must be positive, got {scale}")
+        return scale, int(seed if seed is not None else DEFAULT_NANO_SEED)
+
+    def _require_nano(self, what: str) -> None:
+        if not self.is_nano:
+            raise NotImplementedError(
+                f"{what} is only implemented for the nano voices; "
+                f"{self.pack.name!r} is a piperlite voice"
+            )
+
     def synthesize_ids(self, phoneme_ids, *, duration_length_scale: float | None = None,
                        seed: int | None = None) -> SynthesisResult:
         """Render phoneme ids directly, skipping grapheme-to-phoneme.
@@ -149,40 +176,53 @@ class Synthesizer:
         for callers that already have ids, and the one the golden fixtures
         exercise.
         """
-        if not self.is_nano:
-            raise NotImplementedError(
-                f"synthesize_ids is only implemented for the nano voices; "
-                f"{self.pack.name!r} is a piperlite voice"
-            )
+        self._require_nano("synthesize_ids")
         from . import nano  # noqa: PLC0415
 
-        scale = float(duration_length_scale) if duration_length_scale is not None else 1.0
-        if scale <= 0.0:
-            raise ValueError(f"duration_length_scale must be positive, got {scale}")
+        scale, seed = self._nano_scale_seed(duration_length_scale, seed)
         audio = nano.synthesize_ids(
             self.pack.front, self.pack.dec, self.pack.offsets,
             np.asarray(phoneme_ids, dtype=np.int64),
-            seed=int(seed if seed is not None else DEFAULT_NANO_SEED),
-            length_scale=scale,
+            seed=seed, length_scale=scale, weights=self._nano_weights(),
         )
         return SynthesisResult(audio=np.clip(audio, -1.0, 1.0).astype(np.float32),
                                sample_rate=self.sample_rate)
 
-    def synthesize(self, text: str, *, duration_length_scale: float | None = None) -> SynthesisResult:
-        if self.is_nano:
-            if self.nano_g2p == "lexicon":
-                from . import nano_g2p as nano_g2p_module  # noqa: PLC0415
-                ids, dropped = nano_g2p_module.phonemize(
-                    text, vocabulary=self._vocabulary, max_tokens=self._max_tokens)
-            else:
-                from . import nano_frontend  # noqa: PLC0415
-                ids, dropped = nano_frontend.phonemize(
-                    text, vocabulary=self._vocabulary, max_tokens=self._max_tokens)
-            if dropped:
-                logger.debug("sanotts: dropped %d symbols outside the vocabulary: %r",
-                             len(dropped), dropped)
-            return self.synthesize_ids(ids, duration_length_scale=duration_length_scale)
+    def synthesize_ids_stream(self, phoneme_ids, *, duration_length_scale: float | None = None,
+                              seed: int | None = None, first_chunk_frames: int = 8,
+                              chunk_frames: int = 128) -> Iterator[np.ndarray]:
+        """synthesize_ids(), yielded as float32 chunks while it is decoded.
 
+        Concatenated, the chunks equal synthesize_ids(...).audio to float32
+        rounding. See nano.stream_ids for the chunk sizes.
+        """
+        self._require_nano("synthesize_ids_stream")
+        from . import nano  # noqa: PLC0415
+
+        scale, seed = self._nano_scale_seed(duration_length_scale, seed)
+        for piece in nano.stream_ids(
+                self.pack.front, self.pack.dec, self.pack.offsets,
+                np.asarray(phoneme_ids, dtype=np.int64),
+                seed=seed, length_scale=scale, weights=self._nano_weights(),
+                first_chunk_frames=first_chunk_frames, chunk_frames=chunk_frames):
+            yield np.clip(piece, -1.0, 1.0).astype(np.float32)
+
+    def _nano_ids(self, text: str):
+        if self.nano_g2p == "lexicon":
+            from . import nano_g2p as nano_g2p_module  # noqa: PLC0415
+            ids, dropped = nano_g2p_module.phonemize(
+                text, vocabulary=self._vocabulary, max_tokens=self._max_tokens)
+        else:
+            from . import nano_frontend  # noqa: PLC0415
+            ids, dropped = nano_frontend.phonemize(
+                text, vocabulary=self._vocabulary, max_tokens=self._max_tokens)
+        if dropped:
+            logger.debug("sanotts: dropped %d symbols outside the vocabulary: %r",
+                         len(dropped), dropped)
+        return ids
+
+    def _piperlite_latent(self, text: str, duration_length_scale: float | None) -> np.ndarray:
+        """text -> the decoder's input latent [channels, frames] (piperlite voices)."""
         scale = float(duration_length_scale) if duration_length_scale is not None else self.pack.duration_length_scale
         if scale <= 0.0:
             raise ValueError(f"duration_length_scale must be positive, got {scale}")
@@ -214,10 +254,52 @@ class Synthesizer:
         durations = models.duration_forward(
             self._duration_tensors, self._duration_config, ids, length_scale=scale
         )
-        latent = models.acoustic_forward(self._acoustic_tensors, self._acoustic_config, ids, durations)
+        return models.acoustic_forward(self._acoustic_tensors, self._acoustic_config, ids, durations)
+
+    def synthesize(self, text: str, *, duration_length_scale: float | None = None) -> SynthesisResult:
+        if self.is_nano:
+            return self.synthesize_ids(self._nano_ids(text), duration_length_scale=duration_length_scale)
+
+        latent = self._piperlite_latent(text, duration_length_scale)
         audio = models.decoder_forward(self._decoder_tensors, self._decoder_config, latent)
         audio = np.clip(audio, -1.0, 1.0).astype(np.float32)
         return SynthesisResult(audio=audio, sample_rate=self.sample_rate)
+
+    def synthesize_stream(self, text: str, *, duration_length_scale: float | None = None,
+                          first_chunk_frames: int = 8, chunk_frames: int = 128) -> Iterator[np.ndarray]:
+        """synthesize(), yielded as float32 chunks at self.sample_rate.
+
+        Grapheme-to-phoneme, durations and every other utterance-global step
+        run over the whole text first (they take a few milliseconds). The
+        decoder, which is most of the work, then runs chunk by chunk, and for
+        the nano voices so does the acoustic model's frame stage. The first
+        chunk covers `first_chunk_frames` frames (at the default, 64 ms of
+        audio from a nano voice, 93 ms from a piperlite one) and later ones
+        double up to `chunk_frames`. Concatenated, the chunks equal
+        synthesize(text).audio to float32 rounding; tests/test_nano_stream.py
+        measures this for both voice types. Every chunk is non-empty.
+        """
+        if self.is_nano:
+            yield from self.synthesize_ids_stream(
+                self._nano_ids(text), duration_length_scale=duration_length_scale,
+                first_chunk_frames=first_chunk_frames, chunk_frames=chunk_frames)
+            return
+
+        latent = self._piperlite_latent(text, duration_length_scale)
+        for piece in models.decoder_stream(self._decoder_tensors, self._decoder_config, latent,
+                                           first_chunk_frames=first_chunk_frames,
+                                           chunk_frames=chunk_frames):
+            yield np.clip(piece, -1.0, 1.0).astype(np.float32)
+
+
+def _warm_english_g2p() -> None:
+    """Load the English lexicon G2P and its OOV model now, not on the first
+    sentence (or the first unknown word) a caller synthesizes, so that cost
+    never lands inside a request."""
+    from . import nano_g2p, nano_g2p_oov  # noqa: PLC0415
+
+    nano_g2p.shared_g2p()
+    nano_g2p_oov.shared_phonemizer().warm()
 
 
 def synthesize(
