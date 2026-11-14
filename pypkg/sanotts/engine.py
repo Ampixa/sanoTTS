@@ -130,6 +130,12 @@ class Synthesizer:
             self._nano_w = None
             if self.nano_g2p == "lexicon":
                 _warm_english_g2p()
+            # The default seed's noise for the longest utterance the duration
+            # window allows, built now rather than inside a request.
+            from . import nano_rng  # noqa: PLC0415
+            nano_rng.warm_noise(
+                DEFAULT_NANO_SEED, int(self.pack.offsets["NANO_NOISE_CH"]),
+                self._max_tokens * int(self.pack.offsets["NANO_DUR_MAX_DURATION"]))
             return
 
         self.phoneme_table = frontend.load_phoneme_table(self.pack.phoneme_config_path)

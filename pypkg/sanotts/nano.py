@@ -148,9 +148,17 @@ def silu(x: np.ndarray) -> np.ndarray:
     # One exp over exp(-|x|) is the same per-element arithmetic as the two
     # masked branches (x / (1 + exp(-x)) for x >= 0, x e / (1 + e) with
     # e = exp(x) below), without the boolean gathers and scatters.
-    e = np.exp(-np.abs(x))
+    # x * 1 is x exactly, so scaling x by 1 or e before the one division
+    # gives both branches' values bit for bit.
+    e = np.abs(x)
+    np.negative(e, out=e)
+    np.exp(e, out=e)
     denom = e + 1.0
-    return np.where(x >= 0, x / denom, x * e / denom)
+    num = np.where(x >= 0, np.float32(1.0), e) if x.dtype == np.float32 else np.where(x >= 0, 1.0, e)
+    # x is the first operand, as it was: a NaN x then keeps its own payload.
+    np.multiply(x, num, out=num)
+    num /= denom
+    return num
 
 
 def gelu(x: np.ndarray) -> np.ndarray:
@@ -180,23 +188,18 @@ _ERF_TABLE = np.array([math.erf(v) for v in _ERF_X0.tolist()], dtype=np.float64)
 _ERF_DERIV = (2.0 / math.sqrt(math.pi)) * np.exp(-_ERF_X0 * _ERF_X0)
 
 
-def _erf(x: np.ndarray) -> np.ndarray:
-    """float64 erf, elementwise. NaN in, NaN out; +-inf go to +-1."""
-    x = np.asarray(x, dtype=np.float64)
-    a = np.abs(x)
-    nan = np.isnan(a)
-    has_nan = bool(nan.any())
-    if has_nan:
-        a[nan] = 0.0
-    np.minimum(a, _ERF_KNOTS * _ERF_STEP, out=a)
-    k = np.rint(a * (1.0 / _ERF_STEP)).astype(np.intp)
-    x0 = _ERF_X0[k]
-    t = a - x0
+def _erf_coefficients(x0: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """c3, c4, c5 of the Taylor step at the knots x0.
+
+    erf(x0 + t) = erf(x0) + D * (t + c2 t^2 + c3 t^3 + c4 t^4 + c5 t^5). The
+    2nd..5th derivatives are D times -2x, 4x^2 - 2, 12x - 8x^3 and
+    16x^4 - 48x^2 + 12; each c_n is that polynomial over n!. They depend on
+    the knot only, so they are tabulated once; these are the operations, in
+    the order, that `_erf` used to run on every gathered knot, and float64
+    +, -, *, / are correctly rounded, so each tabulated value is the one it
+    computed. tests/test_nano_stream.py checks the tables against this.
+    """
     x2 = x0 * x0
-    # erf(x0 + t) = erf(x0) + D * (t + c2 t^2 + c3 t^3 + c4 t^4 + c5 t^5).
-    # The 2nd..5th derivatives are D times -2x, 4x^2 - 2, 12x - 8x^3 and
-    # 16x^4 - 48x^2 + 12; each c_n is that polynomial over n!. The in-place
-    # steps below are these same operations in the same order.
     c3 = 4.0 * x2
     c3 -= 2.0
     c3 /= 6.0
@@ -209,6 +212,34 @@ def _erf(x: np.ndarray) -> np.ndarray:
     c5 -= 48.0 * x2
     c5 += 12.0
     c5 /= 120.0
+    return c3, c4, c5
+
+
+_ERF_C3, _ERF_C4, _ERF_C5 = _erf_coefficients(_ERF_X0)
+for _table in (_ERF_X0, _ERF_TABLE, _ERF_DERIV, _ERF_C3, _ERF_C4, _ERF_C5):
+    _table.flags.writeable = False
+del _table
+
+
+def _erf(x: np.ndarray) -> np.ndarray:
+    """float64 erf, elementwise. NaN in, NaN out; +-inf go to +-1."""
+    x = np.asarray(x, dtype=np.float64)
+    a = np.abs(x)
+    # A sum of non-negative values and +inf is NaN only if a NaN is present,
+    # so this tests for NaN without a boolean array the size of the input.
+    has_nan = bool(np.isnan(np.add.reduce(a, axis=None)))
+    if has_nan:
+        nan = np.isnan(a)
+        a[nan] = 0.0
+    np.minimum(a, _ERF_KNOTS * _ERF_STEP, out=a)
+    knot = np.rint(a * (1.0 / _ERF_STEP))
+    k = knot.astype(np.intp)
+    # knot * 2**-10 is exact for knot <= 6144, so it is _ERF_X0[k] bit for
+    # bit without the gather.
+    x0 = knot
+    x0 *= _ERF_STEP
+    c3, c4, c5 = _ERF_C3[k], _ERF_C4[k], _ERF_C5[k]
+    t = a - x0
     poly = t * c5          # t * c5
     poly += c4             # c4 + t*c5
     poly *= t
@@ -234,21 +265,23 @@ def conv1d(x: np.ndarray, w: np.ndarray, b: np.ndarray, kernel: int) -> np.ndarr
     kernel axis fastest.
     """
     c_in, t = x.shape
-    pad = kernel // 2
-    # Row k of each input channel is x shifted by k - pad, zero outside it:
-    # the same matrix np.pad + slicing built, written directly.
-    gathered = np.zeros((c_in * kernel, t), dtype=np.float32)
-    for k in range(kernel):
-        shift = k - pad
-        if abs(shift) >= t:
-            continue                     # this tap only ever sees padding
-        if shift < 0:
-            gathered[k::kernel, -shift:] = x[:, : t + shift]
-        elif shift > 0:
-            gathered[k::kernel, : t - shift] = x[:, shift:]
-        else:
-            gathered[k::kernel] = x
-    return (w @ gathered + b[:, None]).astype(np.float32)
+    if kernel == 1:
+        # The gathered matrix of a 1-wide kernel is x itself, laid out
+        # C-contiguous as the gather wrote it.
+        gathered = np.ascontiguousarray(x, dtype=np.float32)
+    else:
+        pad = kernel // 2
+        # Row (c, k) is input channel c shifted by k - pad with zeros outside
+        # it: a window of length t starting at k in the zero-padded row. The
+        # strided view lists those windows, and the reshape copies them out
+        # C-contiguous, which is the matrix the per-tap slice assignments
+        # used to build, element for element.
+        padded = np.zeros((c_in, t + 2 * pad), dtype=np.float32)
+        padded[:, pad : pad + t] = x
+        item = padded.itemsize
+        gathered = np.ndarray((c_in, kernel, t), dtype=np.float32, buffer=padded,
+                              strides=(padded.strides[0], item, item)).reshape(c_in * kernel, t)
+    return (w @ gathered + b[:, None]).astype(np.float32, copy=False)
 
 
 def residual_block(x: np.ndarray, c0: Q8Layer, c1: Q8Layer, scale: float,
@@ -261,7 +294,7 @@ def residual_block(x: np.ndarray, c0: Q8Layer, c1: Q8Layer, scale: float,
     h = conv1d(x, c0.weight, c0.bias, kernel)
     h = silu(h)
     h = conv1d(h, c1.weight, c1.bias, kernel)
-    return (x + scale * h).astype(np.float32)
+    return (x + scale * h).astype(np.float32, copy=False)
 
 
 # The decoder's norms are built by make_norm(), which asks for eps=1e-6 --
@@ -284,10 +317,30 @@ def layer_norm(x: np.ndarray, w: np.ndarray, b: np.ndarray,
     dev = x - mu
     var = np.add.reduce(np.multiply(dev, dev), axis=0, keepdims=True)
     np.true_divide(var, count, out=var, casting="unsafe")
-    return (dev / np.sqrt(var + eps) * w[:, None] + b[:, None]).astype(np.float32)
+    return (dev / np.sqrt(var + eps) * w[:, None] + b[:, None]).astype(np.float32, copy=False)
 
 
 # ---- stages -------------------------------------------------------------
+
+_UNIT_RAMPS: dict[int, np.ndarray] = {}
+
+
+def _unit_ramp(n: int) -> np.ndarray:
+    """float32 np.linspace(0, 1, n) (one zero when n == 1), built once per n.
+
+    The stages ask for the same few hundred lengths over and over, and
+    np.linspace's Python wrapper costs more than the arithmetic at these
+    sizes. The cached array is np.linspace's own result, read-only.
+    """
+    ramp = _UNIT_RAMPS.get(n)
+    if ramp is None:
+        ramp = np.linspace(0.0, 1.0, n, dtype=np.float32) if n > 1 else np.zeros(1, np.float32)
+        ramp.flags.writeable = False
+        if len(_UNIT_RAMPS) >= 4096:
+            _UNIT_RAMPS.clear()
+        _UNIT_RAMPS[n] = ramp
+    return ramp
+
 
 def duration_forward(w: NanoWeights, ids: np.ndarray,
                      length_scale: float = 1.0) -> np.ndarray:
@@ -307,7 +360,7 @@ def duration_forward(w: NanoWeights, ids: np.ndarray,
     # positions, length hint and valid hint, exactly as DurationStudent builds
     # them. Inference is one unpadded sequence, so valid_hint is all ones and
     # lengths == n.
-    positions = np.linspace(0.0, 1.0, n, dtype=np.float32) if n > 1 else np.zeros(1, np.float32)
+    positions = _unit_ramp(n)
     length_hint = np.float32(math.log1p(max(n, 1)) / math.log1p(float(m["NANO_DUR_MAX_TOKENS"])))
     feats = np.stack([positions,
                       np.full(n, length_hint, dtype=np.float32),
@@ -357,8 +410,7 @@ def acoustic_plan(w: NanoWeights, ids: np.ndarray, durations: np.ndarray) -> Aco
     token_x = emb[ids].T.astype(np.float32)                 # [H, n]
 
     token_count = max(n - 1, 1)
-    token_pos_tok = (np.linspace(0.0, 1.0, n, dtype=np.float32) if n > 1
-                     else np.zeros(1, np.float32))
+    token_pos_tok = _unit_ramp(n)
     dur_f = durations.astype(np.float32)
     max_dur = max(float(dur_f.max()), 1.0)
     duration_hint = (np.log1p(dur_f) / np.log1p(max_dur)).astype(np.float32)
@@ -379,8 +431,7 @@ def acoustic_plan(w: NanoWeights, ids: np.ndarray, durations: np.ndarray) -> Aco
     # than a division.
     frame_token = np.repeat(np.arange(n), durations)
     frames = int(frame_token.size)
-    frame_pos = (np.linspace(0.0, 1.0, frames, dtype=np.float32) if frames > 1
-                 else np.zeros(1, np.float32))
+    frame_pos = _unit_ramp(frames)
     # Per token ti with d frames: token_pos = ti / token_count on each of
     # them, and duration_pos = j / (d - 1) for j in 0..d-1 (0.0 when d == 1),
     # each a single float32 division as before, done for all frames at once.
@@ -429,30 +480,75 @@ def acoustic_forward(w: NanoWeights, ids: np.ndarray, durations: np.ndarray) -> 
     return acoustic_frames(w, plan, 0, plan.frames)
 
 
-def decoder_forward(w: NanoWeights, mel: np.ndarray, noise: np.ndarray) -> np.ndarray:
-    """mel-100 [100, T] + noise [4, T] -> complex spectrum [513, T]."""
+def _depthwise(x: np.ndarray, dw_w: np.ndarray) -> np.ndarray:
+    """Depthwise 'same' conv, one kernel per channel: [C, T] x [C, K] -> [C, T].
+
+    It used to be a zeroed accumulator plus one multiply-add per tap. Here the
+    taps are a strided [C, K, T] view of the zero-padded input, multiplied by
+    the kernel and summed over the tap axis by add.reduce, which walks that
+    (non-innermost) axis in order: ((p0 + p1) + p2) + ..., the same additions
+    as before. The only difference, 0 + p0 against p0, can only change the
+    sign of a zero sum, which the bias add that follows erases unless that
+    bias is itself -0.0. tests/test_nano_stream.py checks the two forms bit
+    for bit with the shipped voices' kernels and biases.
+    """
+    c, t = x.shape
+    pad = dw_w.shape[1] // 2
+    padded = np.zeros((c, t + 2 * pad), dtype=np.float32)
+    padded[:, pad : pad + t] = x
+    item = padded.itemsize
+    taps = np.ndarray((c, dw_w.shape[1], t), dtype=np.float32, buffer=padded,
+                      strides=(padded.strides[0], item, item))
+    return np.add.reduce(taps * dw_w[:, :, None], axis=1)
+
+
+def decoder_forward(w: NanoWeights, mel: np.ndarray, noise: np.ndarray,
+                    keep: tuple[int, int] | None = None) -> np.ndarray:
+    """mel-100 [100, T] + noise [4, T] -> complex spectrum [513, T].
+
+    `keep` = (start, stop) asks for those spectrum columns only, which is what
+    a streamed chunk needs out of its haloed window. Each depthwise block can
+    only move information dk // 2 columns, so after the embedding and after
+    every block the window is cropped to the columns that can still reach
+    [start, stop); the head and the exp/cos/sin then run on the kept columns
+    alone. A cropped edge is zero-padded by the next convolution, but the
+    columns that padding corrupts are among those cropped at the next step,
+    so the kept columns equal the uncropped pass up to float32 rounding:
+    about 1e-5 relative on the spectrum (tests/test_nano_stream.py), and
+    no change in how far the streamed audio is from synthesize(). keep=None
+    is the whole-window pass, unchanged.
+    """
     m = w.m
     dim, ek, dk = m["NANO_DIM"], m["NANO_EMBED_KERNEL"], m["NANO_DW_KERNEL"]
+    blocks = m["NANO_BLOCKS"]
 
     embed = w.dec_q8("EMBED", dim, m["NANO_MELS"] * ek)
     x = conv1d(mel, embed.weight, embed.bias, ek)
     adapter = w.dec_q8("NOISE", dim, m["NANO_NOISE_CH"] * ek)
     x = x + conv1d(noise, adapter.weight, adapter.bias, ek)
 
+    offset = 0  # window column of x[:, 0]
+    if keep is not None:
+        start, stop = keep
+        if not 0 <= start < stop <= x.shape[1]:
+            raise ValueError(f"decoder keep={keep} outside a {x.shape[1]}-column window")
+
+        def crop(x: np.ndarray, offset: int, reach: int) -> tuple[np.ndarray, int]:
+            lo = max(offset, start - reach)
+            hi = min(offset + x.shape[1], stop + reach)
+            if lo == offset and hi == offset + x.shape[1]:
+                return x, offset
+            return np.ascontiguousarray(x[:, lo - offset : hi - offset]), lo
+
+        x, offset = crop(x, offset, blocks * (dk // 2))
+
     x = layer_norm(x, w.dec_f32("NORM_W", dim), w.dec_f32("NORM_B", dim))
 
-    for b in range(m["NANO_BLOCKS"]):
+    for b in range(blocks):
         residual = x
         dw_w = w.dec_f32(f"B{b}_DW_W", dim * dk).reshape(dim, dk)
         dw_b = w.dec_f32(f"B{b}_DW_B", dim)
-        # depthwise: one kernel per channel, groups == dim
-        pad = dk // 2
-        xp = np.zeros((x.shape[0], x.shape[1] + 2 * pad), dtype=x.dtype)
-        xp[:, pad : pad + x.shape[1]] = x
-        h = np.zeros_like(x)
-        for k in range(dk):
-            h += dw_w[:, k : k + 1] * xp[:, k : k + x.shape[1]]
-        h = h + dw_b[:, None]
+        h = _depthwise(x, dw_w) + dw_b[:, None]
         h = layer_norm(h, w.dec_f32(f"B{b}_NORM_W", dim), w.dec_f32(f"B{b}_NORM_B", dim))
         pw0 = w.dec_q8(f"B{b}_PW0", m["NANO_PW_HIDDEN"], dim)
         h = pw0.weight @ h + pw0.bias[:, None]
@@ -460,7 +556,9 @@ def decoder_forward(w: NanoWeights, mel: np.ndarray, noise: np.ndarray) -> np.nd
         pw1 = w.dec_q8(f"B{b}_PW1", dim, m["NANO_PW_HIDDEN"])
         h = pw1.weight @ h + pw1.bias[:, None]
         h = h * w.dec_f32(f"B{b}_GAMMA", dim)[:, None]
-        x = (residual + h).astype(np.float32)
+        x = (residual + h).astype(np.float32, copy=False)
+        if keep is not None:
+            x, offset = crop(x, offset, (blocks - 1 - b) * (dk // 2))
 
     x = layer_norm(x, w.dec_f32("FNORM_W", dim), w.dec_f32("FNORM_B", dim))
     head = w.dec_q8("HEAD", m["NANO_HEAD_OUT"], dim)
@@ -624,35 +722,63 @@ class _StreamingDCBlock:
         return out.astype(np.float32)
 
 
+_HANN: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+
+
+def _hann(n_fft: int) -> tuple[np.ndarray, np.ndarray]:
+    """The periodic Hann window `istft` uses and its square, built once per size."""
+    pair = _HANN.get(n_fft)
+    if pair is None:
+        window = np.hanning(n_fft + 1)[:n_fft].astype(np.float64)
+        wsq = window * window
+        window.flags.writeable = False
+        wsq.flags.writeable = False
+        pair = _HANN[n_fft] = (window, wsq)
+    return pair
+
+
 class _StreamingISTFT:
     """`istft` as an incremental overlap-add over consecutive spectrum columns.
 
     Frames are added in order, the same order `istft` adds them in, so every
     sample sees the same float64 sums. A sample is emitted once no later frame
     can reach it.
+
+    Only the samples not yet emitted are kept: the buffers cover padded
+    positions [base, base + size), grow as frames arrive and drop what has
+    been returned. Allocating and zeroing two float64 buffers the length of
+    the whole utterance used to happen before the first chunk, and it grew
+    with the text.
     """
 
     def __init__(self, n_fft: int, hop: int, total_frames: int) -> None:
         self.n_fft, self.hop, self.total = n_fft, hop, total_frames
-        self.window = np.hanning(n_fft + 1)[:n_fft].astype(np.float64)
-        self.wsq = self.window * self.window
+        self.window, self.wsq = _hann(n_fft)
         self.length = (total_frames - 1) * hop + n_fft      # padded length
         self.pad = n_fft // 2
-        self.out = np.zeros(self.length, dtype=np.float64)
-        self.norm = np.zeros(self.length, dtype=np.float64)
+        self.base = 0           # padded position of out[0] / norm[0]
+        self.out = np.zeros(0, dtype=np.float64)
+        self.norm = np.zeros(0, dtype=np.float64)
         self.added = 0          # spectrum frames added so far
         self.emitted = self.pad  # padded position up to which samples were returned
 
     def push(self, spec: np.ndarray) -> np.ndarray:
         """Add the next columns; return the samples that are now final."""
         frames_td = np.fft.irfft(spec, n=self.n_fft, axis=0)
-        for j in range(frames_td.shape[1]):
-            start = (self.added + j) * self.hop
+        count = frames_td.shape[1]
+        if self.added + count > self.total:
+            raise RuntimeError(f"istft: {self.added + count} frames pushed, {self.total} expected")
+        end = (self.added + count - 1) * self.hop + self.n_fft
+        grow = end - (self.base + self.out.size)
+        if grow > 0:
+            zeros = np.zeros(grow, dtype=np.float64)
+            self.out = np.concatenate([self.out, zeros])
+            self.norm = np.concatenate([self.norm, zeros])
+        for j in range(count):
+            start = (self.added + j) * self.hop - self.base
             self.out[start : start + self.n_fft] += frames_td[:, j] * self.window
             self.norm[start : start + self.n_fft] += self.wsq
-        self.added += frames_td.shape[1]
-        if self.added > self.total:
-            raise RuntimeError(f"istft: {self.added} frames pushed, {self.total} expected")
+        self.added += count
         # The next frame starts at added * hop, so everything before it is
         # final; once the last frame is in, everything up to the end is.
         ready = self.length - self.pad if self.added == self.total else self.added * self.hop
@@ -660,11 +786,15 @@ class _StreamingISTFT:
         hi = min(ready, self.length - self.pad)
         if hi <= lo:
             return np.zeros(0, dtype=np.float32)
-        out = self.out[lo:hi].copy()
-        norm = self.norm[lo:hi]
+        out = self.out[lo - self.base : hi - self.base].copy()
+        norm = self.norm[lo - self.base : hi - self.base]
         nonzero = norm > 1e-11
         out[nonzero] /= norm[nonzero]
         self.emitted = hi
+        # Everything before `hi` has been returned and no later frame reaches it.
+        self.out = self.out[hi - self.base :]
+        self.norm = self.norm[hi - self.base :]
+        self.base = hi
         return out.astype(np.float32)
 
 
@@ -703,7 +833,7 @@ def stream_ids(front: bytes, dec: bytes, meta: dict[str, int],
         lo, hi = max(0, a - halo), min(total, b + halo)
         alo, ahi = max(0, lo - ac_halo), min(total, hi + ac_halo)
         mel = acoustic_frames(w, plan, alo, ahi)[:, lo - alo : hi - alo]
-        spec = decoder_forward(w, mel, noise[:, lo:hi])[:, a - lo : b - lo]
+        spec = decoder_forward(w, mel, noise[:, lo:hi], keep=(a - lo, b - lo))
         piece = dc(ola.push(spec))
         if piece.size:
             yield piece
