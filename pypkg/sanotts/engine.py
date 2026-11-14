@@ -128,9 +128,13 @@ class Synthesizer:
                 "NANO_DUR_MAX_TOKENS", nano_frontend.DEFAULT_MAX_TOKENS))
             self.phoneme_table = None
             self._nano_w = None
+            if self.nano_g2p == "lexicon":
+                _warm_english_g2p()
             return
 
         self.phoneme_table = frontend.load_phoneme_table(self.pack.phoneme_config_path)
+        if self.piperlite_g2p == "lexicon":
+            _warm_english_g2p()
 
         self._duration_tensors = self.pack.component_tensors("duration")
         self._duration_config = self.pack.component_config("duration")
@@ -286,6 +290,16 @@ class Synthesizer:
                                            first_chunk_frames=first_chunk_frames,
                                            chunk_frames=chunk_frames):
             yield np.clip(piece, -1.0, 1.0).astype(np.float32)
+
+
+def _warm_english_g2p() -> None:
+    """Load the English lexicon G2P and its OOV model now, not on the first
+    sentence (or the first unknown word) a caller synthesizes, so that cost
+    never lands inside a request."""
+    from . import nano_g2p, nano_g2p_oov  # noqa: PLC0415
+
+    nano_g2p.shared_g2p()
+    nano_g2p_oov.shared_phonemizer().warm()
 
 
 def synthesize(

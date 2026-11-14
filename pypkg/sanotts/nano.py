@@ -145,12 +145,12 @@ def silu(x: np.ndarray) -> np.ndarray:
     utterance, and a library that cries wolf teaches its callers to ignore
     warnings. Branching on the sign keeps both exponentials bounded.
     """
-    out = np.empty_like(x)
-    pos = x >= 0
-    out[pos] = x[pos] / (1.0 + np.exp(-x[pos]))
-    e = np.exp(x[~pos])
-    out[~pos] = x[~pos] * e / (1.0 + e)
-    return out
+    # One exp over exp(-|x|) is the same per-element arithmetic as the two
+    # masked branches (x / (1 + exp(-x)) for x >= 0, x e / (1 + e) with
+    # e = exp(x) below), without the boolean gathers and scatters.
+    e = np.exp(-np.abs(x))
+    denom = e + 1.0
+    return np.where(x >= 0, x / denom, x * e / denom)
 
 
 def gelu(x: np.ndarray) -> np.ndarray:
@@ -185,21 +185,43 @@ def _erf(x: np.ndarray) -> np.ndarray:
     x = np.asarray(x, dtype=np.float64)
     a = np.abs(x)
     nan = np.isnan(a)
-    a = np.minimum(np.where(nan, 0.0, a), _ERF_KNOTS * _ERF_STEP)
+    has_nan = bool(nan.any())
+    if has_nan:
+        a[nan] = 0.0
+    np.minimum(a, _ERF_KNOTS * _ERF_STEP, out=a)
     k = np.rint(a * (1.0 / _ERF_STEP)).astype(np.intp)
     x0 = _ERF_X0[k]
     t = a - x0
     x2 = x0 * x0
     # erf(x0 + t) = erf(x0) + D * (t + c2 t^2 + c3 t^3 + c4 t^4 + c5 t^5).
     # The 2nd..5th derivatives are D times -2x, 4x^2 - 2, 12x - 8x^3 and
-    # 16x^4 - 48x^2 + 12; each c_n is that polynomial over n!.
-    c2 = -x0
-    c3 = (4.0 * x2 - 2.0) / 6.0
-    c4 = (12.0 * x0 - 8.0 * x0 * x2) / 24.0
-    c5 = (16.0 * x2 * x2 - 48.0 * x2 + 12.0) / 120.0
-    poly = t * (1.0 + t * (c2 + t * (c3 + t * (c4 + t * c5))))
-    out = np.copysign(_ERF_TABLE[k] + _ERF_DERIV[k] * poly, x)
-    if nan.any():
+    # 16x^4 - 48x^2 + 12; each c_n is that polynomial over n!. The in-place
+    # steps below are these same operations in the same order.
+    c3 = 4.0 * x2
+    c3 -= 2.0
+    c3 /= 6.0
+    c4 = 8.0 * x0
+    c4 *= x2
+    np.subtract(12.0 * x0, c4, out=c4)
+    c4 /= 24.0
+    c5 = 16.0 * x2
+    c5 *= x2
+    c5 -= 48.0 * x2
+    c5 += 12.0
+    c5 /= 120.0
+    poly = t * c5          # t * c5
+    poly += c4             # c4 + t*c5
+    poly *= t
+    poly += c3
+    poly *= t
+    np.subtract(poly, x0, out=poly)   # c2 + (...) with c2 = -x0
+    poly *= t
+    poly += 1.0
+    poly *= t
+    poly *= _ERF_DERIV[k]
+    poly += _ERF_TABLE[k]
+    out = np.copysign(poly, x, out=poly)
+    if has_nan:
         out[nan] = np.nan
     return out
 
@@ -213,10 +235,19 @@ def conv1d(x: np.ndarray, w: np.ndarray, b: np.ndarray, kernel: int) -> np.ndarr
     """
     c_in, t = x.shape
     pad = kernel // 2
-    xp = np.pad(x, ((0, 0), (pad, pad)))
-    gathered = np.empty((c_in * kernel, t), dtype=np.float32)
+    # Row k of each input channel is x shifted by k - pad, zero outside it:
+    # the same matrix np.pad + slicing built, written directly.
+    gathered = np.zeros((c_in * kernel, t), dtype=np.float32)
     for k in range(kernel):
-        gathered[k::kernel] = xp[:, k : k + t]
+        shift = k - pad
+        if abs(shift) >= t:
+            continue                     # this tap only ever sees padding
+        if shift < 0:
+            gathered[k::kernel, -shift:] = x[:, : t + shift]
+        elif shift > 0:
+            gathered[k::kernel, : t - shift] = x[:, shift:]
+        else:
+            gathered[k::kernel] = x
     return (w @ gathered + b[:, None]).astype(np.float32)
 
 
@@ -244,9 +275,16 @@ LAYER_NORM_EPS = 1e-6
 def layer_norm(x: np.ndarray, w: np.ndarray, b: np.ndarray,
                eps: float = LAYER_NORM_EPS) -> np.ndarray:
     """Over the channel axis of [C, T], as torch does on channel-last."""
-    mu = x.mean(axis=0, keepdims=True)
-    var = x.var(axis=0, keepdims=True)
-    return ((x - mu) / np.sqrt(var + eps) * w[:, None] + b[:, None]).astype(np.float32)
+    # x.mean / x.var as numpy's _mean/_var compute them (add.reduce, then
+    # true_divide by an intp count with unsafe casting), minus their wrapper
+    # overhead; bit-identical, checked in tests/test_nano_stream.py.
+    count = np.intp(x.shape[0])
+    mu = np.add.reduce(x, axis=0, keepdims=True)
+    np.true_divide(mu, count, out=mu, casting="unsafe")
+    dev = x - mu
+    var = np.add.reduce(np.multiply(dev, dev), axis=0, keepdims=True)
+    np.true_divide(var, count, out=var, casting="unsafe")
+    return (dev / np.sqrt(var + eps) * w[:, None] + b[:, None]).astype(np.float32)
 
 
 # ---- stages -------------------------------------------------------------
@@ -343,17 +381,16 @@ def acoustic_plan(w: NanoWeights, ids: np.ndarray, durations: np.ndarray) -> Aco
     frames = int(frame_token.size)
     frame_pos = (np.linspace(0.0, 1.0, frames, dtype=np.float32) if frames > 1
                  else np.zeros(1, np.float32))
-    token_pos = np.empty(frames, dtype=np.float32)
-    duration_pos = np.empty(frames, dtype=np.float32)
-    at = 0
-    for ti, d in enumerate(durations.tolist()):
-        d = int(d)
-        if d <= 0:
-            continue
-        token_pos[at : at + d] = np.float32(ti) / np.float32(token_count)
-        duration_pos[at : at + d] = (0.0 if d == 1
-                                     else np.arange(d, dtype=np.float32) / np.float32(d - 1))
-        at += d
+    # Per token ti with d frames: token_pos = ti / token_count on each of
+    # them, and duration_pos = j / (d - 1) for j in 0..d-1 (0.0 when d == 1),
+    # each a single float32 division as before, done for all frames at once.
+    token_pos = (np.arange(n, dtype=np.float32) / np.float32(token_count))[frame_token]
+    starts = np.cumsum(durations) - durations
+    within = (np.arange(frames) - starts[frame_token]).astype(np.float32)
+    span = (durations - 1).astype(np.float32)[frame_token]
+    duration_pos = np.zeros(frames, dtype=np.float32)
+    multi = span > 0
+    duration_pos[multi] = within[multi] / span[multi]
     return AcousticPlan(token_x, frame_token, np.stack([frame_pos, token_pos, duration_pos]))
 
 
@@ -410,7 +447,8 @@ def decoder_forward(w: NanoWeights, mel: np.ndarray, noise: np.ndarray) -> np.nd
         dw_b = w.dec_f32(f"B{b}_DW_B", dim)
         # depthwise: one kernel per channel, groups == dim
         pad = dk // 2
-        xp = np.pad(x, ((0, 0), (pad, pad)))
+        xp = np.zeros((x.shape[0], x.shape[1] + 2 * pad), dtype=x.dtype)
+        xp[:, pad : pad + x.shape[1]] = x
         h = np.zeros_like(x)
         for k in range(dk):
             h += dw_w[:, k : k + 1] * xp[:, k : k + x.shape[1]]
@@ -540,6 +578,24 @@ def decoder_halo_frames(meta: dict[str, int]) -> int:
     return meta["NANO_EMBED_KERNEL"] // 2 + meta["NANO_BLOCKS"] * (meta["NANO_DW_KERNEL"] // 2)
 
 
+_DC_IMPULSE_FFT: dict[tuple[int, int], np.ndarray] = {}
+
+
+def _dc_impulse_fft(taps: int, n_fft: int) -> np.ndarray:
+    """rfft of the first `taps` DC-block taps at size n_fft, cached."""
+    key = (taps, n_fft)
+    spectrum = _DC_IMPULSE_FFT.get(key)
+    if spectrum is None:
+        impulse = np.zeros(taps, dtype=np.float64)
+        impulse[0] = 1.0
+        n = np.arange(1, taps, dtype=np.float64)
+        impulse[1:] = (DC_BLOCK_R - 1.0) * DC_BLOCK_R ** (n - 1.0)
+        if len(_DC_IMPULSE_FFT) >= 64:
+            _DC_IMPULSE_FFT.clear()
+        spectrum = _DC_IMPULSE_FFT[key] = np.fft.rfft(impulse, n_fft)
+    return spectrum
+
+
 class _StreamingDCBlock:
     """`dc_block` applied chunk by chunk.
 
@@ -549,20 +605,20 @@ class _StreamingDCBlock:
     """
 
     def __init__(self) -> None:
-        impulse = np.zeros(DC_BLOCK_TAPS, dtype=np.float64)
-        impulse[0] = 1.0
-        n = np.arange(1, DC_BLOCK_TAPS, dtype=np.float64)
-        impulse[1:] = (DC_BLOCK_R - 1.0) * DC_BLOCK_R ** (n - 1.0)
-        self._impulse = impulse
-        self._history = np.zeros(DC_BLOCK_TAPS - 1, dtype=np.float64)
+        # Past input samples, at most DC_BLOCK_TAPS - 1; before the first
+        # chunk there are none, and the filter sees zeros there anyway.
+        self._history = np.zeros(0, dtype=np.float64)
 
     def __call__(self, chunk: np.ndarray) -> np.ndarray:
         if chunk.size == 0:
             return np.zeros(0, dtype=np.float32)
         segment = np.concatenate([self._history, chunk.astype(np.float64)])
-        n_lin = segment.size + DC_BLOCK_TAPS - 1
+        # Taps past the start of the signal only ever meet zeros, so a short
+        # segment needs only its own length in taps.
+        taps = min(DC_BLOCK_TAPS, segment.size)
+        n_lin = segment.size + taps - 1
         n_fft = 1 << (n_lin - 1).bit_length()
-        filtered = np.fft.irfft(np.fft.rfft(segment, n_fft) * np.fft.rfft(self._impulse, n_fft), n_fft)
+        filtered = np.fft.irfft(np.fft.rfft(segment, n_fft) * _dc_impulse_fft(taps, n_fft), n_fft)
         out = filtered[self._history.size : self._history.size + chunk.size]
         self._history = segment[-(DC_BLOCK_TAPS - 1):]
         return out.astype(np.float32)

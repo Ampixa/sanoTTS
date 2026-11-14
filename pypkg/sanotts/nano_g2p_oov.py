@@ -40,6 +40,8 @@ MODEL_PATH = DATA_DIR / "oov_bart_en_us.npz"
 # four underscores so the character at index i is simply chars[i].
 SPECIAL_TOKEN_COUNT = 4
 UNK_ID = 3
+# Words kept by the memo in OOVPhonemizer.__call__ (oldest evicted first).
+MEMO_SIZE = 4096
 
 
 class OOVModelError(RuntimeError):
@@ -47,6 +49,23 @@ class OOVModelError(RuntimeError):
 
 
 def _layer_norm(x: np.ndarray, weight: np.ndarray, bias: np.ndarray, eps: float) -> np.ndarray:
+    """x.mean / x.var over the last axis, done as numpy's own _mean/_var do
+    them (add.reduce, then true_divide by an intp count with unsafe casting)
+    but without their per-call wrapper overhead. Bit-identical to
+    `(x - x.mean(-1, keepdims=True)) / np.sqrt(x.var(-1, keepdims=True) + eps)
+    * weight + bias`; tests/test_nano_g2p_oov_fast.py checks this."""
+    count = np.intp(x.shape[-1])
+    mean = np.add.reduce(x, axis=-1, keepdims=True)
+    np.true_divide(mean, count, out=mean, casting="unsafe")
+    dev = x - mean
+    sq = np.multiply(dev, dev)
+    var = np.add.reduce(sq, axis=-1, keepdims=True)
+    np.true_divide(var, count, out=var, casting="unsafe")
+    return dev / np.sqrt(var + eps) * weight + bias
+
+
+def _layer_norm_reference(x: np.ndarray, weight: np.ndarray, bias: np.ndarray,
+                          eps: float) -> np.ndarray:
     mean = x.mean(axis=-1, keepdims=True)
     var = x.var(axis=-1, keepdims=True)
     return (x - mean) / np.sqrt(var + eps) * weight + bias
@@ -73,6 +92,40 @@ def _gelu_exact(x: np.ndarray) -> np.ndarray:
     return 0.5 * x * (1.0 + _erf(x / math.sqrt(2.0)))
 
 
+_SQRT2 = math.sqrt(2.0)
+
+
+def _gelu_fast(x: np.ndarray) -> np.ndarray:
+    """`_gelu_exact` with the same operations in the same order, in place
+    where possible (IEEE + and * are commutative, so only the temporaries
+    differ). Bit-identical; tests/test_nano_g2p_oov_fast.py checks this."""
+    z = x / _SQRT2
+    sign = np.sign(z)
+    ax = np.abs(z)
+    t = np.multiply(ax, 0.3275911)
+    t += 1.0
+    np.divide(1.0, t, out=t)
+    p = np.multiply(t, 1.061405429)
+    p += -1.453152027
+    p *= t
+    p += 1.421413741
+    p *= t
+    p += -0.284496736
+    p *= t
+    p += 0.254829592
+    p *= t
+    e = np.negative(ax)
+    e *= ax
+    np.exp(e, out=e)
+    p *= e
+    np.subtract(1.0, p, out=p)
+    p *= sign
+    p += 1.0
+    h = np.multiply(x, 0.5)
+    h *= p
+    return h
+
+
 def _softmax(x: np.ndarray) -> np.ndarray:
     shifted = x - x.max(axis=-1, keepdims=True)
     exp = np.exp(shifted)
@@ -84,13 +137,13 @@ class _Attention:
     by the asset builder, so the head reshape collapses to a plain matmul."""
 
     def __init__(self, weights: dict[str, np.ndarray], prefix: str, scaling: float) -> None:
-        self.q_w = weights[f"{prefix}.q_proj.weight"].T
+        self.q_w = np.ascontiguousarray(weights[f"{prefix}.q_proj.weight"].T)
         self.q_b = weights[f"{prefix}.q_proj.bias"]
-        self.k_w = weights[f"{prefix}.k_proj.weight"].T
+        self.k_w = np.ascontiguousarray(weights[f"{prefix}.k_proj.weight"].T)
         self.k_b = weights[f"{prefix}.k_proj.bias"]
-        self.v_w = weights[f"{prefix}.v_proj.weight"].T
+        self.v_w = np.ascontiguousarray(weights[f"{prefix}.v_proj.weight"].T)
         self.v_b = weights[f"{prefix}.v_proj.bias"]
-        self.o_w = weights[f"{prefix}.out_proj.weight"].T
+        self.o_w = np.ascontiguousarray(weights[f"{prefix}.out_proj.weight"].T)
         self.o_b = weights[f"{prefix}.out_proj.bias"]
         self.scaling = scaling
 
@@ -122,9 +175,9 @@ class _Layer:
         else:
             self.cross_attn = None
             self.cross_ln = None
-        self.fc1_w = weights[f"{prefix}.fc1.weight"].T
+        self.fc1_w = np.ascontiguousarray(weights[f"{prefix}.fc1.weight"].T)
         self.fc1_b = weights[f"{prefix}.fc1.bias"]
-        self.fc2_w = weights[f"{prefix}.fc2.weight"].T
+        self.fc2_w = np.ascontiguousarray(weights[f"{prefix}.fc2.weight"].T)
         self.fc2_b = weights[f"{prefix}.fc2.bias"]
         self.final_ln = (weights[f"{prefix}.final_layer_norm.weight"],
                          weights[f"{prefix}.final_layer_norm.bias"])
@@ -138,7 +191,7 @@ class _Layer:
                 raise OOVModelError("decoder layer reached with no encoder memory")
             hidden = _layer_norm(hidden + self.cross_attn(hidden, memory),
                                  *self.cross_ln, self.eps)
-        ffn = _gelu_exact(hidden @ self.fc1_w + self.fc1_b) @ self.fc2_w + self.fc2_b
+        ffn = _gelu_fast(hidden @ self.fc1_w + self.fc1_b) @ self.fc2_w + self.fc2_b
         return _layer_norm(hidden + ffn, *self.final_ln, self.eps)
 
 
@@ -182,6 +235,7 @@ class OOVPhonemizer:
             ch: i for i, ch in enumerate(self.grapheme_chars) if i >= SPECIAL_TOKEN_COUNT
         }
         self.embed = weights["model.shared.weight"]
+        self.embed_t = np.ascontiguousarray(self.embed.T)
         self.logit_bias = weights["final_logits_bias"][0]
         self.enc_pos = weights["model.encoder.embed_positions.weight"]
         self.dec_pos = weights["model.decoder.embed_positions.weight"]
@@ -192,22 +246,223 @@ class OOVPhonemizer:
         self.encoder = _Layer(weights, "model.encoder.layers.0", scaling, eps, cross=False)
         self.decoder = _Layer(weights, "model.decoder.layers.0", scaling, eps, cross=True)
         self.eps = eps
+        self._memo: dict[str, str] = {}
+        self._dec_inputs: tuple[np.ndarray, ...] | None = None
 
     def encode_word(self, word: str) -> list[int]:
         """Character ids with bos/eos, unknown characters mapped to <unk>."""
         return [self.bos_id, *(self.grapheme_to_id.get(c, UNK_ID) for c in word), self.eos_id]
 
     def __call__(self, word: str) -> str:
-        """Phonemes for `word`, or '' if the model emits nothing usable."""
+        """Phonemes for `word`, or '' if the model emits nothing usable.
+
+        The output is a pure function of `word`, so results are memoised
+        (bounded); a text that is phonemized twice, as the long-text fallback
+        does, pays for each unknown word once.
+        """
         if not word:
             raise OOVModelError("cannot phonemize an empty word")
+        cached = self._memo.get(word)
+        if cached is not None:
+            return cached
         ids = self.encode_word(word)
         if len(ids) > self.max_positions:
             raise OOVModelError(
                 f"word {word!r} needs {len(ids)} positions; the model has {self.max_positions}"
             )
         memory = self._encode(np.asarray(ids, dtype=np.int64))
+        out = self._greedy(memory)
+        result = "".join(
+            self.phoneme_chars[i] for i in out[1:]
+            if SPECIAL_TOKEN_COUNT <= i < len(self.phoneme_chars)
+        )
+        if len(self._memo) >= MEMO_SIZE:
+            self._memo.pop(next(iter(self._memo)))
+        self._memo[word] = result
+        return result
 
+    def _greedy(self, memory: np.ndarray) -> list[int]:
+        """Greedy decoding with the decoder's keys and values cached.
+
+        The decoder is one layer, so row i of its self-attention keys and
+        values depends only on token i; and the logits only need the last
+        row. Each step therefore looks up one token's row, appends its
+        key/value, and runs the rest of the layer on that row alone. This is
+        the function `_decode_step` computes for the last row of the full
+        prefix, with the projections regrouped (see `_cross_terms` and
+        `_decoder_inputs`), so the float rounding differs slightly; what is
+        guaranteed is the greedy output, which tests/test_nano_g2p_oov_fast.py
+        checks word for word against `greedy_reference`.
+        """
+        dec = self.decoder
+        sa, ca = dec.self_attn, dec.cross_attn
+        if ca is None:
+            raise OOVModelError("decoder layer has no cross-attention")
+        cross_score_w, cross_score_b, cross_out = self._cross_terms(memory)
+        rows, qs, ks, vos = self._decoder_inputs()
+        vocab = self.embed.shape[0]
+        steps = self.max_positions - 1
+        keys = np.empty((steps, ks.shape[1]), dtype=np.float32)
+        vals = np.empty((steps, vos.shape[1]), dtype=np.float32)
+        out: list[int] = [self.start_id]
+        for step in range(steps):
+            at = step * vocab + out[-1]
+            keys[step] = ks[at]
+            vals[step] = vos[at]
+            att = _softmax(qs[at : at + 1] @ keys[: step + 1].T) @ vals[: step + 1] + sa.o_b
+            h = _layer_norm(rows[at : at + 1] + att, *dec.self_ln, dec.eps)
+            att = _softmax(h @ cross_score_w + cross_score_b) @ cross_out + ca.o_b
+            h = _layer_norm(h + att, *dec.cross_ln, dec.eps)
+            ffn = _gelu_fast(h @ dec.fc1_w + dec.fc1_b) @ dec.fc2_w + dec.fc2_b
+            h = _layer_norm(h + ffn, *dec.final_ln, dec.eps)
+            nxt = int(np.argmax(h[0] @ self.embed_t + self.logit_bias))
+            if nxt == self.eos_id:
+                break
+            out.append(nxt)
+        return out
+
+    def _cross_terms(self, memory: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Cross-attention folded around the word's fixed memory.
+
+        scores = ((h Wq + bq) s) (M Wk + bk)^T = h A + c with A = (Wq s) K^T
+        and c = (bq s) K^T; output = softmax(.) (M Wv + bv) Wo + bo, so the
+        values are taken through Wo once per word. Works on [W, D] memory or
+        a [B, W, D] batch (then A is [B, D, W] and c is [B, 1, W]).
+        """
+        ca = self.decoder.cross_attn
+        if ca is None:
+            raise OOVModelError("decoder layer has no cross-attention")
+        keys_t = np.swapaxes(memory @ ca.k_w + ca.k_b, -1, -2)           # [.., D, W]
+        score_w = (ca.q_w * np.float32(ca.scaling)) @ keys_t              # [.., D, W]
+        score_b = (ca.q_b * np.float32(ca.scaling)) @ keys_t              # [.., W]
+        out = (memory @ ca.v_w + ca.v_b) @ ca.o_w                         # [.., W, D]
+        if memory.ndim == 3:
+            score_b = score_b[:, None, :]
+        return score_w.astype(np.float32), score_b.astype(np.float32), out.astype(np.float32)
+
+    def _decoder_inputs(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """For every (position, token): the decoder's layer-normed input row
+        and its self-attention query, key and value (the value already through
+        the output projection: softmax(.) @ V @ Wo = softmax(.) @ (V Wo)), flattened to
+        [position * vocab + token]. A token's row depends only on the token
+        and its position, so the greedy loop looks them up instead of
+        recomputing them (63 x 63 rows of 128, about 8 MB, built once)."""
+        if self._dec_inputs is None:
+            sa = self.decoder.self_attn
+            vocab = self.embed.shape[0]
+            steps = self.max_positions - 1
+            pos = self.dec_pos[self.offset : self.offset + steps]
+            rows = (pos[:, None, :] + self.embed[None, :, :]).reshape(steps * vocab, -1)
+            rows = np.ascontiguousarray(_layer_norm(rows, *self.dec_ln, self.eps), dtype=np.float32)
+            qs = (rows @ sa.q_w + sa.q_b) * sa.scaling
+            ks = rows @ sa.k_w + sa.k_b
+            vos = (rows @ sa.v_w + sa.v_b) @ sa.o_w
+            self._dec_inputs = (rows, qs, ks, vos)
+        return self._dec_inputs
+
+    def warm(self) -> None:
+        """Build the decoder lookup tables now rather than on the first word."""
+        self._decoder_inputs()
+
+    def memoized(self, word: str) -> bool:
+        return word in self._memo
+
+    def prefetch(self, words: list[str]) -> None:
+        """Decode every word not yet memoised in one batch, into the memo.
+
+        A text with k unknown words then needs one decoding loop instead of
+        k: the step count is the longest word's, and each step runs the same
+        operations on k rows instead of one (on the l40 bench, three words in
+        about 2.4 ms against about 3.4 ms one at a time). Words are padded
+        to a common length and padded positions are masked out of every
+        attention, so each word sees exactly its own characters.
+        tests/test_nano_g2p_oov_fast.py checks the batch against one-at-a-time
+        decoding word for word.
+        """
+        todo = list(dict.fromkeys(w for w in words if w and w not in self._memo))
+        if not todo:
+            return
+        # A word too long for the model is left for __call__, which raises
+        # OOVModelError for it on the caller's normal path.
+        todo = [w for w in todo if len(self.encode_word(w)) <= self.max_positions]
+        if not todo:
+            return
+        encoded = [self.encode_word(w) for w in todo]
+        if len(todo) == 1:
+            self(todo[0])
+            return
+        batch, width = len(todo), max(len(ids) for ids in encoded)
+        tok = np.zeros((batch, width), dtype=np.int64)
+        valid = np.zeros((batch, width), dtype=bool)
+        for b, ids in enumerate(encoded):
+            tok[b, : len(ids)] = ids
+            valid[b, : len(ids)] = True
+        key_mask = np.where(valid, np.float32(0.0), np.float32(-np.inf))[:, None, :]   # [B, 1, W]
+
+        # encoder, batched with padded keys masked
+        enc = self.encoder
+        hidden = self.embed[tok] + self.enc_pos[self.offset : self.offset + width][None]
+        hidden = _layer_norm(hidden, *self.enc_ln, self.eps)
+        a = enc.self_attn
+        q = (hidden @ a.q_w + a.q_b) * a.scaling
+        k = hidden @ a.k_w + a.k_b
+        v = hidden @ a.v_w + a.v_b
+        att = _softmax(q @ k.transpose(0, 2, 1) + key_mask) @ v @ a.o_w + a.o_b
+        hidden = _layer_norm(hidden + att, *enc.self_ln, enc.eps)
+        ffn = _gelu_fast(hidden @ enc.fc1_w + enc.fc1_b) @ enc.fc2_w + enc.fc2_b
+        memory = _layer_norm(hidden + ffn, *enc.final_ln, enc.eps)          # [B, W, D]
+
+        dec = self.decoder
+        sa, ca = dec.self_attn, dec.cross_attn
+        if ca is None:
+            raise OOVModelError("decoder layer has no cross-attention")
+        score_w, score_b, cross_out = self._cross_terms(memory)
+        score_b = score_b + key_mask                                        # [B, 1, W]
+        rows, qs, ks, vos = self._decoder_inputs()
+        vocab = self.embed.shape[0]
+        steps = self.max_positions - 1
+        keys = np.empty((batch, steps, ks.shape[1]), dtype=np.float32)
+        vals = np.empty((batch, steps, vos.shape[1]), dtype=np.float32)
+        last = np.full(batch, self.start_id, dtype=np.int64)
+        outs: list[list[int]] = [[self.start_id] for _ in range(batch)]
+        live = np.ones(batch, dtype=bool)
+        for step in range(steps):
+            at = step * vocab + last
+            keys[:, step] = ks[at]
+            vals[:, step] = vos[at]
+            scores = qs[at][:, None, :] @ keys[:, : step + 1].transpose(0, 2, 1)   # [B, 1, s+1]
+            att = (_softmax(scores) @ vals[:, : step + 1])[:, 0] + sa.o_b
+            h = _layer_norm(rows[at] + att, *dec.self_ln, dec.eps)
+            att = (_softmax(h[:, None, :] @ score_w + score_b) @ cross_out)[:, 0] + ca.o_b
+            h = _layer_norm(h + att, *dec.cross_ln, dec.eps)
+            ffn = _gelu_fast(h @ dec.fc1_w + dec.fc1_b) @ dec.fc2_w + dec.fc2_b
+            h = _layer_norm(h + ffn, *dec.final_ln, dec.eps)
+            nxt = np.argmax(h @ self.embed_t + self.logit_bias, axis=-1)
+            for b in np.flatnonzero(live).tolist():
+                t = int(nxt[b])
+                if t == self.eos_id:
+                    live[b] = False
+                else:
+                    outs[b].append(t)
+            if not live.any():
+                break
+            last = np.where(live, nxt, self.start_id)
+        for w, out in zip(todo, outs):
+            result = "".join(
+                self.phoneme_chars[i] for i in out[1:]
+                if SPECIAL_TOKEN_COUNT <= i < len(self.phoneme_chars)
+            )
+            if len(self._memo) >= MEMO_SIZE:
+                self._memo.pop(next(iter(self._memo)))
+            self._memo[w] = result
+
+    def greedy_reference(self, word: str) -> str:
+        """The original full-prefix decoding algorithm, kept as the test
+        reference. (The weights are now stored contiguously, so BLAS may round
+        it differently from 0.5.1; the release was checked against 0.5.1
+        itself on whole texts, phoneme id for phoneme id.)"""
+        ids = self.encode_word(word)
+        memory = self._encode(np.asarray(ids, dtype=np.int64))
         out: list[int] = [self.start_id]
         for _ in range(self.max_positions - 1):
             logits = self._decode_step(np.asarray(out, dtype=np.int64), memory)
