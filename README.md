@@ -193,8 +193,12 @@ public figure.
 | _reference (~15 M)_ | _~15 M_ | _4.71_ | _4.47_ | _3.65_ |
 | _Kokoro_ | _82 M_ | _4.89_ | _4.52_ | _3.69_ |
 
-sanoTTS is the **smallest** model here and the **best on naturalness (SCOREQ and
-UTMOS) among everything up to 15M params** — beating TinyTTS while being smaller.
+Among the systems in this table, sanoTTS amy is the **smallest** and scores
+**highest on naturalness (SCOREQ and UTMOS) below the ~15M reference** — beating
+TinyTTS while being smaller. This is our own 24-sentence comparison; on the
+[Open TTS Leaderboard](https://huggingface.co/spaces/hf-audio/open_tts_leaderboard)'s
+larger sets, several small models (for example Paradee-8M and PiVo-1.4M) have
+higher UTMOS than amy.
 On DNSMOS-SIG, TinyTTS edges us by 0.01 — no single metric tells the whole story.
 It's the only one that runs a full neural stack on a $3 MCU. Parameter count
 isn't destiny at this scale: Kitten TTS at 10x the size scores a full SCOREQ
