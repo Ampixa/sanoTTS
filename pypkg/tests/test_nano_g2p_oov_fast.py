@@ -23,7 +23,7 @@ from sanotts import nano_g2p, nano_g2p_oov as oov  # noqa: E402
 
 @pytest.fixture(scope="module")
 def model():
-    return oov.OOVPhonemizer()
+    return oov.OOVPhonemizer(table_path=None)  # decode every word: these tests check the decoder
 
 
 @pytest.fixture(scope="module")
