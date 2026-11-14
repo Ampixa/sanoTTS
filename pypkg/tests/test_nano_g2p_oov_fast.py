@@ -45,6 +45,7 @@ def test_layer_norm_and_gelu_bit_identical():
         b = rng.standard_normal(shape[-1]).astype(np.float32)
         assert oov._layer_norm(x, w, b, 1e-5).tobytes() == oov._layer_norm_reference(x, w, b, 1e-5).tobytes()
         assert oov._gelu_fast(x).tobytes() == oov._gelu_exact(x).tobytes()
+        assert oov._softmax(x).tobytes() == oov._softmax_reference(x).tobytes()
 
 
 def test_cached_decoder_matches_reference(model, words):

@@ -162,12 +162,83 @@ def uniform_stream(seed: int, n: int) -> np.ndarray:
     return ATenMT19937(seed).uniform(n)
 
 
+class _NoisePrefix:
+    """One seed's uniform stream and its block-wise Gaussian transform, both
+    as long as any request so far has needed.
+
+    Every call of `seeded_noise` with the same seed restarts the same stream,
+    so the draws for a short request are a prefix of those for a long one.
+    Box-Muller works on independent blocks of 16 aligned to the start of the
+    stream, so the transformed blocks are a prefix too. Only the tail block
+    that torch redraws when the size is not a multiple of 16 depends on the
+    size, and that one is computed per call. The nano voices use one seed for
+    every utterance, so this replaces a twist-and-transform over the whole
+    utterance with a slice.
+    """
+
+    __slots__ = ("uniform", "normal")
+
+    def __init__(self, seed: int, n: int) -> None:
+        # Whole blocks only, so that every block in `normal` is transformed.
+        n = -(-n // 16) * 16
+        self.uniform = ATenMT19937(seed).uniform(n)
+        self.uniform.flags.writeable = False
+        normal = self.uniform.copy()
+        _normal_fill_blocks(normal)
+        normal.flags.writeable = False
+        self.normal = normal
+
+
+_PREFIXES: dict[int, _NoisePrefix] = {}
+
+
+def _noise_prefix(seed: int, n: int) -> _NoisePrefix:
+    """A prefix of at least n draws for `seed`, grown geometrically."""
+    seed &= 0xFFFFFFFF
+    prefix = _PREFIXES.get(seed)
+    if prefix is None or prefix.uniform.size < n:
+        have = 0 if prefix is None else prefix.uniform.size
+        prefix = _NoisePrefix(seed, max(n, 2 * have, 4096))
+        if len(_PREFIXES) >= 8 and seed not in _PREFIXES:
+            _PREFIXES.clear()
+        _PREFIXES[seed] = prefix
+    return prefix
+
+
+def warm_noise(seed: int, channels: int, frames: int) -> None:
+    """Build `seed`'s prefix for requests up to channels*frames now, so that
+    cost is not paid inside the first request that needs it."""
+    _noise_prefix(seed, channels * frames + 16)
+
+
 def seeded_noise(seed: int, channels: int, frames: int) -> np.ndarray:
     """[channels, frames] of N(0,1), matching torch.randn under this seed.
 
     Torch sends sizes under 16 to a scalar path this does not implement; the
     decoder always asks for channels*frames well above that.
+
+    The values are those of drawing `size` uniforms, transforming every whole
+    block of 16, and (when size % 16) overwriting the last 16 with a fresh
+    block drawn after them; they come from the cached prefix instead of a
+    fresh generator. tests/test_nano_stream.py checks both against each other.
     """
+    size = channels * frames
+    if size < 16:
+        raise ValueError(f"seeded_noise needs at least 16 values, got {size}")
+    prefix = _noise_prefix(seed, size + 16)
+    flat = prefix.normal[:size].copy()
+    if size % 16:
+        # Torch draws a FRESH block of 16 (continuing the same stream) and
+        # overwrites the last 16 values with it. The remainder left by the
+        # loop above is discarded, so the tail is not simply its leftover.
+        tail = prefix.uniform[size:size + 16].copy()
+        _normal_fill_16(tail)
+        flat[size - 16 :] = tail
+    return flat.reshape(channels, frames)
+
+
+def seeded_noise_uncached(seed: int, channels: int, frames: int) -> np.ndarray:
+    """`seeded_noise` from a fresh generator: the reference it is tested against."""
     size = channels * frames
     if size < 16:
         raise ValueError(f"seeded_noise needs at least 16 values, got {size}")
@@ -176,9 +247,6 @@ def seeded_noise(seed: int, channels: int, frames: int) -> np.ndarray:
     whole = (size // 16) * 16
     _normal_fill_blocks(flat[:whole])
     if size % 16:
-        # Torch draws a FRESH block of 16 (continuing the same stream) and
-        # overwrites the last 16 values with it. The remainder left by the
-        # loop above is discarded, so the tail is not simply its leftover.
         tail = gen.uniform(16)
         _normal_fill_16(tail)
         flat[size - 16 :] = tail
