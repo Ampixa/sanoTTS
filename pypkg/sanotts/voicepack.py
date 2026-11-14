@@ -327,38 +327,14 @@ def _fetch_from_hf(package_name: str, dest_dir: Path) -> None:
     staging = dest_dir.with_name(dest_dir.name + ".partial")
     shutil.rmtree(staging, ignore_errors=True)
     staging.mkdir(parents=True)
-    # Prose is not a runtime input. A package carries a README and a
-    # runtime-kernels note for people reading the repository, and fetching them
-    # cost two extra round trips -- about a second of the first call -- to put
-    # files on disk that nothing ever opens. Skipping by suffix rather than by
-    # name keeps the "list, do not assume" property that the rest of this
-    # function exists for: a new *data* file still arrives without a code change.
-    wanted = [f for f in files if not f.lower().endswith((".md", ".txt"))]
-    if not wanted:
-        raise VoicePackError(f"{HF_REPO}/{package_name} has only documentation in it")
-
-    def fetch_one(rfilename: str) -> None:
-        relative = rfilename[len(package_name) + 1 :]
-        if not relative or Path(relative).is_absolute() or ".." in Path(relative).parts:
-            raise VoicePackError(f"refusing unsafe path from {HF_REPO}: {rfilename}")
-        target = staging / relative
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(_http_get(f"{HF_RESOLVE_BASE}/{rfilename}"))
-
     try:
-        # These were serial, and a voice is half a dozen files each costing a
-        # round trip to the same host -- so the first call spent most of its
-        # time waiting rather than transferring. The work is IO-bound, so
-        # threads are enough and bring no dependency.
-        if len(wanted) > 1:
-            from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
-
-            with ThreadPoolExecutor(max_workers=min(8, len(wanted))) as pool:
-                # list() so an exception in any worker propagates here, before
-                # the staging directory is promoted.
-                list(pool.map(fetch_one, wanted))
-        else:
-            fetch_one(wanted[0])
+        for rfilename in files:
+            relative = rfilename[len(package_name) + 1 :]
+            if not relative or Path(relative).is_absolute() or ".." in Path(relative).parts:
+                raise VoicePackError(f"refusing unsafe path from {HF_REPO}: {rfilename}")
+            target = staging / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(_http_get(f"{HF_RESOLVE_BASE}/{rfilename}"))
         shutil.rmtree(dest_dir, ignore_errors=True)
         staging.replace(dest_dir)
     finally:

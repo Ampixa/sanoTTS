@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sanotts"
-version = "0.7.0"
+version = "0.5.0"
 description = "Self-contained, numpy-only inference runtime for sanoTTS voices, including the 294k and 2.27M heart voices."
 readme = { text = "sanotts: pip-installable, numpy-only inference for sanoTTS voices. Two graphs are supported: the piperlite voices (amy, kristin, hfc, vi, id) and the nano voices (heart at 2.27M parameters, heart-nano at 294k), the latter running mel-100 -> ConvNeXt1D -> iSTFT with a noise-fed decoder. Both are gated against the same PyTorch references the C runtime is held to. Voices download on demand or load from a local directory.", content-type = "text/plain" }
 license = { text = "MIT" }
@@ -16,28 +16,13 @@ requires-python = ">=3.10"
 # anyone who specifically wants the old espeak path back.
 dependencies = [
   "numpy>=1.24",
-  # espeak-ng, via these two. Required, not optional, since 0.5.0.
-  #
-  # sanotts' own code is MIT and the English, Indonesian and Vietnamese voices
-  # still run through the espeak-free front end in g2p_data/ by default. But
-  # every voice distilled from a Piper teacher in another language was trained
-  # on espeak's phonemes, and no espeak-free front end exists for those
-  # languages, so espeak is the only correct front end they have. Shipping it
-  # as an extra meant `pip install sanotts` gave you a German voice that raised
-  # instead of speaking, which is a worse trade than the dependency.
-  #
-  # phonemizer-fork is GPL-3.0. That does not change sanotts' MIT licence --
-  # this is a dependency, not vendored code -- but installing sanotts now
-  # installs GPL-3.0 packages, and anyone who needs to avoid that can hold at
-  # 0.4.x or use only the en/id/vi voices with these two uninstalled.
-  "phonemizer-fork>=3.3,<4",
-  "espeakng-loader>=0.2,<1",
 ]
 
 [project.optional-dependencies]
-# Kept as a no-op alias so `pip install sanotts[espeak]`, which the 0.4.x docs
-# and every existing README tell people to run, does not start erroring.
-espeak = []
+espeak = [
+  "phonemizer-fork>=3.3,<4",
+  "espeakng-loader>=0.2,<1",
+]
 
 [project.scripts]
 sanotts = "sanotts.cli:main"
@@ -62,12 +47,6 @@ include = [
   # sha256 of every payload.
   "sanotts/g2p_data/indo_g2p/*.xz",
   "sanotts/g2p_data/indo_g2p/MANIFEST.json",
-  # The MIT pypinyin tables behind the Chinese pinyin front end: 358 KB for the
-  # three that ship, against the 152 MB BERT piper uses for the same job.
-  # NOTICE.md carries their attribution and MANIFEST.json the sha256 of every
-  # payload.
-  "sanotts/g2p_data/zh_pinyin/*.xz",
-  "sanotts/g2p_data/zh_pinyin/MANIFEST.json",
 ]
 # `include` alone is not enough for the out-of-vocabulary model: hatchling
 # honours .gitignore when selecting files, the repo ignores *.npz for training

@@ -92,7 +92,7 @@ def _run_say(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="sanotts", description="Self-contained sanoTTS inference CLI.")
+    parser = argparse.ArgumentParser(prog="sanotts", description="Self-contained saanoTTS inference CLI.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     say_parser = subparsers.add_parser("say", help="Synthesize text to a WAV file.")

@@ -44,8 +44,6 @@ from typing import Any
 
 import numpy as np
 
-from .mexican_g2p import normalize_mexican_g2p
-
 logger = logging.getLogger("sanotts.frontend")
 
 # Framing ids fixed by the Piper phoneme_id_map convention; every voice's
@@ -73,36 +71,20 @@ class FrontendError(RuntimeError):
     """Raised when the espeak-ng backend cannot be initialized or used."""
 
 
-# Piper's own phoneme types, and the two this package can read. ``espeak``
-# keys its map on single codepoints; ``pinyin`` keys it on whole initials and
-# finals (``zh``, ``ang``), which is why the key-length rule below is gated.
-PHONEME_TYPE_ESPEAK = "espeak"
-PHONEME_TYPE_PINYIN = "pinyin"
-SUPPORTED_PHONEME_TYPES: frozenset[str] = frozenset(
-    {PHONEME_TYPE_ESPEAK, PHONEME_TYPE_PINYIN})
-
-
 @dataclass(frozen=True)
 class PhonemeTable:
-    """A single voice's phoneme -> Piper phoneme-id map.
-
-    ``phoneme_type`` decides both what the keys look like and which framing
-    ``phonemes_to_ids`` a caller must use, so it travels with the map rather
-    than being re-derived. It defaults to ``espeak`` so that the many callers
-    that build a table by hand keep working unchanged.
-    """
+    """A single voice's codepoint -> Piper phoneme-id map."""
 
     espeak_voice: str
     id_map: dict[str, int]
-    phoneme_type: str = PHONEME_TYPE_ESPEAK
 
 
 def load_phoneme_table(piper_config_path: Path) -> PhonemeTable:
     """Parse a Piper ``*.onnx.json`` / ``piper-phoneme-config.json`` file.
 
     Raises FrontendError if the file does not have the exact shape we
-    depend on (single-codepoint keys for an espeak voice, single-id values,
-    and the pad/bos/eos framing ids piper hardcodes).
+    depend on (single-codepoint keys, single-id values, and the
+    pad/bos/eos framing ids piper hardcodes).
     """
     import json
 
@@ -111,21 +93,14 @@ def load_phoneme_table(piper_config_path: Path) -> PhonemeTable:
     with piper_config_path.open("r", encoding="utf-8") as handle:
         config = json.load(handle)
 
-    phoneme_type = config.get("phoneme_type") or PHONEME_TYPE_ESPEAK
-    if phoneme_type not in SUPPORTED_PHONEME_TYPES:
+    phoneme_type = config.get("phoneme_type", "espeak")
+    if phoneme_type not in (None, "espeak"):
         raise FrontendError(f"{piper_config_path}: unsupported phoneme_type={phoneme_type!r}")
 
     espeak_cfg = config.get("espeak") or {}
     espeak_voice = espeak_cfg.get("voice")
     if not espeak_voice:
-        # A pinyin voice does not need espeak at all, and the language block is
-        # the authority for it. xiao_ya happens to carry a leftover
-        # ``espeak.voice`` of "zh"; a pinyin teacher without one must still load.
-        if phoneme_type == PHONEME_TYPE_PINYIN:
-            espeak_voice = ((config.get("language") or {}).get("family")
-                            or (config.get("language") or {}).get("code") or "zh")
-        else:
-            raise FrontendError(f"{piper_config_path}: missing espeak.voice")
+        raise FrontendError(f"{piper_config_path}: missing espeak.voice")
 
     raw_map = config.get("phoneme_id_map")
     if not isinstance(raw_map, dict) or not raw_map:
@@ -133,9 +108,7 @@ def load_phoneme_table(piper_config_path: Path) -> PhonemeTable:
 
     id_map: dict[str, int] = {}
     for key, ids in raw_map.items():
-        if not key:
-            raise FrontendError(f"{piper_config_path}: empty map key")
-        if phoneme_type == PHONEME_TYPE_ESPEAK and len(key) != 1:
+        if len(key) != 1:
             raise FrontendError(f"{piper_config_path}: multi-codepoint map key {key!r}")
         if not isinstance(ids, list) or len(ids) != 1:
             raise FrontendError(f"{piper_config_path}: multi-id map value {key!r} -> {ids!r}")
@@ -148,8 +121,7 @@ def load_phoneme_table(piper_config_path: Path) -> PhonemeTable:
                 f"{piper_config_path}: framing symbol {sym!r} maps to {got}, expected {want}"
             )
 
-    return PhonemeTable(espeak_voice=str(espeak_voice), id_map=id_map,
-                        phoneme_type=str(phoneme_type))
+    return PhonemeTable(espeak_voice=str(espeak_voice), id_map=id_map)
 
 
 _COMPAT_DIR: Path | None = None
@@ -217,9 +189,7 @@ class EspeakEngine:
         except ImportError as exc:  # pragma: no cover - dependency missing
             raise FrontendError(
                 "the 'espeakng-loader' package is required for phonemization; "
-                "install it with `pip install sanotts[espeak]`. That extra is GPL-3.0 "
-                "and is why it is not installed by default; the English, Indonesian "
-                "and Vietnamese voices need no espeak at all."
+                "install it with `pip install espeakng-loader`"
             ) from exc
         try:
             from phonemizer.backend import EspeakBackend
@@ -227,9 +197,7 @@ class EspeakEngine:
         except ImportError as exc:  # pragma: no cover - dependency missing
             raise FrontendError(
                 "the 'phonemizer-fork' package is required for phonemization; "
-                "install it with `pip install sanotts[espeak]`. That extra is GPL-3.0 "
-                "and is why it is not installed by default; the English, Indonesian "
-                "and Vietnamese voices need no espeak at all."
+                "install it with `pip install phonemizer-fork`"
             ) from exc
 
         library_path = espeakng_loader.get_library_path()
@@ -290,59 +258,21 @@ class EspeakEngine:
         # raises. Retry with a regional variant rather than failing outright;
         # this is a voice-*selection* compatibility shim only (it changes
         # which accent espeak uses), not a phoneme-table substitution.
-        def _build(name: str) -> Any:
-            return EspeakBackend(
-                name,
-                preserve_punctuation=True,
-                punctuation_marks=PUNCTUATION_MARKS,
-                with_stress=True,
-                tie=False,
-                language_switch="remove-flags",
-            )
-
-        # Try the voice the config actually names, FIRST and on its own. Every
-        # shipped voice but a couple of old ones resolves here, and asking
-        # espeak to enumerate its 140 languages before trying costs 0.43 s of
-        # first-call latency to answer a question that was not asked -- which
-        # is every new language's first impression.
-        direct_error: Exception | None = None
-        try:
-            backend = _build(espeak_voice)
-        except Exception as exc:  # noqa: BLE001 - fall through to the shim below
-            # Rebind: Python unbinds the `as` name at the end of the except
-            # block, so referring to it later is a NameError, not a None.
-            direct_error = exc
-        else:
-            self._backends[espeak_voice] = backend
-            return backend
-
-        # Only now pay for discovery. Some older voice packages (kristin) were
-        # trained against an espeak-ng where a bare code like "en" was directly
-        # selectable; newer builds expose only regional variants, so "en" now
-        # raises. Ask espeak what it has rather than guessing suffixes -- the
-        # old guesses were ["-us", "-gb"], right only for English, so a French
-        # voice whose config said "fr" failed with fr-fr sitting right there.
-        # This is a voice-SELECTION shim, not a phoneme-table substitution.
-        candidates: list[str] = []
+        candidates = [espeak_voice]
         if "-" not in espeak_voice:
-            try:
-                supported = set(EspeakBackend.supported_languages())
-            except Exception:  # noqa: BLE001 - discovery is best-effort
-                supported = set()
-            regional = sorted(v for v in supported if v.startswith(f"{espeak_voice}-"))
-            preferred = f"{espeak_voice}-{espeak_voice}"
-            if preferred in regional:
-                regional.remove(preferred)
-                regional.insert(0, preferred)
-            candidates += regional
             candidates += [f"{espeak_voice}-us", f"{espeak_voice}-gb"]
-        seen: set[str] = set()
-        candidates = [c for c in candidates if not (c in seen or seen.add(c))]
-        last_error = direct_error
 
+        last_error: Exception | None = None
         for candidate in candidates:
             try:
-                backend = _build(candidate)
+                backend = EspeakBackend(
+                    candidate,
+                    preserve_punctuation=True,
+                    punctuation_marks=PUNCTUATION_MARKS,
+                    with_stress=True,
+                    tie=False,
+                    language_switch="remove-flags",
+                )
             except Exception as exc:  # noqa: BLE001 - trying multiple voice-name spellings
                 last_error = exc
                 continue
@@ -394,20 +324,9 @@ def phonemes_to_ids(phonemes: list[str], table: PhonemeTable) -> list[int]:
 
 def text_to_phoneme_ids(text: str, table: PhonemeTable) -> np.ndarray:
     """Full text -> Piper phoneme-id array, matching PiperVoice exactly."""
-    if table.phoneme_type != PHONEME_TYPE_ESPEAK:
-        # espeak-ng is not a fallback for a pinyin voice: it would emit IPA
-        # this voice has no id for and the caller would get silence with a
-        # warning. sanotts.zh_g2p is the front end these weights answer to.
-        raise FrontendError(
-            f"this voice's phoneme_type is {table.phoneme_type!r}, not "
-            f"{PHONEME_TYPE_ESPEAK!r}; espeak-ng cannot produce its phonemes. "
-            f"Use sanotts.piper_g2p.text_to_phoneme_ids instead."
-        )
     clean_text = text.strip()
     if not clean_text:
         raise FrontendError("text is empty")
-    # Gated on the voice: a no-op for everything except espeak's es-419.
-    clean_text = normalize_mexican_g2p(clean_text, table.espeak_voice)
     phonemized = _ENGINE.phonemize(clean_text, table.espeak_voice)
     phonemes = list(unicodedata.normalize("NFD", phonemized))
     ids = phonemes_to_ids(phonemes, table)

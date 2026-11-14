@@ -189,26 +189,13 @@ class Synthesizer:
 
         if self.piperlite_g2p in ("lexicon", "indo"):
             from . import piper_g2p  # noqa: PLC0415
-            try:
-                ids, unmapped = piper_g2p.text_to_phoneme_ids(
-                    text, self.phoneme_table,
-                    path="indo" if self.piperlite_g2p == "indo" else "lexicon")
-            except piper_g2p.PiperG2PError as exc:
-                if exc.kind != "language":
-                    raise
-                # No espeak-free front end exists for this language yet. espeak
-                # is not a degraded fallback here -- it is the front end these
-                # weights were distilled on, so it is the correct path and the
-                # only reason it is not the default is the GPL-3.0 dependency.
-                # Routing here beats raising at the caller, who did nothing wrong.
-                logger.debug("sanotts: no espeak-free front end for %r; using espeak",
-                             self.phoneme_table.espeak_voice)
-                ids = frontend.text_to_phoneme_ids(text, self.phoneme_table)
-            else:
-                if unmapped:
-                    logger.warning(
-                        "sanotts: %d symbol(s) have no id in this voice's phoneme_id_map "
-                        "and were skipped: %r", len(unmapped), unmapped)
+            ids, unmapped = piper_g2p.text_to_phoneme_ids(
+                text, self.phoneme_table,
+                path="indo" if self.piperlite_g2p == "indo" else "lexicon")
+            if unmapped:
+                logger.warning(
+                    "sanotts: %d symbol(s) have no id in this voice's phoneme_id_map "
+                    "and were skipped: %r", len(unmapped), unmapped)
         else:
             ids = frontend.text_to_phoneme_ids(text, self.phoneme_table)
         durations = models.duration_forward(

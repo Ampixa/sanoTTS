@@ -227,53 +227,6 @@ def duration_forward(
 # Acoustic student ("architecture": "token_context" in the manifest)
 # --------------------------------------------------------------------------
 
-def output_adapter_forward(
-    latent: np.ndarray,
-    tensors: dict[str, np.ndarray],
-    config: dict[str, Any],
-    prefix: str = "adapter.",
-) -> np.ndarray:
-    """The decoder-facing latent calibration layer of a `calibrated` student.
-
-    Structurally small: an optional depthwise convolution, an optional low-rank
-    residual `x + up(tanh(down(x)))`, then a per-channel scale and bias, over
-    an optional contiguous channel slice. It is initialised near identity in
-    training so it can be bolted onto an existing acoustic checkpoint, which is
-    why several shipped voices carry one.
-
-    `latent` is `[frames, channels]`, matching the acoustic student's output.
-    """
-
-    mode = str(config.get("mode") or "affine")
-    channels = int(latent.shape[1])
-    start = int(config.get("start_channel") or 0)
-    end = int(config.get("end_channel") or channels)
-    if start < 0 or end > channels or start >= end:
-        raise ValueError(f"invalid adapter slice {start}:{end} for {channels} channels")
-
-    x = latent[:, start:end].T                      # [channels, frames]
-    if mode in {"depthwise", "depthwise_lowrank"}:
-        x = depthwise_conv1d_same(x, tensors[f"{prefix}depthwise.weight"])
-    if mode in {"lowrank", "depthwise_lowrank"}:
-        # Packaged as Conv1d kernels, [out, in, 1]; the 1x1 helper wants [out, in].
-        down_w = tensors[f"{prefix}lowrank_down.weight"].reshape(
-            tensors[f"{prefix}lowrank_down.weight"].shape[:2])
-        up_w = tensors[f"{prefix}lowrank_up.weight"].reshape(
-            tensors[f"{prefix}lowrank_up.weight"].shape[:2])
-        down = conv1d_1x1(x, down_w, tensors[f"{prefix}lowrank_down.bias"])
-        x = x + conv1d_1x1(np.tanh(down), up_w, tensors[f"{prefix}lowrank_up.bias"])
-    elif mode not in {"affine", "depthwise"}:
-        raise NotImplementedError(f"unsupported output adapter mode: {mode!r}")
-
-    adapted = x.T * tensors[f"{prefix}scale"].reshape(1, -1) \
-        + tensors[f"{prefix}bias"].reshape(1, -1)
-    if start == 0 and end == channels:
-        return adapted
-    output = latent.copy()
-    output[:, start:end] = adapted
-    return output
-
-
 def acoustic_forward(
     tensors: dict[str, np.ndarray],
     config: dict[str, Any],
@@ -281,30 +234,15 @@ def acoustic_forward(
     durations: np.ndarray,
 ) -> np.ndarray:
     architecture = str(config.get("architecture") or "")
-    adapter_config = None
-    if architecture == "calibrated":
-        # A `token_context` base whose output passes through a small adapter.
-        base_config = config.get("base_config")
-        adapter_config = config.get("output_adapter")
-        if not isinstance(base_config, dict) or not isinstance(adapter_config, dict):
-            raise ValueError("calibrated config needs base_config and output_adapter")
-        config = base_config
-        architecture = str(config.get("architecture") or "")
-        # The wrapper namespaces its base under `base.`; strip it so the
-        # token_context path below reads the names it already knows.
-        tensors = {name[len("base."):]: value for name, value in tensors.items()
-                   if name.startswith("base.")} | {
-            name: value for name, value in tensors.items() if name.startswith("adapter.")}
     if architecture != "token_context":
         raise NotImplementedError(f"unsupported acoustic architecture: {architecture!r}")
-    if adapter_config is None:
-        unexpected_adapter_keys = [name for name in tensors if "adapter" in name]
-        if unexpected_adapter_keys:
-            raise NotImplementedError(
-                "acoustic checkpoint has an output adapter "
-                f"({unexpected_adapter_keys}); this package only implements the "
-                "adapter-free token_context path verified against the shipped voices"
-            )
+    unexpected_adapter_keys = [name for name in tensors if "adapter" in name]
+    if unexpected_adapter_keys:
+        raise NotImplementedError(
+            "acoustic checkpoint has an output adapter "
+            f"({unexpected_adapter_keys}); this package only implements the "
+            "adapter-free token_context path verified against the shipped voices"
+        )
 
     vocab_size = int(config["vocab_size"])
     hidden = int(config["hidden"])
@@ -376,10 +314,6 @@ def acoustic_forward(
     latent = conv1d_1x1(x, tensors["output.weight"], tensors["output.bias"])
     if latent.shape[0] != out_channels:
         raise RuntimeError("acoustic_forward: unexpected output channel count")
-    if adapter_config is not None:
-        # The adapter is defined over [frames, channels]; the runtime carries
-        # the latent the other way round.
-        latent = output_adapter_forward(latent.T, tensors, adapter_config).T
     return latent.astype(np.float32)  # [out_channels, frames]
 
 

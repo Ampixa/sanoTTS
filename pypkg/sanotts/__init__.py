@@ -1,4 +1,4 @@
-"""sanotts: a self-contained, numpy-only sanoTTS inference package.
+"""sanotts: a self-contained, numpy-only saanoTTS inference package.
 
     import sanotts
     result = sanotts.synthesize("Hello world", voice="amy")
