@@ -19,21 +19,30 @@ from transformers' `BartModel` so it can run under numpy alone:
   * greedy decoding from `decoder_start_token_id`, which is what the upstream
     reference script gets from its generation config (no beams, no sampling).
 
-Decoding is per word and words are short, so there is no KV cache: the decoder
-is re-run over the whole prefix each step. A cache would save microseconds on
-sequences that are at most a few dozen tokens and is not worth the surface area.
+Decoding is greedy, per word, with the decoder's keys and values cached
+(`_greedy`); `prefetch` decodes a text's unknown words as one batch, and
+common words are not decoded at all but read from a table of this model's
+own outputs (`_WordTable`, built by tools/build_oov_table.py).
 """
 
 from __future__ import annotations
 
+import bisect
+import hashlib
+import io
 import json
+import lzma
 import math
+from array import array
 from pathlib import Path
 
 import numpy as np
 
 DATA_DIR = Path(__file__).resolve().parent / "g2p_data"
 MODEL_PATH = DATA_DIR / "oov_bart_en_us.npz"
+# This model's own output for common words, precomputed by
+# tools/build_oov_table.py (see _WordTable).
+TABLE_PATH = DATA_DIR / "oov_table_en_us.npz.xz"
 
 # The tokenizer reserves 0..3 for <pad>/<s>/</s>/<unk> and then indexes the
 # character lists; the shipped config records both lists already padded with
@@ -195,10 +204,106 @@ class _Layer:
         return _layer_norm(hidden + ffn, *self.final_ln, self.eps)
 
 
+class _SortedKeys:
+    """The table's words as a sequence of bytes, for bisect."""
+
+    def __init__(self, blob: bytes, off: np.ndarray) -> None:
+        # array("q") indexes to plain ints at 8 bytes a row; a list would
+        # hold ~36 bytes a row of int objects.
+        self.blob = blob
+        self.off = array("q")
+        self.off.frombytes(np.ascontiguousarray(off, dtype=np.int64).tobytes())
+
+    def __len__(self) -> int:
+        return len(self.off) - 1
+
+    def __getitem__(self, i: int) -> bytes:
+        return self.blob[self.off[i]:self.off[i + 1]]
+
+
+class _WordTable:
+    """A read-only word -> phonemes table, the model's own greedy output.
+
+    tools/build_oov_table.py runs OOVPhonemizer.__call__ over a fixed general
+    word list and packs the results here; a hit returns what the model would
+    return for that word on the machine the table was built on, without
+    decoding it. Words are stored sorted (UTF-8 byte order) in one blob, the
+    phonemes in the same order in another, with one length byte each, and a
+    lookup is a binary search. The table records the sha256 of the model file
+    it was built from and is refused for any other model.
+    """
+
+    def __init__(self, path: Path, model_sha256: str) -> None:
+        try:
+            # an uncompressed .npz inside xz: about half the size of
+            # np.savez_compressed for this data, and lzma is in the stdlib
+            raw = lzma.decompress(path.read_bytes())
+            with np.load(io.BytesIO(raw), allow_pickle=False) as bundle:
+                key_len = np.asarray(bundle["key_len"], dtype=np.int64)
+                val_len = np.asarray(bundle["val_len"], dtype=np.int64)
+                keys = bytes(bundle["keys"])
+                values = bytes(bundle["values"])
+                meta = json.loads(str(bundle["meta_json"]))
+        except (OSError, ValueError, KeyError, lzma.LZMAError) as exc:
+            raise OOVModelError(f"could not read {path}: {exc}") from exc
+        except json.JSONDecodeError as exc:
+            raise OOVModelError(f"{path}: meta_json is not valid JSON: {exc}") from exc
+        if meta.get("format") != 1:
+            raise OOVModelError(f"{path}: unsupported table format {meta.get('format')!r}")
+        if meta.get("model_sha256") != model_sha256:
+            raise OOVModelError(
+                f"{path} was built for model {meta.get('model_sha256')}, not {model_sha256}")
+        if key_len.size != val_len.size or int(key_len.sum()) != len(keys) \
+                or int(val_len.sum()) != len(values) or (key_len.size and int(key_len.min()) < 1):
+            raise OOVModelError(f"{path}: inconsistent table arrays")
+        self.keys = _SortedKeys(keys, np.concatenate([[0], np.cumsum(key_len)]))
+        self.values = _SortedKeys(values, np.concatenate([[0], np.cumsum(val_len)]))
+        self.size = len(self.keys)
+        # Sortedness is not re-checked here (it would cost about as much as
+        # the load): pack_table sorts, tests/test_oov_table.py checks the
+        # shipped file, and get() compares the word it lands on, so a
+        # mis-sorted table could only miss, never answer wrongly.
+        self.meta = meta
+
+    def get(self, word: str) -> str | None:
+        raw = word.encode("utf-8")
+        i = bisect.bisect_left(self.keys, raw)
+        if i < self.size and self.keys[i] == raw:
+            return self.values[i].decode("utf-8")
+        return None
+
+    def items(self, idx) -> list[tuple[str, str]]:
+        return [(self.keys[i].decode("utf-8"), self.values[i].decode("utf-8")) for i in idx]
+
+
+def write_table(path: Path | str, entries: dict[str, str], model_sha256: str, meta: dict) -> None:
+    """Write the file _WordTable reads (build tool and tests only)."""
+    buf = io.BytesIO()
+    np.savez(buf, **pack_table(entries, model_sha256, meta))
+    Path(path).write_bytes(lzma.compress(buf.getvalue(), preset=9 | lzma.PRESET_EXTREME))
+
+
+def pack_table(entries: dict[str, str], model_sha256: str, meta: dict) -> dict[str, np.ndarray]:
+    """The arrays _WordTable reads."""
+    rows = sorted((k.encode("utf-8"), v.encode("utf-8")) for k, v in entries.items())
+    if any(not k or len(k) > 255 or len(v) > 255 for k, v in rows):
+        raise OOVModelError("table rows need 1..255-byte words and at most 255-byte phonemes")
+    full_meta = {"format": 1, "model_sha256": model_sha256, **meta}
+    return {
+        "key_len": np.array([len(k) for k, _ in rows], dtype=np.uint8),
+        "val_len": np.array([len(v) for _, v in rows], dtype=np.uint8),
+        "keys": np.frombuffer(b"".join(k for k, _ in rows), dtype=np.uint8),
+        "values": np.frombuffer(b"".join(v for _, v in rows), dtype=np.uint8),
+        "meta_json": np.array(json.dumps(full_meta, sort_keys=True)),
+    }
+
+
 class OOVPhonemizer:
     """Greedy grapheme -> phoneme decoding for one word at a time."""
 
-    def __init__(self, path: Path | str = MODEL_PATH) -> None:
+    def __init__(self, path: Path | str = MODEL_PATH,
+                 table_path: Path | str | None = TABLE_PATH) -> None:
+        """`table_path=None` decodes every word (the build tool uses this)."""
         path = Path(path)
         if not path.is_file():
             raise OOVModelError(
@@ -248,6 +353,25 @@ class OOVPhonemizer:
         self.eps = eps
         self._memo: dict[str, str] = {}
         self._dec_inputs: tuple[np.ndarray, ...] | None = None
+        self.model_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+        self._table_path = None if table_path is None else Path(table_path)
+        self._table: _WordTable | None = None
+
+    def table(self) -> _WordTable | None:
+        """The precomputed table, loaded on first use; None if disabled."""
+        if self._table is None and self._table_path is not None:
+            if not self._table_path.is_file():
+                raise OOVModelError(f"word table not found at {self._table_path}")
+            self._table = _WordTable(self._table_path, self.model_sha256)
+        return self._table
+
+    def _known(self, word: str) -> str | None:
+        """The memoised or tabled answer for `word`, without decoding."""
+        cached = self._memo.get(word)
+        if cached is not None:
+            return cached
+        table = self.table()
+        return None if table is None else table.get(word)
 
     def encode_word(self, word: str) -> list[int]:
         """Character ids with bos/eos, unknown characters mapped to <unk>."""
@@ -262,7 +386,7 @@ class OOVPhonemizer:
         """
         if not word:
             raise OOVModelError("cannot phonemize an empty word")
-        cached = self._memo.get(word)
+        cached = self._known(word)
         if cached is not None:
             return cached
         ids = self.encode_word(word)
@@ -361,11 +485,14 @@ class OOVPhonemizer:
         return self._dec_inputs
 
     def warm(self) -> None:
-        """Build the decoder lookup tables now rather than on the first word."""
+        """Load the word table and build the decoder lookup tables now,
+        rather than on the first word."""
+        self.table()
         self._decoder_inputs()
 
     def memoized(self, word: str) -> bool:
-        return word in self._memo
+        """True when `word` is answered without decoding (memo or table)."""
+        return self._known(word) is not None
 
     def prefetch(self, words: list[str]) -> None:
         """Decode every word not yet memoised in one batch, into the memo.
@@ -379,7 +506,7 @@ class OOVPhonemizer:
         tests/test_nano_g2p_oov_fast.py checks the batch against one-at-a-time
         decoding word for word.
         """
-        todo = list(dict.fromkeys(w for w in words if w and w not in self._memo))
+        todo = list(dict.fromkeys(w for w in words if w and self._known(w) is None))
         if not todo:
             return
         # A word too long for the model is left for __call__, which raises

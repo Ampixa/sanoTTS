@@ -1,12 +1,12 @@
 # Third-party assets in `sanotts/g2p_data/`
 
-Two licences, both permissive. The English assets at the top of this file are
-**Apache-2.0**; the Indonesian ones in `indo_g2p/` and the Chinese ones in
-`zh_pinyin/` are **MIT**, each with one upstream behind a table that is
-deliberately *not* vendored. Nothing here is derived from espeak-ng, and none
-of it carries a copyleft obligation. `tools/build_nano_g2p_assets.py` fetches
-each English file from the pinned revision below and refuses to write it if its
-sha256 has changed; `tools/vendor_indo_g2p.py` and `tools/vendor_zh_pinyin.py`
+The English assets at the top of this file are **Apache-2.0**, except the OOV
+word table, whose word list comes from wordfreq's data and is **CC BY-SA 4.0**;
+the Indonesian ones in `indo_g2p/` and the Chinese ones in `zh_pinyin/` are
+**MIT**, each with one upstream behind a table that is deliberately *not*
+vendored. Nothing here is derived from espeak-ng. `tools/build_nano_g2p_assets.py`
+fetches each English file from the pinned revision below and refuses to write it
+if its sha256 has changed; `tools/vendor_indo_g2p.py` and `tools/vendor_zh_pinyin.py`
 do the same job for `indo_g2p/` and `zh_pinyin/` and record every payload's
 sha256 in the matching `MANIFEST.json`.
 
@@ -58,6 +58,30 @@ licence this work removes and the dependency weight this package refuses.
   on misaki's `us_gold.json` / `us_silver.json`, augmented with regular plurals
   derived from those entries by rule. It is not distilled from espeak-ng, which
   is what makes it usable here.
+
+## `oov_table_en_us.npz.xz`
+
+- **What it is:** the output of `oov_bart_en_us.npz` (above), greedy decoding,
+  one word at a time, for common English words the dictionaries lack. The
+  runtime reads it instead of decoding those words; every entry is what the
+  model returns for that word. It records the sha256 of the model file and is
+  refused for any other.
+- **Word list:** wordfreq 3.1.1 (Robyn Speer, <https://github.com/rspeer/wordfreq>),
+  English, `wordlist="large"`. wordfreq's code is Apache-2.0; its data files
+  are redistributable under **CC BY-SA 4.0**
+  (<https://creativecommons.org/licenses/by-sa/4.0/>) and draw on Google Books
+  Ngrams (<http://books.google.com/ngrams>), Wikipedia, the Leeds Internet
+  Corpus, ParaCrawl, SUBTLEX, OpenSubtitles and other sources listed in
+  wordfreq's README. This file is distributed under CC BY-SA 4.0 accordingly.
+- **Selection:** `tools/build_oov_table.py`. Words made of letters with inner
+  apostrophes, hyphens or periods that fit the model's position table, each in
+  lowercase and capitalised form, dictionary words included (the back-off
+  passes some of them to the fallback). Frequencies are not stored. No
+  evaluation text was an input.
+- **Built on:** x86-64 Linux, NumPy with OpenBLAS, one BLAS thread. Another
+  BLAS may round a near-tie differently, so on other machines a tabled word
+  can differ from what decoding it there would give;
+  `tests/test_oov_table.py` re-decodes a sample of rows.
 
 ## `LICENSE.misaki.txt`
 

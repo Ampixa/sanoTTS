@@ -54,6 +54,8 @@ include = [
   "sanotts/tables/*.json",
   "sanotts/g2p_data/*.json",
   "sanotts/g2p_data/*.npz",
+  # The OOV model's precomputed answers for common words (tools/build_oov_table.py).
+  "sanotts/g2p_data/oov_table_en_us.npz.xz",
   "sanotts/g2p_data/NOTICE.md",
   "sanotts/g2p_data/LICENSE.misaki.txt",
   # The MIT indo-g2p tables behind the selectable Indonesian path. Already
