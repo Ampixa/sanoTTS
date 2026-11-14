@@ -9,6 +9,8 @@ Every claim the 0.5.1 docstrings make is checked here:
   shipped nano lineages and many chunk schedules.
 * The piperlite decoder's `decoder_halo_frames` bounds its measured receptive
   field, and `decoder_stream` concatenates to `decoder_forward`.
+* 0.5.2's faster silu, conv1d, layer_norm, erf, frame features and seeding
+  are bit-identical to the 0.5.1 forms (kept below as references).
 
 Run:  python3 -m pytest pypkg/tests/test_nano_stream.py -v
   or: python3 pypkg/tests/test_nano_stream.py
@@ -215,6 +217,113 @@ def test_piperlite_stream_matches_full_pass():
             assert all(p.size for p in pieces)
             got = np.concatenate(pieces)
             assert got.shape == full.shape and np.abs(got - full).max() <= STREAM_TOL, (frames, first, chunk)
+
+
+# ---- 0.5.2: the faster primitives are bit-identical to the 0.5.1 forms ----
+
+def _silu_ref(x):
+    out = np.empty_like(x)
+    pos = x >= 0
+    out[pos] = x[pos] / (1.0 + np.exp(-x[pos]))
+    e = np.exp(x[~pos])
+    out[~pos] = x[~pos] * e / (1.0 + e)
+    return out
+
+
+def _conv1d_ref(x, w, b, kernel):
+    c_in, t = x.shape
+    pad = kernel // 2
+    xp = np.pad(x, ((0, 0), (pad, pad)))
+    gathered = np.empty((c_in * kernel, t), dtype=np.float32)
+    for k in range(kernel):
+        gathered[k::kernel] = xp[:, k : k + t]
+    return (w @ gathered + b[:, None]).astype(np.float32)
+
+
+def _layer_norm_ref(x, w, b, eps=nano.LAYER_NORM_EPS):
+    mu = x.mean(axis=0, keepdims=True)
+    var = x.var(axis=0, keepdims=True)
+    return ((x - mu) / np.sqrt(var + eps) * w[:, None] + b[:, None]).astype(np.float32)
+
+
+def _erf_ref(x):
+    x = np.asarray(x, dtype=np.float64)
+    a = np.abs(x)
+    nan = np.isnan(a)
+    a = np.minimum(np.where(nan, 0.0, a), nano._ERF_KNOTS * nano._ERF_STEP)
+    k = np.rint(a * (1.0 / nano._ERF_STEP)).astype(np.intp)
+    x0 = nano._ERF_X0[k]
+    t = a - x0
+    x2 = x0 * x0
+    c2 = -x0
+    c3 = (4.0 * x2 - 2.0) / 6.0
+    c4 = (12.0 * x0 - 8.0 * x0 * x2) / 24.0
+    c5 = (16.0 * x2 * x2 - 48.0 * x2 + 12.0) / 120.0
+    poly = t * (1.0 + t * (c2 + t * (c3 + t * (c4 + t * c5))))
+    out = np.copysign(nano._ERF_TABLE[k] + nano._ERF_DERIV[k] * poly, x)
+    if nan.any():
+        out[nan] = np.nan
+    return out
+
+
+def _bits_equal(a, b):
+    return a.dtype == b.dtype and a.shape == b.shape and a.tobytes() == b.tobytes()
+
+
+def test_primitives_bit_identical_to_previous_forms():
+    rng = np.random.default_rng(3)
+    specials = np.array([0.0, -0.0, np.inf, -np.inf, np.nan, 1e-30, -1e-30, 40.0, -40.0])
+    for scale in (1e-3, 1.0, 6.0, 80.0):
+        x = rng.standard_normal((37, 29)) * scale
+        x.flat[: specials.size] = specials
+        assert _bits_equal(nano._erf(x), _erf_ref(x)), scale
+        xf = x.astype(np.float32)
+        with np.errstate(over="ignore", invalid="ignore"):
+            assert _bits_equal(nano.silu(xf), _silu_ref(xf)), scale
+            assert _bits_equal(nano.gelu(xf), (0.5 * xf * (1.0 + _erf_ref(xf.astype(np.float64) / math.sqrt(2.0)))).astype(np.float32))
+        finite = rng.standard_normal((37, 29)).astype(np.float32) * np.float32(scale)
+        w = rng.standard_normal(37).astype(np.float32)
+        b = rng.standard_normal(37).astype(np.float32)
+        assert _bits_equal(nano.layer_norm(finite, w, b), _layer_norm_ref(finite, w, b)), scale
+
+
+def test_conv1d_bit_identical_including_sequences_shorter_than_the_kernel():
+    rng = np.random.default_rng(4)
+    for kernel in (1, 3, 5, 7, 9):
+        for t in (1, 2, 3, 4, 5, 11, 64):
+            x = rng.standard_normal((6, t)).astype(np.float32)
+            w = rng.standard_normal((5, 6 * kernel)).astype(np.float32)
+            b = rng.standard_normal(5).astype(np.float32)
+            assert _bits_equal(nano.conv1d(x, w, b, kernel), _conv1d_ref(x, w, b, kernel)), (kernel, t)
+
+
+def test_frame_features_match_the_per_token_loop():
+    _fixture, meta, front, dec = _lineage(*LINEAGES[0])
+    weights = nano.NanoWeights(front, dec, meta)
+    rng = np.random.default_rng(5)
+    for n in (1, 2, 9, 60):
+        ids = rng.integers(1, meta["NANO_VOCAB"], n)
+        durs = rng.integers(1, 9, n)
+        durs[rng.random(n) < 0.3] = 1
+        plan = nano.acoustic_plan(weights, ids, durs)
+        token_count = max(n - 1, 1)
+        frames = int(durs.sum())
+        token_pos = np.empty(frames, dtype=np.float32)
+        duration_pos = np.empty(frames, dtype=np.float32)
+        at = 0
+        for ti, d in enumerate(durs.tolist()):
+            token_pos[at : at + d] = np.float32(ti) / np.float32(token_count)
+            duration_pos[at : at + d] = 0.0 if d == 1 else np.arange(d, dtype=np.float32) / np.float32(d - 1)
+            at += d
+        assert _bits_equal(plan.frame_feats[1], token_pos), n
+        assert _bits_equal(plan.frame_feats[2], duration_pos), n
+
+
+def test_cached_seed_state_is_not_shared_between_generators():
+    a, b = nano_rng.ATenMT19937(99), nano_rng.ATenMT19937(99)
+    first = a.uniform(2000)
+    assert np.array_equal(b.uniform(2000), first)
+    assert np.array_equal(nano_rng.ATenMT19937(99).uniform(2000), first)
 
 
 if __name__ == "__main__":

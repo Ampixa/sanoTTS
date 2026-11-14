@@ -27,6 +27,30 @@ _UPPER = 0x80000000
 _LOWER = 0x7FFFFFFF
 
 
+_SEEDED: dict[int, np.ndarray] = {}
+
+
+def _seeded_state(seed: int) -> np.ndarray:
+    """The 624-word MT19937 state for `seed`, before the first twist.
+
+    Seeding is a 623-step serial recurrence in Python ints (~0.4 ms), and the
+    nano voices use one fixed seed, so each seed's state is built once and
+    copied. Callers must copy it; it is never handed out to be mutated.
+    """
+    state = _SEEDED.get(seed)
+    if state is None:
+        words = [seed]
+        for i in range(1, _N):
+            prev = words[-1]
+            words.append((1812433253 * (prev ^ (prev >> 30)) + i) & 0xFFFFFFFF)
+        state = np.array(words, dtype=np.uint32)
+        state.flags.writeable = False
+        if len(_SEEDED) >= 64:
+            _SEEDED.clear()
+        _SEEDED[seed] = state
+    return state
+
+
 class ATenMT19937:
     """MT19937 with ATen's seeding and 24-bit float uniform.
 
@@ -41,12 +65,7 @@ class ATenMT19937:
     __slots__ = ("_state", "_next")
 
     def __init__(self, seed: int) -> None:
-        state = np.empty(_N, dtype=np.uint64)
-        state[0] = np.uint64(seed & 0xFFFFFFFF)
-        for i in range(1, _N):
-            prev = int(state[i - 1])
-            state[i] = np.uint64((1812433253 * (prev ^ (prev >> 30)) + i) & 0xFFFFFFFF)
-        self._state = state.astype(np.uint32)
+        self._state = _seeded_state(seed & 0xFFFFFFFF).copy()
         # The state is twisted before the first draw, as ATen does.
         self._next = _N
 
