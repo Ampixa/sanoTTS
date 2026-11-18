@@ -102,6 +102,22 @@ the fallback.
 
 Nothing to install: [tts.ampixa.com/sanoTTS](https://tts.ampixa.com/sanoTTS).
 
+### Android (system voice, TalkBack)
+
+[sanotts-android](https://github.com/Ampixa/sanotts-android) is an Android
+text-to-speech engine built on this runtime. Once installed, sanoTTS appears in
+the phone's Text-to-speech settings next to the built-in engines, and TalkBack
+and any other app can speak through it: twelve languages, on the device, with
+no permissions. It is pre-alpha; it speaks on a Samsung Galaxy A53 (Android 14)
+and has not yet been tested with blind or low-vision users.
+
+| Chosen as the phone's voice engine | Text-to-speech settings |
+| --- | --- |
+| <img src="docs/assets/android-engine-picker.png" alt="sanoTTS in Android's preferred engine list" width="270"> | <img src="docs/assets/android-tts-settings.png" alt="Android Text-to-speech settings with sanoTTS selected" width="270"> |
+
+For your own iOS, Android or Flutter app, the bindings are in
+[`mobile/`](mobile/).
+
 ### Deploy on your own site
 
 sanoTTS's browser demo runs entirely client-side — WebAssembly, no server —
