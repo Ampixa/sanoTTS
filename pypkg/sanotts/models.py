@@ -80,14 +80,16 @@ def conv1d_same(
         raise ValueError(f"conv1d_same: channel mismatch {in_ch_w} != {in_ch}")
     pad = dilation * (K // 2)
     out = np.broadcast_to(bias[:, None].astype(np.float32), (out_ch, T)).copy()
+    # One contiguous [out_ch, in_ch] matrix per tap: numpy only hands a matmul to BLAS
+    # when its operands are contiguous, and weight[:, :, k] is strided by K.
+    taps = np.ascontiguousarray(weight.transpose(2, 0, 1))
     for k in range(K):
         off = k * dilation - pad
         lo = max(0, -off)
         hi = min(T, T - off)
         if hi <= lo:
             continue
-        # out[:, lo:hi] += weight[:, :, k] @ x[:, lo+off:hi+off]
-        out[:, lo:hi] += weight[:, :, k] @ x[:, lo + off:hi + off]
+        out[:, lo:hi] += taps[k] @ x[:, lo + off:hi + off]
     return out
 
 
@@ -134,6 +136,8 @@ def conv_transpose1d(
         raise ValueError(f"conv_transpose1d: channel mismatch {in_ch_w} != {in_ch}")
     L = (T - 1) * stride - 2 * padding + K
     out = np.broadcast_to(bias[:, None].astype(np.float32), (out_ch, L)).copy()
+    # Contiguous [out_ch, in_ch] per tap so the matmul goes to BLAS (see conv1d_same).
+    taps = np.ascontiguousarray(weight.transpose(2, 1, 0))
     for k in range(K):
         shift = k - padding
         if shift >= L:
@@ -148,7 +152,7 @@ def conv_transpose1d(
         count = t_hi - t_lo
         j_start = t_lo * stride + shift
         j_end = j_start + (count - 1) * stride + 1
-        contrib = weight[:, :, k].T @ x[:, t_lo:t_hi]  # [out_ch, count]
+        contrib = taps[k] @ x[:, t_lo:t_hi]  # [out_ch, count]
         out[:, j_start:j_end:stride] += contrib
     return out
 
