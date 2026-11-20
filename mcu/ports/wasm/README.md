@@ -103,7 +103,7 @@ node mcu/ports/wasm/verify_nano_node.mjs heart     en_us_r227f32  # min corr 1.0
 
 | file | role |
 | --- | --- |
-| `snt_nano_wasm.c` | port shims + `snt_nano_wasm_synthesize` (front, dec, ids, optional frozen durations, 64-bit seed as two halves, arena, out) |
+| `snt_nano_wasm.c` | port shims + `snt_nano_wasm_synthesize` (front, dec, ids, optional frozen durations, 64-bit seed as two halves, arena, out) + `snt_nano_wasm_set_length_scale` |
 | `build_nano.sh` | `emcc` -> `web/snt_nano_<voice>.js`; `f32` adds `-DSNT_NANO_W_F32` |
 | `verify_nano_node.mjs` | the fixture gate under Node: every `mcu/test/fixtures/<lineage>` row with its frozen durations and seed, minimum Pearson vs the float PyTorch reference, 0.98 |
 
@@ -123,3 +123,8 @@ espeak-ng IPA into the 62-symbol corpus vocabulary, which is the same object for
 Trellis-RIFT and for every mel-100 stack (`artifacts/kokoro-corpus-af_heart-20260713/kokoro_vocab.json`,
 checked entry by entry). The decoder-noise seed is `sha256(text)[:8]`, the
 renderer's own convention, exposed as `snt_nano_wasm_seed_from_text`.
+
+The speaking rate is `snt_nano_wasm_set_length_scale(scale)`, which divides every duration the
+duration student predicts: 0 (the initial value) is the model's own pace, above 1 is slower and
+below 1 is faster. The module keeps the value between calls, so a caller sets it before each
+`snt_nano_wasm_synthesize`; it has no effect when frozen durations are passed.

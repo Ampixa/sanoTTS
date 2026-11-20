@@ -65,8 +65,12 @@ playAudio(result);
 - **`tts.synthesize(text, { voice, voiceBase, lengthScale, maxSeconds })`** —
   phonemizes `text` and renders audio with the given voice. `voiceBase`
   defaults to Hugging Face (see [Voices](#voices)); `lengthScale` overrides
-  the voice's default speaking rate; `maxSeconds` caps the output buffer
-  (default 20s).
+  the voice's default speaking rate (larger is slower; 1 is the `snt_nano`
+  voices' own pace); `maxSeconds` caps the output buffer (default 20s).
+  `lengthScale` applies to every voice, including the `snt_nano` voices
+  (`heart`, `heartnano`), when the hosted `snt_nano_*` wasm modules export
+  `snt_nano_wasm_set_length_scale`; a module built without it ignores the
+  option.
 - **`tts.loadVoice(key, { voiceBase })`** — fetch + cache a voice's weight
   bundle ahead of time (e.g. while the user is still choosing a voice), so
   the first `synthesize()` call for that voice doesn't pay the network

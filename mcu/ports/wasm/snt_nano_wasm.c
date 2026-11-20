@@ -93,6 +93,12 @@ static int nano_sink(const float *pcm, int n, void *user) {
 static snt_nano_stats g_last_stats;
 static int g_last_rc;
 
+/* Speaking-rate divisor for later synthesize calls (0 = the model's own pace),
+ * kept out of snt_nano_wasm_synthesize's signature so the existing export
+ * stays call-compatible with callers built against an older module. */
+SNT_EXPORT
+void snt_nano_wasm_set_length_scale(float length_scale) { snt_nano_set_length_scale(length_scale); }
+
 SNT_EXPORT
 int snt_nano_wasm_sample_rate(void) { return SNT_NANO_SAMPLE_RATE; }
 

@@ -61,7 +61,7 @@ emcc \
   "$here/snt_nano_wasm.c" \
   -sMODULARIZE=1 -sEXPORT_NAME="$export_name" \
   -sINITIAL_MEMORY=134217728 \
-  -sEXPORTED_FUNCTIONS='_malloc,_free,_snt_nano_wasm_synthesize,_snt_nano_wasm_seed_from_text,_snt_nano_wasm_sample_rate,_snt_nano_wasm_weight_format,_snt_nano_wasm_last_frames,_snt_nano_wasm_last_arena_peak,_snt_nano_wasm_last_rc' \
+  -sEXPORTED_FUNCTIONS='_malloc,_free,_snt_nano_wasm_synthesize,_snt_nano_wasm_set_length_scale,_snt_nano_wasm_seed_from_text,_snt_nano_wasm_sample_rate,_snt_nano_wasm_weight_format,_snt_nano_wasm_last_frames,_snt_nano_wasm_last_arena_peak,_snt_nano_wasm_last_rc' \
   -sEXPORTED_RUNTIME_METHODS='cwrap,HEAPU8,HEAP32,HEAPU32,HEAPF32,stringToUTF8,lengthBytesUTF8' \
   -sENVIRONMENT=web,worker,node \
   -o "$web/snt_nano_$voice.js"
