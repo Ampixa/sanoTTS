@@ -1,0 +1,64 @@
+{
+  "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+  "version": "2026-11-20",
+  "entity": {
+    "type": "organisation",
+    "role": "owner",
+    "name": "Ampixa Labs",
+    "email": "yash@ampixa.com",
+    "description": "Ampixa Labs is a Nepal-based AI company with a team of approximately six people working on speech and language technology. We maintain open-source tools for local speech synthesis, recognition and evaluation. This application seeks support specifically for sustaining sanoTTS and its public contributor ecosystem.",
+    "webpageUrl": {
+      "url": "https://ampixa.com"
+    }
+  },
+  "projects": [
+    {
+      "guid": "sanotts",
+      "name": "sanoTTS",
+      "description": "sanoTTS is an open-source family of compact neural text-to-speech models and runtimes maintained by Ampixa Labs. It supports local speech synthesis through Python, WebAssembly and embedded C, including selected ESP32-S3 configurations. Its aim is to make speech interfaces practical on inexpensive hardware and in offline or privacy-sensitive applications. The source includes inference code, language bindings, training recipes, evaluation tools and runnable examples. The inference runtime and designated bindings are MIT-licensed; the wider project and espeak-ng integration are GPL-3.0-or-later.\n\nPublic adoption evidence checked on 20 November 2026: Hugging Face reports 590,604 downloads in the last month and 1,354,798 all-time for ampixa/sanoTTS; GitHub reports 851 stars and 90 forks. Downloads are platform-counted file requests, not unique people or deployed installations. Independent reuse includes kokopop, which supports sanoTTS inference, and sanoTTS-jp, an independently maintained Japanese reimplementation of the published recipe. These projects retain their own ownership and licences.\n\nEvidence: https://huggingface.co/ampixa/sanoTTS ; https://github.com/Ampixa/sanoTTS ; https://github.com/tterrasson/kokopop ; https://github.com/ayutaz/sanoTTS-jp .\n\nFunding will sustain the existing public software: maintenance, reproducible evaluation, compatibility testing and contributor support. Accessibility is an intended application; the new Android engine remains pre-alpha and user evaluation is still needed.\n\nOn 20 November 2026, the Open TTS Leaderboard's CPU streaming table ranks sanoTTS heart-nano #1 (5.9 ms), heart #3 (9.8 ms) and amy #5 (36.3 ms) by p95 time to first audio: three of the top five places. These are latency results; the entries note host-CPU/NumPy evaluation. Source: https://huggingface.co/spaces/hf-audio/open_tts_leaderboard?streaming-cpu",
+      "webpageUrl": {
+        "url": "https://github.com/Ampixa/sanoTTS"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/Ampixa/sanoTTS"
+      },
+      "licenses": [
+        "spdx:GPL-3.0-or-later",
+        "spdx:MIT"
+      ],
+      "tags": [
+        "text-to-speech",
+        "speech-synthesis",
+        "tinyml",
+        "offline",
+        "multilingual",
+        "accessibility",
+        "embedded",
+        "webassembly"
+      ]
+    }
+  ],
+  "funding": {
+    "channels": [
+      {
+        "guid": "ampixa-bank",
+        "type": "bank",
+        "description": "Contact yash@ampixa.com to arrange grant disbursement. Bank instructions and compliance documents will be shared privately. International grant-receipt eligibility is being confirmed."
+      }
+    ],
+    "plans": [
+      {
+        "guid": "sanotts-maintenance-12-months",
+        "status": "active",
+        "name": "Sustain sanoTTS for 12 months",
+        "description": "Proposed 12-month budget (USD): 18,000 for part-time maintainer engineering, issue triage and releases; 3,000 for compensated human speech-quality and accessibility evaluation; 2,000 for device testing, CI and release infrastructure; 2,000 for documentation, reproducible examples and contributor support. Total: 25,000. Priorities are to maintain the existing Python, browser and embedded runtimes; fix reproducible defects; improve compatibility coverage; document language-specific evaluation with its limitations; and publish progress and expenditure summaries. Evaluation involving participants will use informed consent. Funds support public open-source maintenance and reusable outputs, not private client development. The grant covers a single 12-month period.",
+        "amount": 25000,
+        "currency": "USD",
+        "frequency": "one-time",
+        "channels": [
+          "ampixa-bank"
+        ]
+      }
+    ]
+  }
+}
