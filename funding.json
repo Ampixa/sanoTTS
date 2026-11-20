@@ -1,6 +1,6 @@
 {
   "$schema": "https://fundingjson.org/schema/v1.1.0.json",
-  "version": "2026-11-20",
+  "version": "v1.0.0",
   "entity": {
     "type": "organisation",
     "role": "owner",
@@ -51,7 +51,7 @@
         "guid": "sanotts-maintenance-12-months",
         "status": "active",
         "name": "Sustain sanoTTS for 12 months",
-        "description": "Proposed 12-month budget (USD): 18,000 for part-time maintainer engineering, issue triage and releases; 3,000 for compensated human speech-quality and accessibility evaluation; 2,000 for device testing, CI and release infrastructure; 2,000 for documentation, reproducible examples and contributor support. Total: 25,000. Priorities are to maintain the existing Python, browser and embedded runtimes; fix reproducible defects; improve compatibility coverage; document language-specific evaluation with its limitations; and publish progress and expenditure summaries. Evaluation involving participants will use informed consent. Funds support public open-source maintenance and reusable outputs, not private client development. The grant covers a single 12-month period.",
+        "description": "12-month budget (USD): $18,000 maintainer engineering, triage and releases; $3,000 human speech-quality/accessibility evaluation; $2,000 device testing, CI and release infrastructure; $2,000 documentation and contributor support. Total: $25,000. Maintain public Python, browser and embedded runtimes, fix defects and improve compatibility. Publish progress and expenditure summaries. Participant evaluations use informed consent. Funds support open-source work, not private client development.",
         "amount": 25000,
         "currency": "USD",
         "frequency": "one-time",
