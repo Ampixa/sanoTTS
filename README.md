@@ -323,7 +323,8 @@ where we have not.
 
 **[sanoTTS-jp](https://github.com/ayutaz/sanoTTS-jp)** — Japanese, which this
 repository does not have. A clean-room reimplementation of the distillation
-recipe by [@ayutaz](https://github.com/ayutaz), 559 K parameters, MIT, teacher
+recipe by [@ayutaz](https://github.com/ayutaz), 559 K parameters, code MIT but
+the distributed weights are not (see its `LICENSE-MODEL.md`), teacher
 is [piper-plus](https://github.com/ayutaz/piper-plus) (MB-iSTFT-VITS2). It does
 the harder half of Japanese **on the chip**: morphological analysis of mixed
 kanji/kana and pitch-accent estimation, not just the acoustic model. Browser
@@ -350,6 +351,64 @@ otherwise.
 
 **[kokopop](https://github.com/tterrasson/kokopop)** — a standalone C++ library
 for running neural TTS from GGUF with no Python, MIT.
+
+### Voices other people have trained
+
+None of these are in this repository's voice list, and we have not measured
+them ourselves; the numbers below are their authors'.
+
+**[Chilean and Colombian Spanish](https://github.com/sauris/sanoTTS-es-cl)** by
+[@sauris](https://github.com/sauris). Four Piper teachers fine-tuned on Google's
+crowdsourced corpora ([SLR71](https://openslr.org/71) Chile,
+[SLR72](https://openslr.org/72) Colombia) with the Latin-American `es-419` espeak
+voice, then distilled with this repository's Root-A recipe into eight browser
+voices for the sanoTTS wasm runtime: `huemul` and `copihue` (Chile), `vueltiao`
+and `chande` (Colombia), each at 1.57 M and at 340 k parameters, plus an int8
+`huemul-small` at 333 KB. It also upgrades the browser G2P module to the
+espeak-ng version Piper 1.8 uses. The full pipeline is written up so it can be
+re-run for another speaker. Live demo at
+[sauris.github.io/sanoTTS-es-cl](https://sauris.github.io/sanoTTS-es-cl/).
+Code GPL-3.0; the voice weights carry the datasets' CC BY-SA 4.0.
+
+**[Ukrainian, Serhiy](https://huggingface.co/dmytro-m/ua-serhiy-0p58m)** by
+[@dmytro-m](https://huggingface.co/dmytro-m) (shared in
+[#23](https://github.com/Ampixa/sanoTTS/issues/23)). 575,888 parameters at
+22,050 Hz, trained with lexical-stress marks so stress pairs such as *за́мок* /
+*замо́к* come out right, distilled from the author's own
+[uk_UA-serhiy-high](https://huggingface.co/dmytro-m/uk_UA-serhiy-high) Piper
+teacher. It uses this repository's FP16 manifest layout but a different decoder
+(an LRC bottleneck with an FSD/iSTFT head), so it runs through its own
+`inference.py`, not through the PiperLite runtime in `pypkg/`, the browser or
+the MCU. GPL-3.0 (teacher Apache-2.0, corpus MIT).
+
+**[Finnish](https://huggingface.co/AsmoKoskinen/SanoTTS_Finnish_Model)** by
+[@AsmoKoskinen](https://huggingface.co/AsmoKoskinen), distilled from the
+author's [Finnish Piper voice](https://huggingface.co/AsmoKoskinen/Piper_Finnish_Model),
+with an [Arduino Nano ESP32 build](https://huggingface.co/AsmoKoskinen/SanoTTS_Finnish_Arduino_Nano_ESP32).
+CC BY-NC 4.0, so non-commercial use only.
+
+### Ports and integrations
+
+- **Other formats:** [sanoTTS-ONNX](https://huggingface.co/mrfakename/sanoTTS-ONNX)
+  with a [browser Space](https://huggingface.co/spaces/mrfakename/sanotts) and a
+  [WebGPU Space](https://huggingface.co/spaces/mrfakename/sanotts-webgpu)
+  (@mrfakename); [SanoTTS-GGUF](https://huggingface.co/remixerdec/SanoTTS-GGUF)
+  (@remixerdec); [Sakura-sanoTTS-ONNX](https://huggingface.co/webmp3/Sakura-sanoTTS-ONNX)
+  (@webmp3); [sanotts-loom](https://huggingface.co/loom-ai-org/sanotts-loom), the
+  published voices as GGUF for [loom.cpp](https://github.com/loom-ai-org/loom.cpp).
+- **Apps and plugins:** a [Subtitld add-on](https://github.com/Subtitld/addon-sanotts)
+  (pure numpy, GPL-3.0); a one-click
+  [Pinokio launcher](https://github.com/PierrunoYT/SanoTTS-Pinokio);
+  [heart-tts](https://github.com/tarelerulz/heart-tts), Read Aloud on a Raspberry
+  Pi with the heart voices; [HX-SANOTTS](https://github.com/1169892406/HX-SANOTTS),
+  an offline announcer plugin with the Chinese voice and its own C kernel; and a
+  [Majordomo module](https://github.com/artt652/majordomo-sanotts) with its
+  [engine](https://github.com/artt652/sanotts-engine).
+- **Front ends:** [sanoTTS-MIT](https://github.com/cb88/sanoTTS-MIT) swaps the
+  GPL espeak-ng front end for TinyTTS's ARPAbet-to-IPA front end
+  ([#18](https://github.com/Ampixa/sanoTTS/issues/18)).
+- **More sanoTTS-jp hardware:** [Arduino on CoreS3](https://github.com/ronron-gh/SanoTTS_Arduino_CoreS3)
+  and a [PlatformIO build with lip-sync](https://github.com/nnn112358/SanoTTS-jp-M5StackCoreS3-platformio).
 
 If you have built something, open an issue and it goes here.
 
