@@ -297,6 +297,118 @@ def residual_block(x: np.ndarray, c0: Q8Layer, c1: Q8Layer, scale: float,
     return (x + scale * h).astype(np.float32, copy=False)
 
 
+def _silu_tanh(x: np.ndarray) -> np.ndarray:
+    """x * sigmoid(x) as x * (1 + tanh(x / 2)) / 2, in place on a temporary.
+
+    sigmoid(x) = (1 + tanh(x/2)) / 2 exactly; tanh saturates instead of
+    overflowing, so no warning and no sign branch. Four float32 calls
+    against silu()'s seven; the two agree to float32 rounding.
+    """
+    h = np.multiply(x, np.float32(0.5))
+    np.tanh(h, out=h)
+    h += np.float32(1.0)
+    h *= x
+    h *= np.float32(0.5)
+    return h
+
+
+def _conv_k(x: np.ndarray, w: np.ndarray, b: np.ndarray, kernel: int) -> np.ndarray:
+    """conv1d for kernel > 1, b already shaped [C_out, 1]."""
+    c_in, t = x.shape
+    pad = kernel // 2
+    padded = np.zeros((c_in, t + 2 * pad), dtype=np.float32)
+    padded[:, pad : pad + t] = x
+    item = padded.itemsize
+    gathered = np.ndarray((c_in, kernel, t), dtype=np.float32, buffer=padded,
+                          strides=(padded.strides[0], item, item)).reshape(c_in * kernel, t)
+    out = w @ gathered
+    out += b
+    return out
+
+
+def _residual_stack(x: np.ndarray, blocks: list, kernel: int) -> np.ndarray:
+    """residual_block over folded (w0, b0, w1 * scale, b1 * scale) layers."""
+    for w0, b0, w1, b1 in blocks:
+        h = _silu_tanh(_conv_k(x, w0, b0, kernel))
+        h = _conv_k(h, w1, b1, kernel)
+        h += x
+        x = h
+    return x
+
+
+@dataclass
+class _FrontPlan:
+    """The front end's weights with constants folded into matmuls.
+
+    Each stage's input projection is a 1x1 conv over [embedding; features],
+    so its embedding half is a per-vocabulary table (W_e @ E^T, [H, vocab])
+    and its feature half a few columns; every residual scale is folded into
+    the block's second conv. The algebra is exact; float32 rounding moves.
+    """
+    dur_emb: np.ndarray      # [H, vocab]
+    dur_feat: np.ndarray     # [H, 3] for (positions, length_hint, valid=1)
+    dur_b: np.ndarray        # [H, 1]
+    dur_blocks: list
+    dur_out_w: np.ndarray    # [1, H]
+    dur_out_b: float
+    tok_emb: np.ndarray      # [H, vocab]
+    tok_feat: np.ndarray     # [H, 2] for (token_pos, duration_hint)
+    tok_b: np.ndarray
+    tok_blocks: list
+    fr_tok: np.ndarray       # [H, H] frame projection of the token states
+    fr_feat: np.ndarray      # [H, 3]
+    fr_b: np.ndarray
+    fr_blocks: list
+    out_w: np.ndarray        # [mels, H]
+    out_b: np.ndarray        # [mels, 1]
+
+
+def _front_plan(w: NanoWeights) -> _FrontPlan:
+    def build() -> _FrontPlan:
+        m = w.m
+        f64 = np.float64
+
+        def blocks(prefix: str, depth: int, hidden: int, kernel: int) -> list:
+            out = []
+            for b in range(depth):
+                c0 = w.front_q8(f"{prefix}{b}_C0", hidden, hidden * kernel)
+                c1 = w.front_q8(f"{prefix}{b}_C1", hidden, hidden * kernel)
+                scale = float(w.front_f32(f"{prefix}{b}_SCALE", 1)[0])
+                out.append((c0.weight, c0.bias[:, None].copy(),
+                            (c1.weight.astype(f64) * scale).astype(np.float32),
+                            (c1.bias.astype(f64) * scale)[:, None].astype(np.float32)))
+            return out
+
+        v = m["NANO_VOCAB"]
+        hd, ha = m["NANO_DUR_HIDDEN"], m["NANO_AC_HIDDEN"]
+        dur_e = w.front_f32("DUR_EMB", v * hd).reshape(v, hd).astype(f64)
+        proj = w.front_q8("DUR_PROJ", hd, hd + 3)
+        ac_e = w.front_f32("AC_EMB", v * ha).reshape(v, ha).astype(f64)
+        tproj = w.front_q8("AC_TPROJ", ha, ha + 2)
+        fproj = w.front_q8("AC_FPROJ", ha, ha + 3)
+        dout = w.front_q8("DUR_OUT", 1, hd)
+        aout = w.front_q8("AC_OUT", m["NANO_MELS"], ha)
+        pw = proj.weight.astype(f64)
+        tw = tproj.weight.astype(f64)
+        return _FrontPlan(
+            dur_emb=np.ascontiguousarray((pw[:, :hd] @ dur_e.T).astype(np.float32)),
+            dur_feat=np.ascontiguousarray(pw[:, hd:].astype(np.float32)),
+            dur_b=proj.bias[:, None].copy(),
+            dur_blocks=blocks("DUR_B", m["NANO_DUR_DEPTH"], hd, m["NANO_DUR_KERNEL"]),
+            dur_out_w=dout.weight, dur_out_b=float(dout.bias[0]),
+            tok_emb=np.ascontiguousarray((tw[:, :ha] @ ac_e.T).astype(np.float32)),
+            tok_feat=np.ascontiguousarray(tw[:, ha:].astype(np.float32)),
+            tok_b=tproj.bias[:, None].copy(),
+            tok_blocks=blocks("AC_TB", m["NANO_AC_TOKEN_DEPTH"], ha, m["NANO_AC_KERNEL"]),
+            fr_tok=np.ascontiguousarray(fproj.weight[:, :ha]),
+            fr_feat=np.ascontiguousarray(fproj.weight[:, ha:]),
+            fr_b=fproj.bias[:, None].copy(),
+            fr_blocks=blocks("AC_FB", m["NANO_AC_DEPTH"], ha, m["NANO_AC_KERNEL"]),
+            out_w=aout.weight, out_b=aout.bias[:, None].copy(),
+        )
+    return w._cached(("front_plan",), build)
+
+
 # The decoder's norms are built by make_norm(), which asks for eps=1e-6 --
 # NOT torch's 1e-5 default. The difference looks negligible and is not: it
 # compounds through four blocks and is then amplified by the exp() in the
@@ -342,7 +454,7 @@ def _unit_ramp(n: int) -> np.ndarray:
     return ramp
 
 
-def duration_forward(w: NanoWeights, ids: np.ndarray,
+def duration_forward_reference(w: NanoWeights, ids: np.ndarray,
                      length_scale: float = 1.0) -> np.ndarray:
     """Phoneme ids -> integer frame counts, one per token.
 
@@ -393,13 +505,14 @@ class AcousticPlan:
     token_x: np.ndarray
     frame_token: np.ndarray
     frame_feats: np.ndarray
+    token_f: np.ndarray | None = None   # frame projection of token_x, [H, n] (fast path)
 
     @property
     def frames(self) -> int:
         return int(self.frame_token.size)
 
 
-def acoustic_plan(w: NanoWeights, ids: np.ndarray, durations: np.ndarray) -> AcousticPlan:
+def acoustic_plan_reference(w: NanoWeights, ids: np.ndarray, durations: np.ndarray) -> AcousticPlan:
     """Token stage and frame features of ContextualLatentStudent."""
     m = w.m
     H = m["NANO_AC_HIDDEN"]
@@ -451,7 +564,7 @@ def acoustic_halo_frames(meta: dict[str, int]) -> int:
     return meta["NANO_AC_DEPTH"] * 2 * (meta["NANO_AC_KERNEL"] // 2)
 
 
-def acoustic_frames(w: NanoWeights, plan: AcousticPlan, lo: int, hi: int) -> np.ndarray:
+def acoustic_frames_reference(w: NanoWeights, plan: AcousticPlan, lo: int, hi: int) -> np.ndarray:
     """The frame stage over frames [lo, hi) only -> mel-100 [100, hi - lo].
 
     Exact for the frames at least `acoustic_halo_frames` inside the range
@@ -472,6 +585,110 @@ def acoustic_frames(w: NanoWeights, plan: AcousticPlan, lo: int, hi: int) -> np.
 
     out = w.front_q8("AC_OUT", m["NANO_MELS"], H)
     return conv1d(x, out.weight, out.bias, 1)
+
+
+def is_local(meta: dict[str, int]) -> bool:
+    """True for a voice trained with local features only (heart-nano-s).
+
+    Such a voice's duration and acoustic inputs carry no whole-utterance
+    quantity (no position ramps, no length hint, duration hints over the fixed
+    NANO_DUR_MAX_DURATION), and its decoder noise is laid out frame-major, so
+    every frame depends only on nearby tokens and can be produced before the
+    rest of the text has been converted. NANO_LOCAL_FEATURES in the header.
+    """
+    return meta.get("NANO_LOCAL_FEATURES", 0) == 1
+
+
+def frame_major_noise(seed: int, channels: int, lo: int, hi: int) -> np.ndarray:
+    """[channels, hi - lo] of N(0,1): frame t, channel c is draw t * channels + c.
+
+    Unlike seeded_noise (draw c * T + t, which depends on the utterance length
+    T), any frame range is available without knowing where the utterance ends.
+    """
+    from .nano_rng import _noise_prefix  # noqa: PLC0415
+
+    if not 0 <= lo <= hi:
+        raise ValueError(f"frame range [{lo}, {hi}) is invalid")
+    prefix = _noise_prefix(seed, hi * channels)
+    return np.ascontiguousarray(prefix.normal[lo * channels : hi * channels]
+                                .reshape(hi - lo, channels).T, dtype=np.float32)
+
+
+def duration_forward(w: NanoWeights, ids: np.ndarray,
+                     length_scale: float = 1.0) -> np.ndarray:
+    """Phoneme ids -> integer frame counts, one per token.
+
+    duration_forward_reference on the folded weights of _FrontPlan; the
+    log-durations agree to float32 rounding, so the rounded counts agree
+    except where a value sits on a rounding boundary (tests check the
+    shipped voices on real text).
+    """
+    m = w.m
+    p = _front_plan(w)
+    n = int(ids.size)
+    length_hint = np.float32(math.log1p(max(n, 1)) / math.log1p(float(m["NANO_DUR_MAX_TOKENS"])))
+    x = p.dur_emb[:, ids]
+    if is_local(m):
+        # heart-nano-s: positions and the length hint are trained as zeros.
+        x += p.dur_feat[:, 2:3] + p.dur_b
+    else:
+        x += p.dur_feat[:, 0:1] * _unit_ramp(n)
+        x += p.dur_feat[:, 1:2] * length_hint + p.dur_feat[:, 2:3] + p.dur_b
+    x = _residual_stack(x, p.dur_blocks, m["NANO_DUR_KERNEL"])
+    log_d = (p.dur_out_w @ x)[0]
+    log_d += np.float32(p.dur_out_b)
+    d = np.round(np.maximum(np.exp(log_d), 1.0) * float(length_scale))
+    return np.clip(d, 1, m["NANO_DUR_MAX_DURATION"]).astype(np.int32)
+
+
+def acoustic_plan(w: NanoWeights, ids: np.ndarray, durations: np.ndarray) -> AcousticPlan:
+    """acoustic_plan_reference on the folded weights of _FrontPlan, plus the
+    frame projection of the token states (token_f) that acoustic_frames uses."""
+    m = w.m
+    p = _front_plan(w)
+    n = int(ids.size)
+    token_count = max(n - 1, 1)
+    dur_f = durations.astype(np.float32)
+    local = is_local(m)
+    max_dur = float(m["NANO_DUR_MAX_DURATION"]) if local else max(float(dur_f.max()), 1.0)
+    duration_hint = (np.log1p(dur_f) / np.log1p(max_dur)).astype(np.float32)
+    x = p.tok_emb[:, ids]
+    if not local:
+        x += p.tok_feat[:, 0:1] * _unit_ramp(n)
+    x += p.tok_feat[:, 1:2] * duration_hint
+    x += p.tok_b
+    token_x = _residual_stack(x, p.tok_blocks, m["NANO_AC_KERNEL"])
+
+    frame_token = np.repeat(np.arange(n), durations)
+    frames = int(frame_token.size)
+    if local:
+        frame_pos = np.zeros(frames, dtype=np.float32)
+        token_pos = np.zeros(frames, dtype=np.float32)
+    else:
+        frame_pos = _unit_ramp(frames)
+        token_pos = (np.arange(n, dtype=np.float32) / np.float32(token_count))[frame_token]
+    starts = np.cumsum(durations) - durations
+    within = (np.arange(frames) - starts[frame_token]).astype(np.float32)
+    span = (durations - 1).astype(np.float32)[frame_token]
+    duration_pos = np.zeros(frames, dtype=np.float32)
+    multi = span > 0
+    duration_pos[multi] = within[multi] / span[multi]
+    token_f = p.fr_tok @ token_x
+    token_f += p.fr_b
+    return AcousticPlan(token_x, frame_token, np.stack([frame_pos, token_pos, duration_pos]), token_f)
+
+
+def acoustic_frames(w: NanoWeights, plan: AcousticPlan, lo: int, hi: int) -> np.ndarray:
+    """acoustic_frames_reference on the folded weights: frames [lo, hi) -> mel-100."""
+    p = _front_plan(w)
+    if plan.token_f is None:
+        return acoustic_frames_reference(w, plan, lo, hi)
+    x = plan.token_f[:, plan.frame_token[lo:hi]]
+    x += p.fr_feat @ plan.frame_feats[:, lo:hi]
+    x = _residual_stack(x, p.fr_blocks, w.m["NANO_AC_KERNEL"])
+    out = p.out_w @ x
+    out += p.out_b
+    return out
 
 
 def acoustic_forward(w: NanoWeights, ids: np.ndarray, durations: np.ndarray) -> np.ndarray:
@@ -502,8 +719,207 @@ def _depthwise(x: np.ndarray, dw_w: np.ndarray) -> np.ndarray:
     return np.add.reduce(taps * dw_w[:, :, None], axis=1)
 
 
+_GELU_LO = -10.0
+_GELU_STEPS_PER_UNIT = 1024
+_GELU_KNOTS = 20 * _GELU_STEPS_PER_UNIT
+
+
+def _gelu_tables() -> tuple[np.ndarray, np.ndarray]:
+    """GELU at every knot of [-10, 10] (step 1/1024) and the slope to the next.
+
+    Piecewise-linear interpolation between knots is within 1e-7 of the exact
+    erf GELU (h^2/8 * max|gelu''| with h = 2**-10), below float32 resolution
+    for most activations. Past the last knot the last segment's slope is 1
+    per unit, so x > 10 extrapolates to x; below the first it is 0, so
+    x < -10 gives 0: both equal GELU there to far under float32 rounding.
+    """
+    x = _GELU_LO + np.arange(_GELU_KNOTS + 1, dtype=np.float64) / _GELU_STEPS_PER_UNIT
+    y = 0.5 * x * (1.0 + _erf(x / math.sqrt(2.0)))
+    slope = np.empty_like(y)
+    slope[:-1] = np.diff(y)
+    slope[-1] = 1.0 / _GELU_STEPS_PER_UNIT
+    slope[0] = 0.0
+    y[0] = 0.0
+    return y.astype(np.float32), slope.astype(np.float32)
+
+
+# The ufunc behind np.clip, without np.clip's argument-checking wrapper
+# (several microseconds a call, more than the clipping itself here).
+_clip_ufunc = np._core.umath.clip if hasattr(np, "_core") else np.core.umath.clip
+
+_GELU_Y: np.ndarray | None = None
+_GELU_SLOPE: np.ndarray | None = None
+
+
+def gelu_fast(x: np.ndarray) -> np.ndarray:
+    """GELU by table interpolation, float32 (see _gelu_tables for the error).
+
+    Ten numpy calls on float32 instead of the float64 erf's twenty with five
+    gathers: on the decoder's small blocks the call count is the cost.
+    """
+    global _GELU_Y, _GELU_SLOPE
+    if _GELU_Y is None:
+        _GELU_Y, _GELU_SLOPE = _gelu_tables()
+    u = x - np.float32(_GELU_LO)
+    u *= np.float32(_GELU_STEPS_PER_UNIT)
+    i = np.floor(u)
+    _clip_ufunc(i, 0.0, float(_GELU_KNOTS), out=i)
+    u -= i
+    k = i.astype(np.intp)
+    out = _GELU_SLOPE[k]
+    out *= u
+    out += _GELU_Y[k]
+    return out
+
+
+@dataclass
+class _DecoderPlan:
+    """The decoder's weights with every constant scale folded into a matmul.
+
+    - embed and noise adapter: one conv over the stacked [mel; noise] input;
+    - each block's norm affine (w, b) into PW0: W diag(w), W b + bias;
+    - each block's layer scale gamma into PW1: diag(gamma) W, gamma * bias;
+    - the final norm affine into the head.
+    The algebra is exact; float32 rounding moves by ~1e-7 relative.
+    """
+    in_w: np.ndarray
+    in_b: np.ndarray
+    norm_w: np.ndarray
+    norm_b: np.ndarray
+    blocks: list
+    head_w: np.ndarray
+    head_b: np.ndarray
+
+
+def _decoder_plan(w: NanoWeights) -> _DecoderPlan:
+    def build() -> _DecoderPlan:
+        m = w.m
+        dim, ek, dk = m["NANO_DIM"], m["NANO_EMBED_KERNEL"], m["NANO_DW_KERNEL"]
+        embed = w.dec_q8("EMBED", dim, m["NANO_MELS"] * ek)
+        adapter = w.dec_q8("NOISE", dim, m["NANO_NOISE_CH"] * ek)
+        f64 = np.float64
+        blocks = []
+        for b in range(m["NANO_BLOCKS"]):
+            dw_w = w.dec_f32(f"B{b}_DW_W", dim * dk).reshape(dim, dk)
+            dw_b = w.dec_f32(f"B{b}_DW_B", dim)
+            nw, nb = w.dec_f32(f"B{b}_NORM_W", dim).astype(f64), w.dec_f32(f"B{b}_NORM_B", dim).astype(f64)
+            pw0 = w.dec_q8(f"B{b}_PW0", m["NANO_PW_HIDDEN"], dim)
+            pw1 = w.dec_q8(f"B{b}_PW1", dim, m["NANO_PW_HIDDEN"])
+            gamma = w.dec_f32(f"B{b}_GAMMA", dim).astype(f64)
+            w0 = pw0.weight.astype(f64)
+            w1 = pw1.weight.astype(f64)
+            blocks.append((
+                np.ascontiguousarray(dw_w.T[:, :, None]),                      # [dk, dim, 1]
+                dw_b[:, None].copy(),
+                (w0 * nw[None, :]).astype(np.float32),
+                (w0 @ nb + pw0.bias)[:, None].astype(np.float32),
+                (gamma[:, None] * w1).astype(np.float32),
+                (gamma * pw1.bias)[:, None].astype(np.float32),
+            ))
+        head = w.dec_q8("HEAD", m["NANO_HEAD_OUT"], dim)
+        fw, fb = w.dec_f32("FNORM_W", dim).astype(f64), w.dec_f32("FNORM_B", dim).astype(f64)
+        hw = head.weight.astype(f64)
+        return _DecoderPlan(
+            in_w=np.ascontiguousarray(np.concatenate([embed.weight, adapter.weight], axis=1)),
+            in_b=(embed.bias + adapter.bias)[:, None].astype(np.float32),
+            norm_w=w.dec_f32("NORM_W", dim)[:, None].copy(),
+            norm_b=w.dec_f32("NORM_B", dim)[:, None].copy(),
+            blocks=blocks,
+            head_w=(hw * fw[None, :]).astype(np.float32),
+            head_b=(hw @ fb + head.bias)[:, None].astype(np.float32),
+        )
+    return w._cached(("decoder_plan",), build)
+
+
+def _normalize(x: np.ndarray, eps: float = LAYER_NORM_EPS) -> np.ndarray:
+    """(x - mean) / sqrt(var + eps) over the channel axis of [C, T], no affine."""
+    inv_c = np.float32(1.0 / x.shape[0])
+    mu = np.add.reduce(x, axis=0)
+    mu *= inv_c
+    dev = x - mu
+    var = np.einsum("ct,ct->t", dev, dev)
+    var *= inv_c
+    var += np.float32(eps)
+    np.sqrt(var, out=var)
+    dev /= var
+    return dev
+
+
 def decoder_forward(w: NanoWeights, mel: np.ndarray, noise: np.ndarray,
                     keep: tuple[int, int] | None = None) -> np.ndarray:
+    """mel-100 [100, T] + noise [4, T] -> complex spectrum [513, T].
+
+    Same graph as decoder_forward_reference, on the folded weights of
+    _DecoderPlan and the table GELU; the two agree to float32 rounding
+    (tests/test_nano_stream.py). `keep` as in the reference.
+    """
+    m = w.m
+    p = _decoder_plan(w)
+    ek, dk = m["NANO_EMBED_KERNEL"], m["NANO_DW_KERNEL"]
+    blocks = len(p.blocks)
+    reach_dw = dk // 2
+
+    x = conv1d(np.concatenate([mel, noise], axis=0), p.in_w, p.in_b[:, 0], ek)
+
+    offset = 0
+    if keep is not None:
+        start, stop = keep
+        if not 0 <= start < stop <= x.shape[1]:
+            raise ValueError(f"decoder keep={keep} outside a {x.shape[1]}-column window")
+
+        def crop(x: np.ndarray, offset: int, reach: int) -> tuple[np.ndarray, int]:
+            lo = max(offset, start - reach)
+            hi = min(offset + x.shape[1], stop + reach)
+            if lo == offset and hi == offset + x.shape[1]:
+                return x, offset
+            return x[:, lo - offset : hi - offset], lo
+
+        x, offset = crop(x, offset, blocks * reach_dw)
+
+    x = _normalize(x)
+    x *= p.norm_w
+    x += p.norm_b
+
+    c = x.shape[0]
+    for b, (dw_t, dw_b, w0, b0, w1, b1) in enumerate(p.blocks):
+        t = x.shape[1]
+        padded = np.zeros((c, t + 2 * reach_dw), dtype=np.float32)
+        padded[:, reach_dw : reach_dw + t] = x
+        item = padded.itemsize
+        taps = np.ndarray((dk, c, t), dtype=np.float32, buffer=padded,
+                          strides=(item, padded.strides[0], item))
+        h = np.einsum("kct,kcs->ct", taps, dw_t)
+        h += dw_b
+        h = _normalize(h)
+        h = w0 @ h
+        h += b0
+        h = gelu_fast(h)
+        y = w1 @ h
+        y += b1
+        y += x
+        x = y
+        if keep is not None:
+            x, offset = crop(x, offset, (blocks - 1 - b) * reach_dw)
+
+    x = _normalize(np.ascontiguousarray(x))
+    out = p.head_w @ x
+    out += p.head_b
+
+    bins = m["NANO_BINS"]
+    mag = np.exp(out[:bins])
+    phase = out[bins:]
+    mag[0] = 0.0
+    mag[-1] = 0.0
+    np.minimum(mag, np.float32(1e2), out=mag)
+    spec = np.empty(phase.shape, dtype=np.complex64)
+    spec.real = np.cos(phase)
+    spec.imag = np.sin(phase)
+    spec *= mag
+    return spec
+
+
+def decoder_forward_reference(w: NanoWeights, mel: np.ndarray, noise: np.ndarray,
+                              keep: tuple[int, int] | None = None) -> np.ndarray:
     """mel-100 [100, T] + noise [4, T] -> complex spectrum [513, T].
 
     `keep` = (start, stop) asks for those spectrum columns only, which is what
@@ -751,22 +1167,32 @@ class _StreamingISTFT:
     with the text.
     """
 
-    def __init__(self, n_fft: int, hop: int, total_frames: int) -> None:
-        self.n_fft, self.hop, self.total = n_fft, hop, total_frames
+    def __init__(self, n_fft: int, hop: int, total_frames: int | None) -> None:
+        self.n_fft, self.hop = n_fft, hop
         self.window, self.wsq = _hann(n_fft)
-        self.length = (total_frames - 1) * hop + n_fft      # padded length
         self.pad = n_fft // 2
         self.base = 0           # padded position of out[0] / norm[0]
         self.out = np.zeros(0, dtype=np.float64)
         self.norm = np.zeros(0, dtype=np.float64)
         self.added = 0          # spectrum frames added so far
         self.emitted = self.pad  # padded position up to which samples were returned
+        self.total: int | None = None
+        self.length: int | None = None
+        if total_frames is not None:
+            self.set_total(total_frames)
+
+    def set_total(self, total_frames: int) -> None:
+        """The utterance length, once known (a local voice learns it late)."""
+        if total_frames < max(self.added, 1):
+            raise RuntimeError(f"istft: total {total_frames} < {self.added} frames already added")
+        self.total = total_frames
+        self.length = (total_frames - 1) * self.hop + self.n_fft      # padded length
 
     def push(self, spec: np.ndarray) -> np.ndarray:
         """Add the next columns; return the samples that are now final."""
         frames_td = np.fft.irfft(spec, n=self.n_fft, axis=0)
         count = frames_td.shape[1]
-        if self.added + count > self.total:
+        if self.total is not None and self.added + count > self.total:
             raise RuntimeError(f"istft: {self.added + count} frames pushed, {self.total} expected")
         end = (self.added + count - 1) * self.hop + self.n_fft
         grow = end - (self.base + self.out.size)
@@ -781,9 +1207,12 @@ class _StreamingISTFT:
         self.added += count
         # The next frame starts at added * hop, so everything before it is
         # final; once the last frame is in, everything up to the end is.
-        ready = self.length - self.pad if self.added == self.total else self.added * self.hop
+        if self.total is None:
+            ready = hi = self.added * self.hop
+        else:
+            ready = self.length - self.pad if self.added == self.total else self.added * self.hop
+            hi = min(ready, self.length - self.pad)
         lo = self.emitted
-        hi = min(ready, self.length - self.pad)
         if hi <= lo:
             return np.zeros(0, dtype=np.float32)
         out = self.out[lo - self.base : hi - self.base].copy()
@@ -803,7 +1232,7 @@ def stream_ids(front: bytes, dec: bytes, meta: dict[str, int],
                durations: np.ndarray | None = None,
                length_scale: float = 1.0,
                weights: NanoWeights | None = None,
-               first_chunk_frames: int = 8,
+               first_chunk_frames: int = 4,
                chunk_frames: int = 128):
     """Phoneme ids -> waveform, yielded in pieces as they are decoded.
 
@@ -835,6 +1264,94 @@ def stream_ids(front: bytes, dec: bytes, meta: dict[str, int],
         mel = acoustic_frames(w, plan, alo, ahi)[:, lo - alo : hi - alo]
         spec = decoder_forward(w, mel, noise[:, lo:hi], keep=(a - lo, b - lo))
         piece = dc(ola.push(spec))
+        if piece.size:
+            yield piece
+        a, size = b, min(chunk_frames, size * 2)
+    if ola.emitted != ola.length - ola.pad:
+        raise RuntimeError(f"istft: emitted to {ola.emitted}, expected {ola.length - ola.pad}")
+
+
+def duration_halo_tokens(meta: dict[str, int]) -> int:
+    """Tokens of right context a duration needs: NANO_DUR_DEPTH blocks of two
+    NANO_DUR_KERNEL convs (the 1x1 projections reach no further)."""
+    return meta["NANO_DUR_DEPTH"] * 2 * (meta["NANO_DUR_KERNEL"] // 2)
+
+
+def token_halo_tokens(meta: dict[str, int]) -> int:
+    """Tokens of right context the acoustic token stage needs."""
+    return meta["NANO_AC_TOKEN_DEPTH"] * 2 * (meta["NANO_AC_KERNEL"] // 2)
+
+
+def stream_local(w: NanoWeights, prefix_ids: list[int] | None, full_ids, *,
+                 seed: int, length_scale: float = 1.0,
+                 first_chunk_frames: int = 4, chunk_frames: int = 128):
+    """A local voice's waveform, in pieces, starting before the text is done.
+
+    `prefix_ids` are the ids of the first words (or None) and `full_ids()`
+    returns the whole utterance's ids, which must start with `prefix_ids`.
+    Phase 1 runs durations and the acoustic token stage on the prefix alone
+    and decodes the frames whose whole receptive field lies inside its
+    trusted part: a duration is final once duration_halo_tokens of right
+    context exist, a token state once token_halo_tokens more do, and a
+    spectrum frame once the acoustic frame stage and decoder halos fit before
+    the last trusted frame. Phase 2 converts the rest, keeps phase 1's
+    durations for the tokens it already used (so a float rounding difference
+    between the two passes can never move a frame boundary), and continues
+    with the same iSTFT and DC-blocker state. A local voice's synthesize() is
+    this stream concatenated, so the two agree by construction.
+    """
+    m = w.m
+    if not is_local(m):
+        raise ValueError("stream_local needs a voice with NANO_LOCAL_FEATURES")
+    if first_chunk_frames < 1 or chunk_frames < first_chunk_frames:
+        raise ValueError(
+            f"need 1 <= first_chunk_frames <= chunk_frames, got {first_chunk_frames}, {chunk_frames}")
+    halo = decoder_halo_frames(m)
+    ac_halo = acoustic_halo_frames(m)
+    channels = m["NANO_NOISE_CH"]
+    ola = _StreamingISTFT(m["NANO_N_FFT"], m["NANO_HOP"], None)
+    dc = _StreamingDCBlock()
+    a, size = 0, first_chunk_frames
+
+    def decode(plan: AcousticPlan, total: int, a: int, b: int) -> np.ndarray:
+        lo, hi = max(0, a - halo), min(total, b + halo)
+        alo, ahi = max(0, lo - ac_halo), min(total, hi + ac_halo)
+        mel = acoustic_frames(w, plan, alo, ahi)[:, lo - alo : hi - alo]
+        noise = frame_major_noise(seed, channels, lo, hi)
+        spec = decoder_forward(w, mel, noise, keep=(a - lo, b - lo))
+        return dc(ola.push(spec))
+
+    kept: np.ndarray | None = None
+    if prefix_ids is not None:
+        ids_p = np.asarray(prefix_ids, dtype=np.int64)
+        trusted_dur = ids_p.size - duration_halo_tokens(m)
+        trusted_tok = trusted_dur - token_halo_tokens(m)
+        if trusted_tok > 0:
+            dur_p = duration_forward(w, ids_p, length_scale=length_scale)
+            plan_p = acoustic_plan(w, ids_p, dur_p)
+            # every frame of the trusted tokens, minus what the frame stage and
+            # decoder need to their right
+            limit = int(dur_p[:trusted_tok].sum()) - ac_halo - halo
+            if limit >= first_chunk_frames:
+                kept = dur_p[:trusted_dur]
+                while a + size <= limit:
+                    piece = decode(plan_p, plan_p.frames, a, a + size)
+                    if piece.size:
+                        yield piece
+                    a, size = a + size, min(chunk_frames, size * 2)
+
+    ids = np.asarray(full_ids(), dtype=np.int64)
+    if ids.size == 0:
+        raise ValueError("nano: empty phoneme id sequence")
+    durations = duration_forward(w, ids, length_scale=length_scale).astype(np.int64)
+    if kept is not None:
+        durations[: kept.size] = kept
+    plan = acoustic_plan(w, ids, durations)
+    total = plan.frames
+    ola.set_total(total)
+    while a < total:
+        b = min(total, a + size)
+        piece = decode(plan, total, a, b)
         if piece.size:
             yield piece
         a, size = b, min(chunk_frames, size * 2)

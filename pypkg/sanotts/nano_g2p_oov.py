@@ -371,6 +371,8 @@ class OOVPhonemizer:
         self.eps = eps
         self._memo: dict[str, str] = {}
         self._dec_inputs: tuple[np.ndarray, ...] | None = None
+        self._fast: tuple | None = None
+        self._enc_fast: tuple | None = None
         self.model_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
         self._table_path = None if table_path is None else Path(table_path)
         self._table: _WordTable | None = None
@@ -412,8 +414,8 @@ class OOVPhonemizer:
             raise OOVModelError(
                 f"word {word!r} needs {len(ids)} positions; the model has {self.max_positions}"
             )
-        memory = self._encode(np.asarray(ids, dtype=np.int64))
-        out = self._greedy(memory)
+        memory = self._encode_fast(ids)
+        out = self._greedy_fast(memory)
         result = "".join(
             self.phoneme_chars[i] for i in out[1:]
             if SPECIAL_TOKEN_COUNT <= i < len(self.phoneme_chars)
@@ -461,6 +463,148 @@ class OOVPhonemizer:
             if nxt == self.eos_id:
                 break
             out.append(nxt)
+        return out
+
+    def _enc_tables(self) -> tuple:
+        """For every (position, character): the encoder's normed input row and
+        its query, key and value (the value through the output projection),
+        flattened to [position * vocab + id] -- the encoder-side twin of
+        _decoder_inputs. Built once."""
+        if self._enc_fast is None:
+            a = self.encoder.self_attn
+            vocab = self.embed.shape[0]
+            pos = self.enc_pos[self.offset : self.offset + self.max_positions]
+            rows = (pos[:, None, :] + self.embed[None, :, :]).reshape(-1, self.embed.shape[1])
+            rows = np.ascontiguousarray(_layer_norm(rows, *self.enc_ln, self.eps), dtype=np.float32)
+            qs = np.ascontiguousarray((rows @ a.q_w + a.q_b) * a.scaling, dtype=np.float32)
+            ks = np.ascontiguousarray(rows @ a.k_w + a.k_b, dtype=np.float32)
+            vos = np.ascontiguousarray((rows @ a.v_w + a.v_b) @ a.o_w + a.o_b, dtype=np.float32)
+            self._enc_fast = (rows, qs, ks, vos, vocab)
+        return self._enc_fast
+
+    def _encode_fast(self, ids: list[int]) -> np.ndarray:
+        """_encode on the tables of _enc_tables and the table GELU; agrees with
+        it to float32 rounding (the output bias rides inside the softmax-
+        weighted sum, whose weights sum to one)."""
+        from .nano import gelu_fast  # noqa: PLC0415
+
+        rows, qs, ks, vos, vocab = self._enc_tables()
+        enc = self.encoder
+        at = np.arange(len(ids)) * vocab + np.asarray(ids)
+        h = rows[at]
+        sc = qs[at] @ ks[at].T
+        sc -= np.maximum.reduce(sc, axis=-1, keepdims=True)
+        np.exp(sc, out=sc)
+        sc /= np.add.reduce(sc, axis=-1, keepdims=True)
+        x = sc @ vos[at]
+        x += h
+        x = _layer_norm(x, *enc.self_ln, enc.eps)
+        f = x @ enc.fc1_w
+        f += enc.fc1_b
+        y = gelu_fast(f) @ enc.fc2_w
+        y += enc.fc2_b
+        y += x
+        return _layer_norm(y, *enc.final_ln, enc.eps)
+
+    def _fast_tables(self) -> tuple:
+        """Word-independent constants of _greedy_fast, built once.
+
+        - rows + the self-attention output bias, so a step adds one array;
+        - the final norm's affine folded into the logits:
+          (n * g + b) E + c = n (diag(g) E) + (b E + c);
+        - step 0, which attends to the start token alone (a softmax over one
+          score is exactly 1), so its self-attention block is a constant row.
+        """
+        if self._fast is None:
+            dec = self.decoder
+            sa = dec.self_attn
+            rows, qs, ks, vos = self._decoder_inputs()
+            rows_ob = np.ascontiguousarray(rows + sa.o_b, dtype=np.float32)
+            g, b = dec.final_ln
+            f64 = np.float64
+            logit_w = np.ascontiguousarray((g.astype(f64)[:, None] * self.embed_t).astype(np.float32))
+            logit_b = (b.astype(f64) @ self.embed_t + self.logit_bias).astype(np.float32)
+            at0 = self.start_id
+            h0 = _layer_norm(rows_ob[at0] + vos[at0], *dec.self_ln, dec.eps).astype(np.float32)
+            self._fast = (rows_ob, logit_w, logit_b, h0)
+        return self._fast
+
+    def _greedy_fast(self, memory: np.ndarray) -> list[int]:
+        """_greedy with fewer numpy calls per step (on one word every call
+        costs more than its arithmetic): the constants of _fast_tables, the
+        cross-attention output bias moved inside the softmax-weighted sum
+        (the weights sum to one), 1-D norms with a Python-float scale, and
+        the decoder's table GELU. The float rounding differs from _greedy;
+        the greedy output is what is checked, against the shipped word table
+        (this model's own answers) in tests/test_nano_g2p_oov_fast.py."""
+        from .nano import gelu_fast  # noqa: PLC0415
+
+        dec = self.decoder
+        sa, ca = dec.self_attn, dec.cross_attn
+        if ca is None:
+            raise OOVModelError("decoder layer has no cross-attention")
+        score_w, score_b, cross_out = self._cross_terms(memory)
+        score_b = score_b.reshape(-1)
+        cross_out = cross_out + ca.o_b
+        rows, qs, ks, vos = self._decoder_inputs()
+        rows_ob, logit_w, logit_b, h0 = self._fast_tables()
+        (sg, sb), (cg, cb) = dec.self_ln, dec.cross_ln
+        eps = dec.eps
+        d = rows.shape[1]
+        inv_d = 1.0 / d
+        vocab = self.embed.shape[0]
+        steps = self.max_positions - 1
+        keys = np.empty((steps, ks.shape[1]), dtype=np.float32)
+        vals = np.empty((steps, vos.shape[1]), dtype=np.float32)
+        fc1_w, fc1_b, fc2_w, fc2_b = dec.fc1_w, dec.fc1_b, dec.fc2_w, dec.fc2_b
+        add_reduce, max_reduce, exp = np.add.reduce, np.maximum.reduce, np.exp
+        sqrt = math.sqrt
+        eos = self.eos_id
+        out: list[int] = [self.start_id]
+        last = self.start_id
+        for step in range(steps):
+            at = step * vocab + last
+            keys[step] = ks[at]
+            vals[step] = vos[at]
+            if step == 0:
+                h = h0
+            else:
+                sc = keys[: step + 1] @ qs[at]
+                sc -= max_reduce(sc)
+                exp(sc, out=sc)
+                sc /= add_reduce(sc)
+                x = sc @ vals[: step + 1]
+                x += rows_ob[at]
+                x -= add_reduce(x) * inv_d
+                x *= 1.0 / sqrt(float(x @ x) * inv_d + eps)
+                x *= sg
+                x += sb
+                h = x
+            c = h @ score_w
+            c += score_b
+            c -= max_reduce(c)
+            exp(c, out=c)
+            c /= add_reduce(c)
+            x = c @ cross_out
+            x += h
+            x -= add_reduce(x) * inv_d
+            x *= 1.0 / sqrt(float(x @ x) * inv_d + eps)
+            x *= cg
+            x += cb
+            f = x @ fc1_w
+            f += fc1_b
+            y = gelu_fast(f) @ fc2_w
+            y += fc2_b
+            y += x
+            y -= add_reduce(y) * inv_d
+            y *= 1.0 / sqrt(float(y @ y) * inv_d + eps)
+            logits = y @ logit_w
+            logits += logit_b
+            nxt = int(logits.argmax())
+            if nxt == eos:
+                break
+            out.append(nxt)
+            last = nxt
         return out
 
     def _cross_terms(self, memory: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -532,10 +676,20 @@ class OOVPhonemizer:
         todo = [w for w in todo if len(self.encode_word(w)) <= self.max_positions]
         if not todo:
             return
-        encoded = [self.encode_word(w) for w in todo]
-        if len(todo) == 1:
-            self(todo[0])
+        # One word at a time on the fused single-word path: since it halved
+        # the per-step call count, it is as fast as or faster than the batch
+        # below for the 1-4 unknown words a sentence brings (measured on the
+        # leaderboard-like host, 2026-11-24). The batch is kept as
+        # _prefetch_batch for larger groups and its test.
+        if len(todo) <= 4:
+            for w in todo:
+                self(w)
             return
+        self._prefetch_batch(todo)
+
+    def _prefetch_batch(self, todo: list[str]) -> None:
+        """prefetch's batched decoding of `todo` (unmemoised, in-range words)."""
+        encoded = [self.encode_word(w) for w in todo]
         batch, width = len(todo), max(len(ids) for ids in encoded)
         tok = np.zeros((batch, width), dtype=np.int64)
         valid = np.zeros((batch, width), dtype=bool)

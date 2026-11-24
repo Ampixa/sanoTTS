@@ -52,7 +52,7 @@ def _add_say_args(parser: argparse.ArgumentParser) -> None:
         "--nano-g2p",
         choices=NANO_G2P_CHOICES,
         default=DEFAULT_NANO_G2P,
-        help=("Grapheme-to-phoneme path for the nano voices (heart, heart-nano): "
+        help=("Grapheme-to-phoneme path for the nano voices (heart, heart-nano, heart-nano-s): "
               "'espeak' runs espeak-ng on every word, 'lexicon' uses the vendored "
               "misaki dictionaries plus a numpy fallback and needs no espeak-ng. "
               "Ignored by the piperlite voices."),

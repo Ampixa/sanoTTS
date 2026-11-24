@@ -52,6 +52,7 @@ from __future__ import annotations
 import json
 import re
 import unicodedata
+import copy
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Callable
@@ -1166,29 +1167,24 @@ class NanoG2P:
     def __call__(self, text: str) -> tuple[str, list[Token]]:
         """misaki/en.py: G2P.__call__ (preprocess reduced to a left strip).
 
-        With the neural fallback, the text is first converted with a
-        recording stand-in for the model: words it already knows are
-        answered, the others are collected. If nothing was collected that
-        pass is the result. Otherwise the collected words are decoded in one
-        batch and the text is converted again, now with every answer known,
-        so the result is what one pass with the real model gives (each word's
-        phonemes depend only on the word), with one decoding loop for all of
-        the unknown words instead of one per word.
+        Unknown words go to the fallback as the conversion reaches them; the
+        neural fallback memoises each answer, so a word costs one decode per
+        process however often it recurs.
         """
-        fallback = self.fallback
-        if isinstance(fallback, _NeuralFallback):
-            model = fallback.model()
-            recorder = _RecordingModel(model)
-            result = self._convert(text, _NeuralFallback(recorder))
-            if not recorder.pending:
-                return result
-            model.prefetch(recorder.pending)
-        return self._convert(text, fallback)
+        # One pass with the real fallback. The record-then-batch-decode second
+        # pass that used to run here only paid off while the model was faster
+        # in batches; its single-word path is now as fast (nano_g2p_oov.prefetch),
+        # and each word's phonemes depend on the word alone, so one pass gives
+        # the same result without converting the text twice.
+        return self._convert(text, self.fallback)
 
-    def _convert(self, text: str, fallback) -> tuple[str, list[Token]]:
-        tokens: list[Token | list[Token]] = NanoG2P.retokenize(
-            NanoG2P.fold_left(tokenize(text.lstrip()))
-        )
+    @staticmethod
+    def _tokens(text: str) -> list:
+        return NanoG2P.retokenize(NanoG2P.fold_left(tokenize(text.lstrip())))
+
+    def _convert(self, text: str, fallback, tokens: list | None = None) -> tuple[str, list[Token]]:
+        if tokens is None:
+            tokens = self._tokens(text)
         ctx = TokenContext()
         for _i, word in reversed(list(enumerate(tokens))):
             if not isinstance(word, list):
@@ -1463,6 +1459,91 @@ def phonemize(text: str, *, vocabulary: dict[str, int] | None = None,
             f"phoneme sequence has {len(ids)} tokens including BOS/EOS; maximum is {max_tokens}",
         )
     return ids, "".join(dropped)
+
+
+def _phoneme_ids(ps: str, vocabulary: dict[str, int] | None) -> tuple[list[int], str]:
+    """The id body (no <bos>/<eos>) of a phoneme string, and what was dropped."""
+    from .nano_frontend import DEFAULT_VOCABULARY, SPECIAL_IDS  # noqa: PLC0415
+
+    vocab = vocabulary or DEFAULT_VOCABULARY
+    kept: list[int] = []
+    dropped: list[str] = []
+    for ch in ps:
+        if ch in vocab:
+            if ch not in SPECIAL_IDS:
+                kept.append(int(vocab[ch]))
+        else:
+            dropped.append(ch)
+    return kept, "".join(dropped)
+
+
+class StreamingPhonemes:
+    """Phoneme ids of a text, the first words before the rest.
+
+    `prefix_ids` is <bos> plus the ids of the first `prefix_items` token items,
+    converted with `lookahead` items of right context; `full()` converts the
+    whole text and returns what `phonemize` would (including the per-chunk
+    <bos>/<eos>), and checks that it starts with `prefix_ids`.
+
+    Why the prefix is exact: tokenizing and tagging (cheap, rule-based, with
+    left-to-right state) always run over the whole text. Conversion runs right
+    to left, and a word's phonemes see only the TokenContext built from the
+    word after it, which depends on that word's text and the class (vowel,
+    consonant or punctuation) of its first phoneme; that first phoneme does
+    not depend on context for any lexicon entry. Converting `lookahead` items
+    past the prefix therefore reaches the same context the whole text gives.
+    full() verifies the claim on every call rather than trusting it; a
+    mismatch raises, since a stream must never contradict what it already sent.
+    """
+
+    def __init__(self, text: str, *, vocabulary: dict[str, int] | None = None,
+                 prefix_items: int = 6, lookahead: int = 3,
+                 g2p: NanoG2P | None = None) -> None:
+        if not isinstance(text, str) or not text.strip():
+            raise FrontendError("empty", "text must be a non-empty string")
+        self.text = text
+        self.vocabulary = vocabulary
+        self.engine = g2p if g2p is not None else shared_g2p()
+        self._tokens = self.engine._tokens(text)
+        self.prefix_items = min(prefix_items, len(self._tokens))
+        self.prefix_ids: list[int] | None = None
+        if self.prefix_items < len(self._tokens):
+            stop = min(len(self._tokens), self.prefix_items + lookahead)
+            part = [[copy.copy(t) for t in tk] if isinstance(tk, list) else copy.copy(tk)
+                    for tk in self._tokens[:stop]]
+            _ps, flat = self.engine._convert(text, self.engine.fallback, tokens=part)
+            head = flat[: self.prefix_items]
+            for tk in head:
+                if tk.phonemes is None:
+                    tk.phonemes = ""
+            prefix_ps = "".join(tk.phonemes + (" " if tk.whitespace else "") for tk in head).lstrip()
+            body, _dropped = _phoneme_ids(prefix_ps, vocabulary)
+            if body:
+                from .nano_frontend import SPECIAL_IDS  # noqa: PLC0415
+                self.prefix_ids = [SPECIAL_IDS["<bos>"], *body]
+
+    def full(self) -> tuple[list[int], str]:
+        """(ids, dropped) for the whole text, as `phonemize` gives them (no length cap)."""
+        _result, tokens = self.engine._convert(self.text, self.engine.fallback, tokens=self._tokens)
+        chunks = en_chunks(tokens)
+        if not chunks:
+            raise FrontendError("empty", f"phonemization produced no symbols for text: {self.text!r}")
+        from .nano_frontend import SPECIAL_IDS  # noqa: PLC0415
+        ids: list[int] = []
+        dropped: list[str] = []
+        for chunk in chunks:
+            if len(chunk) > MAX_PS_CHARS:
+                chunk = chunk[:MAX_PS_CHARS]
+            body, chunk_dropped = _phoneme_ids(chunk, self.vocabulary)
+            if not body:
+                raise FrontendError("empty", "phonemization produced no symbols in the packaged vocabulary")
+            ids.extend([SPECIAL_IDS["<bos>"], *body, SPECIAL_IDS["<eos>"]])
+            dropped.append(chunk_dropped)
+        if self.prefix_ids is not None and ids[: len(self.prefix_ids)] != self.prefix_ids:
+            raise FrontendError(
+                "internal",
+                f"streaming prefix disagrees with the whole-text conversion for {self.text!r}")
+        return ids, "".join(dropped)
 
 
 def phonemize_to_string(text: str, *, g2p: NanoG2P | None = None) -> str:

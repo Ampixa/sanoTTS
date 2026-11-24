@@ -16,6 +16,11 @@ logger = logging.getLogger("sanotts.engine")
 # The nano decoder is noise-fed, so a rendering is only reproducible if the
 # seed is fixed. Callers that want variation pass their own.
 DEFAULT_NANO_SEED = 2236265385529901705
+# First streamed chunk, in decoder frames. A nano frame is 256 samples at 24 kHz
+# and the iSTFT holds back n_fft/2 = 512 samples, so 4 frames give 512 samples
+# (~21 ms) of first audio; 3 would give none and fall through to the next chunk.
+NANO_FIRST_CHUNK_FRAMES = 4
+PIPERLITE_FIRST_CHUNK_FRAMES = 8
 
 # Which grapheme-to-phoneme path the nano voices use.
 #   "espeak"  nano_frontend: espeak-ng on every word, then misaki's E2M rewrite.
@@ -186,16 +191,21 @@ class Synthesizer:
         from . import nano  # noqa: PLC0415
 
         scale, seed = self._nano_scale_seed(duration_length_scale, seed)
-        audio = nano.synthesize_ids(
-            self.pack.front, self.pack.dec, self.pack.offsets,
-            np.asarray(phoneme_ids, dtype=np.int64),
-            seed=seed, length_scale=scale, weights=self._nano_weights(),
-        )
+        if nano.is_local(self.pack.offsets):
+            ids = list(np.asarray(phoneme_ids, dtype=np.int64))
+            audio = np.concatenate(list(nano.stream_local(
+                self._nano_weights(), None, lambda: ids, seed=seed, length_scale=scale)))
+        else:
+            audio = nano.synthesize_ids(
+                self.pack.front, self.pack.dec, self.pack.offsets,
+                np.asarray(phoneme_ids, dtype=np.int64),
+                seed=seed, length_scale=scale, weights=self._nano_weights(),
+            )
         return SynthesisResult(audio=np.clip(audio, -1.0, 1.0).astype(np.float32),
                                sample_rate=self.sample_rate)
 
     def synthesize_ids_stream(self, phoneme_ids, *, duration_length_scale: float | None = None,
-                              seed: int | None = None, first_chunk_frames: int = 8,
+                              seed: int | None = None, first_chunk_frames: int = 4,
                               chunk_frames: int = 128) -> Iterator[np.ndarray]:
         """synthesize_ids(), yielded as float32 chunks while it is decoded.
 
@@ -249,7 +259,39 @@ class Synthesizer:
         )
         return models.acoustic_forward(self._acoustic_tensors, self._acoustic_config, ids, durations)
 
+    def _local_stream(self, text: str, duration_length_scale: float | None,
+                      first_chunk_frames: int, chunk_frames: int) -> Iterator[np.ndarray]:
+        """A local nano voice (NANO_LOCAL_FEATURES): phonemize the first words,
+        stream from them, then the rest (nano_g2p.StreamingPhonemes, nano.stream_local)."""
+        from . import nano, nano_g2p  # noqa: PLC0415
+
+        if self.nano_g2p != "lexicon":
+            raise NotImplementedError("a local nano voice streams through the lexicon G2P only")
+        scale, seed = self._nano_scale_seed(duration_length_scale, None)
+        # Enough leading words that the prefix ids cover the duration and token-stage
+        # right context plus a first chunk (~5 phoneme ids per word item); two items
+        # of look-ahead reach the whole-text context (verified on 50.5k sentences).
+        meta = self.pack.offsets
+        need = nano.duration_halo_tokens(meta) + nano.token_halo_tokens(meta) + 6
+        phonemes = nano_g2p.StreamingPhonemes(text, vocabulary=self._vocabulary,
+                                              prefix_items=max(3, -(-need // 5)), lookahead=2)
+        for piece in nano.stream_local(
+                self._nano_weights(), phonemes.prefix_ids, lambda: phonemes.full()[0],
+                seed=seed, length_scale=scale,
+                first_chunk_frames=first_chunk_frames, chunk_frames=chunk_frames):
+            yield np.clip(piece, -1.0, 1.0).astype(np.float32)
+
+    def _is_local(self) -> bool:
+        from . import nano  # noqa: PLC0415
+
+        return self.is_nano and nano.is_local(self.pack.offsets)
+
     def synthesize(self, text: str, *, duration_length_scale: float | None = None) -> SynthesisResult:
+        if self._is_local():
+            # Defined as the stream concatenated, so the two can never disagree.
+            audio = np.concatenate(list(self._local_stream(
+                text, duration_length_scale, NANO_FIRST_CHUNK_FRAMES, 128)))
+            return SynthesisResult(audio=audio, sample_rate=self.sample_rate)
         if self.is_nano:
             return self.synthesize_ids(self._nano_ids(text), duration_length_scale=duration_length_scale)
 
@@ -259,24 +301,35 @@ class Synthesizer:
         return SynthesisResult(audio=audio, sample_rate=self.sample_rate)
 
     def synthesize_stream(self, text: str, *, duration_length_scale: float | None = None,
-                          first_chunk_frames: int = 8, chunk_frames: int = 128) -> Iterator[np.ndarray]:
+                          first_chunk_frames: int | None = None,
+                          chunk_frames: int = 128) -> Iterator[np.ndarray]:
         """synthesize(), yielded as float32 chunks at self.sample_rate.
 
         Grapheme-to-phoneme, durations and every other utterance-global step
         run over the whole text first (they take a few milliseconds). The
         decoder, which is most of the work, then runs chunk by chunk, and for
         the nano voices so does the acoustic model's frame stage. The first
-        chunk covers `first_chunk_frames` frames (at the default, 64 ms of
-        audio from a nano voice, 93 ms from a piperlite one) and later ones
-        double up to `chunk_frames`. Concatenated, the chunks equal
+        chunk covers `first_chunk_frames` frames and later ones double up to
+        `chunk_frames`. The default is 4 frames for a nano voice (about 21 ms
+        of audio once the iSTFT's centre padding is trimmed; the next chunk is
+        ready in well under that) and 8 for a piperlite one (93 ms). Concatenated, the chunks equal
         synthesize(text).audio to float32 rounding; tests/test_nano_stream.py
         measures this for both voice types. Every chunk is non-empty.
         """
+        if self._is_local():
+            yield from self._local_stream(
+                text, duration_length_scale,
+                NANO_FIRST_CHUNK_FRAMES if first_chunk_frames is None else first_chunk_frames,
+                chunk_frames)
+            return
         if self.is_nano:
             yield from self.synthesize_ids_stream(
                 self._nano_ids(text), duration_length_scale=duration_length_scale,
-                first_chunk_frames=first_chunk_frames, chunk_frames=chunk_frames)
+                first_chunk_frames=NANO_FIRST_CHUNK_FRAMES if first_chunk_frames is None else first_chunk_frames,
+                chunk_frames=chunk_frames)
             return
+        if first_chunk_frames is None:
+            first_chunk_frames = PIPERLITE_FIRST_CHUNK_FRAMES
 
         latent = self._piperlite_latent(text, duration_length_scale)
         for piece in models.decoder_stream(self._decoder_tensors, self._decoder_config, latent,

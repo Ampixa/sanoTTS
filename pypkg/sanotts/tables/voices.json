@@ -45,6 +45,15 @@
       "parameters": 294279,
       "archive": "heartnano-e13b"
     },
+    "heart-nano-s": {
+      "package": "heartnanos",
+      "language": "en_US",
+      "sample_rate": 24000,
+      "runtime": "nano",
+      "release": "voices-v2",
+      "parameters": 263103,
+      "archive": "heartnanos-k3ft40k"
+    },
     "heart": {
       "package": "heart",
       "language": "en_US",

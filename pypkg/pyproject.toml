@@ -4,9 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sanotts"
-version = "0.5.4"
+version = "0.5.5"
 description = "Self-contained, numpy-only inference runtime for sanoTTS voices, including the 294k and 2.27M heart voices."
-readme = { text = "sanotts: pip-installable, numpy-only inference for sanoTTS voices. Two graphs are supported: the piperlite voices (amy, kristin, hfc, vi, id) and the nano voices (heart at 2.27M parameters, heart-nano at 294k), the latter running mel-100 -> ConvNeXt1D -> iSTFT with a noise-fed decoder. Both are gated against the same PyTorch references the C runtime is held to. Voices download on demand or load from a local directory.", content-type = "text/plain" }
+readme = { text = "sanotts: pip-installable, numpy-only inference for sanoTTS voices. Two graphs are supported: the piperlite voices (amy, kristin, hfc, vi, id) and the nano voices (heart at 2.27M parameters, heart-nano at 294k, heart-nano-s at 263k), the latter running mel-100 -> ConvNeXt1D -> iSTFT with a noise-fed decoder. Both are gated against the same PyTorch references the C runtime is held to. Voices download on demand or load from a local directory.", content-type = "text/plain" }
 license = { text = "MIT" }
 requires-python = ">=3.10"
 # numpy is the only runtime dependency, which is the point of this package.

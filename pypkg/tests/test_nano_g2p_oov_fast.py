@@ -91,18 +91,22 @@ TEXTS = (
 )
 
 
-def test_two_pass_g2p_equals_one_pass_with_the_real_model():
+def test_g2p_is_one_pass_with_the_real_model():
+    """NanoG2P.__call__ converts once, decoding unknown words as it reaches
+    them (the record-then-prefetch second pass is gone): its result is the
+    plain one-pass conversion, unknown words end up memoised, and a text with
+    no unknown word never touches the model."""
     g2p = nano_g2p.NanoG2P()
     model = g2p.fallback.model()
-    calls = []
-    real_prefetch = model.prefetch
-    model.prefetch = lambda ws: (calls.append(list(ws)), real_prefetch(ws))[1]
-    try:
-        for text in TEXTS:
-            model._memo.clear()
-            reference = g2p._convert(text, g2p.fallback)[0]     # one pass, words decoded one at a time
-            model._memo.clear()
-            assert g2p(text)[0] == reference, text
-    finally:
-        del model.prefetch
-    assert calls and not any("Nothing" in " ".join(c) for c in calls)
+    decoded = []
+    real_call = type(model).__call__
+    for text in TEXTS:
+        model._memo.clear()
+        reference = g2p._convert(text, g2p.fallback)[0]
+        model._memo.clear()
+        before = set(model._memo)
+        assert g2p(text)[0] == reference, text
+        decoded.append(set(model._memo) - before)
+    assert decoded[0] and decoded[2], decoded   # text 1's names are answered by the word table
+    assert not decoded[3], decoded[3]
+    assert real_call is type(model).__call__
