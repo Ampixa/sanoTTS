@@ -1,19 +1,19 @@
 # sanoTTS — a tiny neural voice that runs anywhere
 
 ***sano*** (सानो) — Nepali for **"small."** A family of tiny neural text-to-speech
-voices — **294k to 2.3M parameters** — that run with **no cloud and no NPU**:
+voices — **263k to 2.3M parameters** — that run with **no cloud and no NPU**:
 real-time on a ~$3 ESP32-S3 (out a GPIO into an LM386 and a speaker), or live
 in the browser via WASM.
 
 ![sanoTTS — thirty tiny voices, sixteen languages, browser + $3 chip](docs/assets/saanotts-hero-v2.png)
 
-- smallest neural TTS family known — **294k to 2.3M parameters**
+- smallest neural TTS family known — **263k to 2.3M parameters**
 - runs **real-time on a $3 microcontroller** — measured **RTF 0.383 on an
   ESP32-S3**, 2.6x faster than real time, with the Xtensa LX7 SIMD kernels the
   Arduino library assembles by default ([BOARDS.md](BOARDS.md), 2026-09-04).
   Scalar C on the same board is 1.58, i.e. slower than real time
 - runs right in your browser — **WebAssembly**, no server
-- **0.3 to 8.7 MB** per voice depending on precision — 337 KB int8 (heart-nano),
+- **0.3 to 8.7 MB** per voice depending on precision — 311 KB int8 (heart-nano),
   ~3 MB fp16, 5.5-8.7 MB fp32 — zero dependencies (espeak-ng phonemizer included)
 - **30 voices** across **16 languages** in the browser demo — English, German,
   French, Spanish, Italian, Portuguese, Russian, Czech, Romanian, Turkish,
@@ -28,8 +28,10 @@ in the browser via WASM.
   run a listening test. Numbers and method in
   [`experiments/evidence/ood-tatoeba-20260908.json`](experiments/evidence/ood-tatoeba-20260908.json)
 - **heart**, our best-sounding voice at **2.27M parameters** (24 kHz), and
-  **heart-nano**, the same voice in **294k parameters** — a complete text-to-speech
-  stack, int8, in 337 KB. Both synthesize live in the browser demo
+  **heart-nano**, the same voice in **263k parameters** — a complete text-to-speech
+  stack, int8, in 311 KB, that starts speaking after the first few words
+  (sanotts 0.5.6). heart and the first heart-nano (294k) synthesize live in the
+  browser demo; the browser runtime does not run the streaming heart-nano yet
 - open source, **GPL-3.0**
 
 ## Live demo
@@ -68,7 +70,8 @@ result = sanotts.synthesize("Hello world", voice="amy")   # numpy audio @ 22.05 
 
 Voices, largest to smallest: `heart` (2.27M), `hfc` and `amy-1p8m` (1.8M),
 `amy`, `kristin`, `vi` and `id` (1.46M), `amy-1p1m` (1.1M), and `heart-nano`
-(294k, 337 KB of weights).
+(263k, 311 KB of weights, since sanotts 0.5.6; earlier versions install the first,
+294k heart-nano under that name).
 
 They are fetched from
 [huggingface.co/ampixa/sanoTTS](https://huggingface.co/ampixa/sanoTTS) into
@@ -168,7 +171,8 @@ host, and load them the same way `web/index.html` does:
   gzipped; the acoustic/decoder wasm adds another ~40 KB)
 - per-voice weights, fetched lazily on first use of that voice and never
   bundled with the runtime:
-  - **int8** — heart-nano at **337 KB**, the on-device stack unchanged
+  - **int8** — the first heart-nano (294k) at **337 KB**, the on-device stack
+    unchanged (the streaming 263k heart-nano is pip-only for now)
   - **fp16** — the ten voices added 2026-09-08 at **~3.0 MB** each; fp16 is the
     reference for these, not an approximation, since every number they have was
     measured on the fp16 package. The browser widens them to fp32 after
@@ -192,8 +196,8 @@ exclude the shared external G2P.
 
 ![Size comparison: sanoTTS 0.75M-1.8M params vs TinyTTS 1.62M vs Inflect Nano 4.63M vs Kokoro 82M, linear axis](docs/assets/chart-size-comparison.svg)
 
-Kokoro is 36x larger than our largest voice (heart, 2.27M), and 279x larger than
-our smallest (heart-nano, 294k).
+Kokoro is 36x larger than our largest voice (heart, 2.27M), and 312x larger than
+our smallest (heart-nano, 263k).
 Shipped-file sizes: sanoTTS amy 2.8 MB fp16 and TinyTTS 3.5 MB fp16, both
 verified from the released files; Kokoro's ~330 MB fp32 is its widely cited
 public figure.
@@ -202,12 +206,18 @@ public figure.
 | --- | ---: | :---: | :---: | :---: |
 | **sanoTTS (amy)** | **1.46 M** | **4.13** | **4.10** | 3.61 |
 | sanoTTS (heart) | 2.27 M | 3.48 | 3.38 | 3.51 |
-| sanoTTS (heart-nano) | 0.29 M | 2.29 | 2.45 | 3.35 |
+| sanoTTS (first heart-nano) | 0.29 M | 2.29 | 2.45 | 3.35 |
 | TinyTTS | 1.62 M | 3.94 | 3.65 | **3.62** |
 | Inflect Nano | 4.63 M | 3.81 | 3.65 | 3.58 |
 | Kitten TTS nano | 15 M | 3.02 | 3.58 | 3.43 |
 | _reference (~15 M)_ | _~15 M_ | _4.71_ | _4.47_ | _3.65_ |
 | _Kokoro_ | _82 M_ | _4.89_ | _4.52_ | _3.69_ |
+
+The heart-nano rows in this README's tables are the first, 294k model. The current
+263k heart-nano (2026-11-25) has not been scored on this 24-sentence set yet; on
+CV3-Eval English it scores UTMOS 2.51 against the first model's 2.37 and WER 1.42 %
+against 1.57 % (our runs, details on the
+[model card](https://huggingface.co/ampixa/sanoTTS)).
 
 Among the systems in this table, sanoTTS amy is the **smallest** and scores
 **highest on naturalness (SCOREQ and UTMOS) below the ~15M reference** — beating
@@ -237,7 +247,7 @@ SCOREQ from 3.70 to 4.16.
 | | hfc | 1.83 M | 3.94 | 0.069 ‡ |
 | | amy-small | 1.08 M | 3.70 | — |
 | | heart (24 kHz) | 2.27 M | 3.48 | 0.080 ‡ |
-| | heart-nano (int8, 24 kHz) | 294 k | 2.29 | 0.083 ‡ |
+| | first heart-nano (int8, 24 kHz) | 294 k | 2.29 | 0.083 ‡ |
 | | robot (on-device, int8) | 567 k | — | — |
 | German 🇩🇪 | German | 1.57 M | — | 0.099 |
 | | German small | 512 k | — | 0.145 |
@@ -275,7 +285,7 @@ diverse held-out English sentences, the same ones the SCOREQ column uses, rather
 than the 16 Tatoeba sentences. Corpus WER — total errors over total words —
 which is why it is not the mean of the per-clip figures.
 
-Worth reading across that row rather than down it. **heart-nano at 294 k scores
+Worth reading across that row rather than down it. **The first heart-nano at 294 k scores
 0.083 against heart's 0.080 at 2.27 M** — the same words arrive from a model 7.7
 times smaller — while SCOREQ separates them 2.29 against 3.48. That is the whole
 point of carrying both columns: shrinking the model cost almost nothing in
@@ -306,11 +316,16 @@ directory name, never a parameter count for these binaries.)
 
 `heart` and `heart-nano` are a second recipe: a 100-band mel interface between
 the acoustic model and a noise-shaping ConvNeXt + iSTFT decoder, at 24 kHz.
-`heart-nano` is the smallest complete neural TTS stack we have built —
-duration 22,858 + acoustic 65,299 + decoder 206,122 = 294,279 parameters, shipped
-as 337 KB of int8 blobs (`web/voices/heartnano/`) and run in the browser with the
-int8 arithmetic of the microcontroller build unchanged (`mcu/src/snt_nano.c`,
-golden fixture `mcu/test/fixtures/en_us_e13b`). `heart` ships float32 weights
+`heart-nano` is the smallest complete neural TTS stack we have built. Since
+2026-11-25 it is a streaming-native student: duration 14,746 + acoustic 42,235 +
+decoder 206,122 = 263,103 parameters, 311 KB of int8 blobs (`heartnanos/` on
+Hugging Face, sanotts >= 0.5.6), whose duration and acoustic models see only
+nearby phonemes, so audio starts after the first words instead of after the whole
+text. The first heart-nano, duration 22,858 + acoustic 65,299 + decoder 206,122 =
+294,279 parameters in 337 KB of int8 blobs (`web/voices/heartnano/`), is what the
+browser demo and the microcontroller build still run, with the int8 arithmetic of
+the microcontroller build unchanged (`mcu/src/snt_nano.c`, golden fixture
+`mcu/test/fixtures/en_us_e13b`). `heart` ships float32 weights
 (`web/voices/heart/`, 9.1 MB): its int8 form fails the 0.98 golden gate at 0.951
 minimum correlation, the float build reproduces the training-side output at
 1.000000 (`mcu/test/fixtures/en_us_r227f32`). Rebuild both with
