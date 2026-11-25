@@ -163,6 +163,9 @@ class NanoVoicePack:
     front: bytes
     dec: bytes
     offsets: dict[str, int]
+    # Optional harmonic-plus-noise decoder weights (meta.json "dsp_decoder"); when present the voice is decoded
+    # by nano_dsp instead of the neural decoder in `dec`, which still ships so older versions can play it.
+    dsp: bytes | None = None
 
     @property
     def sample_rate(self) -> int:
@@ -239,8 +242,26 @@ def _load_nano_directory(name: str, directory: Path) -> NanoVoicePack:
     from .nano import parse_meta_header  # noqa: PLC0415 - avoids a cycle at import time
 
     offsets = parse_meta_header(header_path)
+    dsp = None
+    dsp_name = meta.get("dsp_decoder")
+    if dsp_name:
+        dsp_path = directory / dsp_name
+        if not dsp_path.is_file():
+            raise VoicePackError(f"{directory}: meta.json names dsp_decoder {dsp_name} but the file is missing")
+        dsp = dsp_path.read_bytes()
+        if meta.get("dsp_decoder_bytes") is not None and len(dsp) != int(meta["dsp_decoder_bytes"]):
+            raise VoicePackError(f"{dsp_path}: size {len(dsp)} != meta dsp_decoder_bytes {meta['dsp_decoder_bytes']}")
+        want = meta.get("dsp_decoder_sha256")
+        if not want:
+            raise VoicePackError(f"{directory}: dsp_decoder without dsp_decoder_sha256")
+        got = _sha256_hex(dsp)
+        if got != want:
+            raise VoicePackError(f"{dsp_path}: sha256 mismatch (meta={want}, actual={got}); "
+                                 "the voice package is corrupt or was tampered with")
+        if not offsets.get("NANO_LOCAL_FEATURES"):
+            raise VoicePackError(f"{directory}: a dsp_decoder voice must be a local-feature voice")
     return NanoVoicePack(name=name, directory=directory, meta=meta,
-                         front=blobs["front"], dec=blobs["dec"], offsets=offsets)
+                         front=blobs["front"], dec=blobs["dec"], offsets=offsets, dsp=dsp)
 
 
 def _load_from_directory(name: str, directory: Path) -> VoicePack:

@@ -158,6 +158,28 @@ class Synthesizer:
     def sample_rate(self) -> int:
         return self.pack.sample_rate
 
+    def _dsp_weights(self):
+        """The voice's harmonic-plus-noise decoder (meta.json dsp_decoder), or None; built once."""
+        if self.pack.dsp is None:
+            return None
+        if getattr(self, "_dsp_w", None) is None:
+            from . import nano_dsp  # noqa: PLC0415
+            self._dsp_w = nano_dsp.DspWeights.from_bytes(self.pack.dsp)
+        return self._dsp_w
+
+    def _local_pieces(self, prefix_ids, full_ids, *, seed, length_scale, first_chunk_frames=4, chunk_frames=128):
+        """A local voice's audio pieces, through the DSP decoder when the voice has one."""
+        from . import nano  # noqa: PLC0415
+
+        dsp = self._dsp_weights()
+        if dsp is not None:
+            from . import nano_dsp  # noqa: PLC0415
+            return nano_dsp.stream_local(self._nano_weights(), dsp, prefix_ids, full_ids, seed=seed,
+                                         length_scale=length_scale, first_chunk_frames=first_chunk_frames,
+                                         chunk_frames=chunk_frames)
+        return nano.stream_local(self._nano_weights(), prefix_ids, full_ids, seed=seed, length_scale=length_scale,
+                                 first_chunk_frames=first_chunk_frames, chunk_frames=chunk_frames)
+
     def _nano_weights(self):
         """The voice's dequantised nano layers, built once and reused."""
         from . import nano  # noqa: PLC0415
@@ -193,8 +215,7 @@ class Synthesizer:
         scale, seed = self._nano_scale_seed(duration_length_scale, seed)
         if nano.is_local(self.pack.offsets):
             ids = list(np.asarray(phoneme_ids, dtype=np.int64))
-            audio = np.concatenate(list(nano.stream_local(
-                self._nano_weights(), None, lambda: ids, seed=seed, length_scale=scale)))
+            audio = np.concatenate(list(self._local_pieces(None, lambda: ids, seed=seed, length_scale=scale)))
         else:
             audio = nano.synthesize_ids(
                 self.pack.front, self.pack.dec, self.pack.offsets,
@@ -216,6 +237,12 @@ class Synthesizer:
         from . import nano  # noqa: PLC0415
 
         scale, seed = self._nano_scale_seed(duration_length_scale, seed)
+        if self.pack.dsp is not None:
+            ids = list(np.asarray(phoneme_ids, dtype=np.int64))
+            for piece in self._local_pieces(None, lambda: ids, seed=seed, length_scale=scale,
+                                            first_chunk_frames=first_chunk_frames, chunk_frames=chunk_frames):
+                yield np.clip(piece, -1.0, 1.0).astype(np.float32)
+            return
         for piece in nano.stream_ids(
                 self.pack.front, self.pack.dec, self.pack.offsets,
                 np.asarray(phoneme_ids, dtype=np.int64),
@@ -275,9 +302,8 @@ class Synthesizer:
         need = nano.duration_halo_tokens(meta) + nano.token_halo_tokens(meta) + 6
         phonemes = nano_g2p.StreamingPhonemes(text, vocabulary=self._vocabulary,
                                               prefix_items=max(3, -(-need // 5)), lookahead=2)
-        for piece in nano.stream_local(
-                self._nano_weights(), phonemes.prefix_ids, lambda: phonemes.full()[0],
-                seed=seed, length_scale=scale,
+        for piece in self._local_pieces(
+                phonemes.prefix_ids, lambda: phonemes.full()[0], seed=seed, length_scale=scale,
                 first_chunk_frames=first_chunk_frames, chunk_frames=chunk_frames):
             yield np.clip(piece, -1.0, 1.0).astype(np.float32)
 
