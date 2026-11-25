@@ -25,7 +25,7 @@ from sanotts.nano_rng import seeded_noise, uniform_stream  # noqa: E402
 GATE = 0.98
 
 # Every nano lineage that ships, and the weight format each uses. e12nano is
-# the original int8 export; e13b is what the heart-nano package contains; and
+# the original int8 export; e13b is what the first heart-nano package (heartnano/, sanotts <= 0.5.5) contains; and
 # r227f32 is the 2.27M heart voice, whose float rows the int8 path cannot
 # read. All three go through the same code, so all three are gated.
 LINEAGES = (

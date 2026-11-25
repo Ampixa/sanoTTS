@@ -37,15 +37,16 @@
       "sample_rate": 22050
     },
     "heart-nano": {
-      "package": "heartnano",
+      "package": "heartnanos",
       "language": "en_US",
       "sample_rate": 24000,
       "runtime": "nano",
       "release": "voices-v2",
-      "parameters": 294279,
-      "archive": "heartnano-e13b"
+      "parameters": 263103,
+      "archive": "heartnanos-k3ft40k"
     },
     "heart-nano-s": {
+      "alias_of": "heart-nano",
       "package": "heartnanos",
       "language": "en_US",
       "sample_rate": 24000,

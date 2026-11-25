@@ -588,7 +588,7 @@ def acoustic_frames_reference(w: NanoWeights, plan: AcousticPlan, lo: int, hi: i
 
 
 def is_local(meta: dict[str, int]) -> bool:
-    """True for a voice trained with local features only (heart-nano-s).
+    """True for a voice trained with local features only (heart-nano since 0.5.6).
 
     Such a voice's duration and acoustic inputs carry no whole-utterance
     quantity (no position ramps, no length hint, duration hints over the fixed
@@ -629,7 +629,7 @@ def duration_forward(w: NanoWeights, ids: np.ndarray,
     length_hint = np.float32(math.log1p(max(n, 1)) / math.log1p(float(m["NANO_DUR_MAX_TOKENS"])))
     x = p.dur_emb[:, ids]
     if is_local(m):
-        # heart-nano-s: positions and the length hint are trained as zeros.
+        # Local voices (heart-nano): positions and the length hint are trained as zeros.
         x += p.dur_feat[:, 2:3] + p.dur_b
     else:
         x += p.dur_feat[:, 0:1] * _unit_ramp(n)

@@ -1,4 +1,4 @@
-"""Local-feature voices (heart-nano-s): streaming before the text is converted.
+"""Local-feature voices (heart-nano since 0.5.6, heartnanos/): streaming before the text is converted.
 
 Checked here:
 
@@ -13,7 +13,7 @@ Checked here:
 * StreamingPhonemes' prefix ids are a prefix of its full ids, and full()
   equals phonemize's ids.
 
-The weights are the heart-nano (en_us_e13b) fixture with the local flag set.
+The weights are the first heart-nano (en_us_e13b) fixture with the local flag set.
 That network was not trained with local features, so its audio is not
 meaningful, but every property tested is structural (receptive fields, noise
 layout, stream bookkeeping) and holds for any weights.
