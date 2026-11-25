@@ -92,7 +92,9 @@ def test_npz_round_trip():
     w.save_npz(buf)
     w2 = nano_dsp.DspWeights.from_bytes(buf.getvalue())
     mel = _mel(40)
-    assert np.array_equal(nano_dsp.render(w, mel), nano_dsp.render(w2, mel))
+    # weights are stored as float32: the round trip is exact to float32 weight rounding
+    ref = nano_dsp.render(w, mel)
+    assert np.abs(nano_dsp.render(w2, mel) - ref).max() <= 1e-4 * max(1.0, float(np.abs(ref).max()))
     assert (w2.minphase, w2.harm_bands, w2.noise_bands) == (True, 12, 8)
 
 

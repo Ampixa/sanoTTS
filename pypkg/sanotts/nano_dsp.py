@@ -102,7 +102,8 @@ class DspWeights:
         for i, b in enumerate(self.blocks):
             for k in ("dw_w", "dw_b", "n_w", "n_b", "p1_w", "p1_b", "p2_w", "p2_b", "gamma"):
                 arrays[f"b{i}_{k}"] = b[k]
-        np.savez(path, **arrays)
+        # float32 on disk (half the size); everything is computed in float64 after loading
+        np.savez(path, **{k: (v.astype(np.float32) if v.dtype.kind == "f" else v) for k, v in arrays.items()})
 
     @classmethod
     def from_bytes(cls, data: bytes):
@@ -111,6 +112,7 @@ class DspWeights:
     @classmethod
     def load_npz(cls, path):
         z = np.load(path, allow_pickle=False)
+        z = {k: (z[k].astype(np.float64) if z[k].dtype.kind == "f" else z[k]) for k in z.files}
         pads = z["pads"].tolist()
         n = (len(pads) - 2) // 2
         blocks = [{k: z[f"b{i}_{k}"] for k in ("dw_w", "dw_b", "n_w", "n_b", "p1_w", "p1_b", "p2_w", "p2_b", "gamma")}
