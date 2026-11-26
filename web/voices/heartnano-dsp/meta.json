@@ -445,8 +445,7 @@
   "front_q8.bin": "a8681189df2e8299800c56179b66d8c274cc6756cee2114492ef9b6898354acb",
   "nano_q8_meta.h": "fb6298b5d2cb595139151796374e32d87532f05f6b7340d942f2d963e68d5692",
   "dsp_decoder.npz": "caca0d0ab83ff2b774e61d28bd5dd409e053ba9f8632b48a3f1c8a003fc44029",
-  "lineage": "heart-nano 0.5.7: heartnanos front end (k3 local features, unchanged) + harmonic-plus-noise decoder hn-s48 (ControlNet dim 48, 80 harmonics with minimum-phase phases, 512-point noise), 65k steps, EMA",
-  "exported": "2026-11-24T21:37:39+00:00 via ~/heartnano-s/export_front_local.py"
+  "lineage": "heart-nano (sanotts 0.5.7): int8 local-feature front end + harmonic-plus-noise decoder"
  },
  "converted_by": "tools/convert_heartnano_dsp_web.py"
 }
