@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sanotts"
-version = "0.5.6"
+version = "0.5.7"
 description = "Self-contained, numpy-only inference runtime for sanoTTS voices, including the 263k and 2.27M heart voices."
 readme = { text = "sanotts: pip-installable, numpy-only inference for sanoTTS voices. Two graphs are supported: the piperlite voices (amy, kristin, hfc, vi, id) and the nano voices (heart at 2.27M parameters, heart-nano at 263k, streaming from the first words), the latter running mel-100 -> ConvNeXt1D -> iSTFT with a noise-fed decoder. Both are gated against the same PyTorch references the C runtime is held to. Voices download on demand or load from a local directory.", content-type = "text/plain" }
 license = { text = "MIT" }

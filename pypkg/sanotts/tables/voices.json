@@ -37,23 +37,23 @@
       "sample_rate": 22050
     },
     "heart-nano": {
-      "package": "heartnanos",
+      "package": "heartnano-dsp",
       "language": "en_US",
       "sample_rate": 24000,
       "runtime": "nano",
       "release": "voices-v2",
-      "parameters": 263103,
-      "archive": "heartnanos-k3ft40k"
+      "parameters": 104215,
+      "archive": "heartnano-dsp-s48k65"
     },
     "heart-nano-s": {
       "alias_of": "heart-nano",
-      "package": "heartnanos",
+      "package": "heartnano-dsp",
       "language": "en_US",
       "sample_rate": 24000,
       "runtime": "nano",
       "release": "voices-v2",
-      "parameters": 263103,
-      "archive": "heartnanos-k3ft40k"
+      "parameters": 104215,
+      "archive": "heartnano-dsp-s48k65"
     },
     "heart": {
       "package": "heart",
