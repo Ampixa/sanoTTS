@@ -294,8 +294,8 @@
   picker synthesizes your typed text live, right here, with no server involved. Where a language
   offers two sizes, the chips under its mascot switch between them.
   <i>heart</i> and <i>heart-nano</i> take a different route from text to sound than the other
-  voices (a 100-band mel interface into a noise-shaping decoder), so they load their own small
-  runtime; <i>heart-nano</i> runs the int8 arithmetic of the microcontroller build unchanged.</p>
+  voices (a 100-band mel interface into a decoder of their own), so they load their own small
+  runtime; <i>heart-nano</i> (104k) runs its int8 front end and a harmonic-plus-noise decoder in plain JavaScript.</p>
 
 
   <ul class="hl">
@@ -312,12 +312,12 @@
       <a href="#compare">What they score, and what that score does not tell you</a></li>
     <li><b>new:</b> <b>heart</b>, our best-sounding voice at <b>2.27M parameters</b> and 24&nbsp;kHz, and
       <b>heart-nano</b>, the same voice squeezed into <b>294k parameters</b> &mdash; a complete
-      text-to-speech stack, int8, in 337&nbsp;KB. Both synthesize live in the picker above</li>
+      text-to-speech stack, int8, in 337&nbsp;KB (replaced in the picker by the 104k heart-nano below)</li>
     <li><b>new (2026-11-26):</b> <b>heart-nano</b> in <b>104k parameters</b> &mdash; the same front end
       that starts speaking after the first few words, now with a 47k-parameter harmonic-plus-noise
       decoder. On CV3-Eval English: word error 1.15&nbsp;% and UTMOS 3.88 (the 294k version: 1.57&nbsp;% and 2.37).
-      For Python only for now (<code>pip install sanotts==0.5.7</code>, voice <code>heart-nano</code>):
-      the browser picker above still plays the 294k version.
+      It synthesizes live in the picker above, and in Python with <code>pip install sanotts==0.5.7</code>
+      (voice <code>heart-nano</code>).
       <a href="https://huggingface.co/ampixa/sanoTTS">Numbers and method</a></li>
     <li><b>new, experimental:</b> <b>trellis</b> &mdash; a whole new architecture that fits a
       complete voice in <b>under 1M parameters</b> and runs about <b>5&times; faster</b> in the
@@ -415,8 +415,8 @@
   <p class="note">Same 24-sentence set, three independent no-reference metrics; best value per row in
   crimson. sanoTTS amy leads on SCOREQ and UTMOS; on DNSMOS-SIG TinyTTS edges us by 0.01 &mdash; no single
   metric tells the whole story. <i>heart</i> is a different voice and recipe (24&nbsp;kHz, noise-shaping
-  decoder) scored on the identical 24 sentences; the 294k <i>heart-nano</i> in the picker scores
-  2.29 / 2.45 / 3.35 on the same three metrics (the 104k heart-nano has not been scored on this set yet).</p>
+  decoder) scored on the identical 24 sentences; the earlier 294k <i>heart-nano</i> scores
+  2.29 / 2.45 / 3.35 on the same three metrics (the 104k heart-nano in the picker has not been scored on this set yet).</p>
 
   <p class="lead" style="margin:32px 0 6px"><b>The size-quality frontier we traced</b></p>
   <svg viewBox="0 0 640 260" font-family="Lucida Console, Monaco, monospace" font-size="11"
