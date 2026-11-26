@@ -164,13 +164,29 @@
       image-rendering:pixelated; }
   .mascots .name { font-size:11.5px; line-height:1.2; color:var(--muted2); text-align:center; }
   .mascots .m.on .name { color:var(--ink); font-weight:bold; }
-  .mascots .chips { display:flex; gap:3px; flex-wrap:wrap; justify-content:center; }
-  .mascots .chip { font-family:inherit; font-size:10px; font-weight:normal; line-height:1.4;
-      padding:1px 5px; border:1px solid var(--rule); background:var(--bg); color:var(--faint);
-      cursor:pointer; }
-  .mascots .chip:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+  /* A size that is the only one for its voice is plain text; two sizes are a two-button switch. */
+  .mascots .size { font-size:10.5px; line-height:1.4; color:var(--muted2); padding:2px 0; }
+  .mascots .sizes { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .mascots .sizes .cap { font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted2); }
+  .mascots .chips { display:flex; justify-content:center; }
+  .mascots .chip { font-family:inherit; font-size:11px; font-weight:normal; line-height:1.3;
+      padding:3px 7px; border:1px solid var(--ink); background:var(--bg); color:var(--ink);
+      cursor:pointer; border-radius:0; }
+  .mascots .chip + .chip { border-left:none; }
+  .mascots .chip:first-child { border-radius:4px 0 0 4px; }
+  .mascots .chip:last-child { border-radius:0 4px 4px 0; }
+  .mascots .chip:hover:not(.sel) { background:var(--rule); }
+  .mascots .chip:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
   .mascots .chip.sel { border-color:var(--accent); background:var(--accent); color:#fff;
       font-weight:bold; }
+  .mascots .chip.sel + .chip { border-left:1px solid var(--ink); }
+  .mascots .chip + .chip.sel { margin-left:-1px; border-left:1px solid var(--accent); }
+  .pickbar { display:flex; gap:6px; align-items:center; flex-wrap:wrap; font-size:12px;
+      color:var(--muted2); margin:10px 0 -4px; }
+  .pickbar button { font-family:inherit; font-size:12px; font-weight:normal; padding:2px 8px;
+      border:1px solid var(--rule); background:var(--bg); color:var(--ink); cursor:pointer; border-radius:4px; }
+  .pickbar button:hover { border-color:var(--accent); }
+  .pickbar button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); font-weight:bold; }
 
   /* one row per language: what we measured, and a live sample */
   table.langtable { border-collapse:collapse; width:100%; margin:14px 0 8px; font-size:14px; }
@@ -248,6 +264,11 @@
   <b>448&nbsp;KB pinyin lexicon</b> instead) and spoken by that voice's own neural stack
   &mdash; all client-side, no server. Pick a voice:</p>
 
+  <div class="pickbar" id="pickbar" role="group" aria-label="Sort voices">Sort:
+    <button type="button" data-sort="small" aria-pressed="true">smallest first</button>
+    <button type="button" data-sort="large" aria-pressed="false">largest first</button>
+    <button type="button" data-sort="name" aria-pressed="false">A&ndash;Z</button>
+  </div>
   <div class="mascots" id="mascots"></div>
 
   <div class="row" style="margin-top:16px">
@@ -273,8 +294,8 @@
   picker synthesizes your typed text live, right here, with no server involved. Where a language
   offers two sizes, the chips under its mascot switch between them.
   <i>heart</i> and <i>heart-nano</i> take a different route from text to sound than the other
-  voices (a 100-band mel interface into a noise-shaping decoder), so they load their own small
-  runtime; <i>heart-nano</i> runs the int8 arithmetic of the microcontroller build unchanged.</p>
+  voices (a 100-band mel interface into a decoder of their own), so they load their own small
+  runtime; <i>heart-nano</i> (104k) runs its int8 front end and a harmonic-plus-noise decoder in plain JavaScript.</p>
 
 
   <ul class="hl">
@@ -291,12 +312,12 @@
       <a href="#compare">What they score, and what that score does not tell you</a></li>
     <li><b>new:</b> <b>heart</b>, our best-sounding voice at <b>2.27M parameters</b> and 24&nbsp;kHz, and
       <b>heart-nano</b>, the same voice squeezed into <b>294k parameters</b> &mdash; a complete
-      text-to-speech stack, int8, in 337&nbsp;KB. Both synthesize live in the picker above</li>
+      text-to-speech stack, int8, in 337&nbsp;KB (replaced in the picker by the 104k heart-nano below)</li>
     <li><b>new (2026-11-26):</b> <b>heart-nano</b> in <b>104k parameters</b> &mdash; the same front end
       that starts speaking after the first few words, now with a 47k-parameter harmonic-plus-noise
       decoder. On CV3-Eval English: word error 1.15&nbsp;% and UTMOS 3.88 (the 294k version: 1.57&nbsp;% and 2.37).
-      For Python only for now (<code>pip install sanotts==0.5.7</code>, voice <code>heart-nano</code>):
-      the browser picker above still plays the 294k version.
+      It synthesizes live in the picker above, and in Python with <code>pip install sanotts==0.5.7</code>
+      (voice <code>heart-nano</code>).
       <a href="https://huggingface.co/ampixa/sanoTTS">Numbers and method</a></li>
     <li><b>new, experimental:</b> <b>trellis</b> &mdash; a whole new architecture that fits a
       complete voice in <b>under 1M parameters</b> and runs about <b>5&times; faster</b> in the
@@ -394,8 +415,8 @@
   <p class="note">Same 24-sentence set, three independent no-reference metrics; best value per row in
   crimson. sanoTTS amy leads on SCOREQ and UTMOS; on DNSMOS-SIG TinyTTS edges us by 0.01 &mdash; no single
   metric tells the whole story. <i>heart</i> is a different voice and recipe (24&nbsp;kHz, noise-shaping
-  decoder) scored on the identical 24 sentences; the 294k <i>heart-nano</i> in the picker scores
-  2.29 / 2.45 / 3.35 on the same three metrics (the 104k heart-nano has not been scored on this set yet).</p>
+  decoder) scored on the identical 24 sentences; the earlier 294k <i>heart-nano</i> scores
+  2.29 / 2.45 / 3.35 on the same three metrics (the 104k heart-nano in the picker has not been scored on this set yet).</p>
 
   <p class="lead" style="margin:32px 0 6px"><b>The size-quality frontier we traced</b></p>
   <svg viewBox="0 0 640 260" font-family="Lucida Console, Monaco, monospace" font-size="11"
@@ -555,7 +576,7 @@
 <script src="snt_trellis.js?v=20260819"></script>
 <script src="trellis_frontend.js?v=20260819"></script>
 <script src="snt_nano_heart.js?v=20260902"></script>
-<script src="snt_nano_heartnano.js?v=20260902"></script>
+<script src="heartnano_dsp.js?v=20261126"></script>
 <script>
 // ARENA: the esp32 build lives inside 320KB SRAM, but the browser has no such
 // budget -- 2MB covers paragraph-length chunks (320KB OOMs past ~100 ids).
@@ -609,12 +630,19 @@ const VOICES = [
   // against the corpus vocab), a different network behind it. One wasm
   // module per voice because the runtime bakes the model's shapes in at
   // compile time. `heart` ships float32 weights (the int8 form of this
-  // stack fails the 0.98 golden gate at 0.951); `heartnano` ships the int8
-  // blobs and int8 math of the device build, unchanged.
+  // stack fails the 0.98 golden gate at 0.951).
+  //
+  // `heartnano` is the sanotts 0.5.7 heart-nano (104,215 params): the int8
+  // local-feature front end plus the harmonic-plus-noise decoder. snt_nano
+  // cannot run it, so `dsp` names its bundle (web/voices/heartnano-dsp/) and
+  // loadNanoBundle/synthNano hand it to heartnano_dsp.js, a plain-JS port of
+  // the Python package checked against it (tools/verify_heartnano_dsp_node.mjs).
+  // The 294k voice it replaces (web/voices/heartnano/, snt_nano_heartnano.js)
+  // stays on disk for deployed older copies of this page.
   {key:"heart",    label:"heart",      params:"2.27M", flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\u2764\uFE0F",
     nano:true},
-  {key:"heartnano",label:"heart-nano", params:"294k",  flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83D\uDC95",
-    nano:true},
+  {key:"heartnano",label:"heart-nano", params:"104k",  exact:104215, flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83D\uDC95",
+    nano:true, dsp:"heartnano-dsp"},
   // --- added 2026-09-08: ten more languages, each in two sizes ------------
   // Same SaanoVoice lane as vietnamese/indonesian/nepali/hindi/chinese above
   // -- nothing new in the runtime -- so espeak_voice, g2p_voice_slot and
@@ -692,6 +720,21 @@ function selectVoice(v) {
   else if (v.nano) loadNanoBundle(v.key, voiceProgress).catch(e => log("prefetch " + v.key + ": " + (e && e.message || e)));
   else if (v.key !== "mcu") loadVoiceBundle(v.key, voiceProgress).catch(e => log("prefetch " + v.key + ": " + (e && e.message || e)));
 }
+// Parameter count of a voice: the exact figure when the table has one, else parsed from its label
+// ("294k", "1.57M"). Throws on a label it cannot read, so a typo in the table cannot silently sort wrong.
+function paramCount(v) {
+  if (v.exact) return v.exact;
+  const m = /^~?([0-9.]+)\s*([kM])$/.exec(v.params);
+  if (!m) throw new Error("cannot read params of voice " + v.key + ": " + v.params);
+  return parseFloat(m[1]) * (m[2] === "M" ? 1e6 : 1e3);
+}
+let pickSort = "small";
+function setPickSort(mode) {
+  pickSort = mode;
+  for (const b of document.querySelectorAll("#pickbar button"))
+    b.setAttribute("aria-pressed", String(b.dataset.sort === mode));
+  renderMascots();
+}
 function renderMascots() {
   const box = $("mascots");
   box.innerHTML = "";
@@ -701,6 +744,14 @@ function renderMascots() {
     if (!byGroup.has(g)) { byGroup.set(g, []); order.push(g); }
     byGroup.get(g).push(v);
   }
+  // Sizes inside a tile always run small to large; tiles follow the chosen sort
+  // (by their smallest size, by their largest size, or by name).
+  for (const g of order) byGroup.get(g).sort((a, b) => paramCount(a) - paramCount(b));
+  const lo = g => paramCount(byGroup.get(g)[0]), hi = g => paramCount(byGroup.get(g).at(-1));
+  const name = g => byGroup.get(g)[0].label.toLowerCase();
+  if (pickSort === "small") order.sort((a, b) => lo(a) - lo(b) || name(a).localeCompare(name(b)));
+  else if (pickSort === "large") order.sort((a, b) => hi(b) - hi(a) || name(a).localeCompare(name(b)));
+  else order.sort((a, b) => name(a).localeCompare(name(b)));
   for (const g of order) {
     const sizes = byGroup.get(g), head = sizes[0];
     const tile = document.createElement("div");
@@ -725,17 +776,38 @@ function renderMascots() {
     // Clicking the art keeps the size already chosen for this language.
     art.onclick = () => selectVoice(sizes.indexOf(voice) >= 0 ? voice : head);
     tile.appendChild(art);
-    const chips = document.createElement("div");
-    chips.className = "chips";
-    for (const v of sizes) {
-      const c = document.createElement("button");
-      c.className = "chip" + (v === voice ? " sel" : "");
-      c.textContent = v.params;
-      c.title = v.label + " \u2014 " + (v.exact ? v.exact.toLocaleString() + " parameters" : v.params + " params");
-      c.onclick = () => selectVoice(v);
-      chips.appendChild(c);
+    const describe = v => v.label + " \u2014 " + (v.exact ? v.exact.toLocaleString() + " parameters" : v.params + " params");
+    if (sizes.length === 1) {
+      // One size only: say how big it is, but do not draw it as something to press.
+      const sz = document.createElement("span");
+      sz.className = "size";
+      sz.textContent = head.params + " params";
+      sz.title = describe(head);
+      tile.appendChild(sz);
+    } else {
+      const wrap = document.createElement("div");
+      wrap.className = "sizes";
+      const cap = document.createElement("span");
+      cap.className = "cap";
+      cap.textContent = "size";
+      wrap.appendChild(cap);
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      chips.setAttribute("role", "group");
+      chips.setAttribute("aria-label", head.label + " size");
+      for (const v of sizes) {
+        const c = document.createElement("button");
+        c.type = "button";
+        c.className = "chip" + (v === voice ? " sel" : "");
+        c.textContent = v.params;
+        c.title = "use the " + describe(v);
+        c.setAttribute("aria-pressed", String(v === voice));
+        c.onclick = () => selectVoice(v);
+        chips.appendChild(c);
+      }
+      wrap.appendChild(chips);
+      tile.appendChild(wrap);
     }
-    tile.appendChild(chips);
     box.appendChild(tile);
   }
 }
@@ -747,7 +819,7 @@ function updateUI() {
 let Mod=null, G2P=null, Voice=null, Trellis=null, audioCtx=null, lastPcm=null, mcuAssets=null;
 const voiceBundles = new Map(); // key -> Promise<{meta,front,dec}>
 let trellisBundle=null, trellisFrontend=null;
-// snt_nano voices: one module per voice (SaanoNanoHeart, SaanoNanoHeartNano)
+// snt_nano voices: one module per voice (SaanoNanoHeart; heart-nano runs in heartnano_dsp.js)
 const NANO_MODULES = {};        // key -> instantiated Emscripten module
 const nanoBundles = new Map();  // key -> Promise<{meta,front,dec}>
 const NANO_ARENA = 16*1024*1024, NANO_OUT_CAP = 24000*30;
@@ -1093,6 +1165,8 @@ function loadVoiceBundle(key, onProgress){
 // meta.json ("weights": "f32" | "int8"), plus the module that was compiled
 // against that exact export (meta.export_name).
 function loadNanoBundle(key, onProgress){
+  const dspDir = (VOICES.find(v => v.key === key) || {}).dsp;
+  if(dspDir) return loadNanoDspBundle(key, dspDir, onProgress);
   if(!nanoBundles.has(key)){
     nanoBundles.set(key, (async () => {
       const meta = await fetchVoiceJson(key + "/meta.json");
@@ -1109,7 +1183,47 @@ function loadNanoBundle(key, onProgress){
   }
   return nanoBundles.get(key);
 }
+// heart-nano 0.5.7: front_q8.bin + dsp_decoder_f32.bin, run by heartnano_dsp.js
+// (SaanoNanoDsp). Both blobs are size- and sha256-checked against meta.json by
+// fetchVoiceFile; createVoice re-checks sizes, offsets and tensor shapes and
+// throws on any mismatch.
+function loadNanoDspBundle(key, dir, onProgress){
+  if(!nanoBundles.has(key)){
+    const pending = (async () => {
+      if(!self.SaanoNanoDsp) throw new Error("heartnano_dsp.js did not load");
+      const meta = await fetchVoiceJson(dir + "/meta.json");
+      if(meta.runtime !== "nano_dsp_js") throw new Error(dir + "/meta.json: runtime " + meta.runtime + ", expected nano_dsp_js");
+      const note = progressTracker(onProgress, key + " voice");
+      const [front, dsp] = await Promise.all([
+        fetchVoiceFile(dir + "/" + meta.front,
+          {note, expect:{bytes:meta.front_bytes, sha256:meta.front_sha256}}),
+        fetchVoiceFile(dir + "/" + meta.dsp,
+          {note, expect:{bytes:meta.dsp_bytes, sha256:meta.dsp_sha256}}),
+      ]);
+      const runtime = self.SaanoNanoDsp.createVoice({meta, front, dsp});
+      if(onProgress) onProgress(note.summary(), "done");
+      return {meta, runtime};
+    })();
+    // as loadVoiceBundle: memoise the success only, so a failed fetch can be retried
+    pending.catch(() => { if(nanoBundles.get(key) === pending) nanoBundles.delete(key); });
+    nanoBundles.set(key, pending);
+  }
+  return nanoBundles.get(key);
+}
+async function synthNanoDsp(key, text){
+  const bundle = await loadNanoBundle(key);
+  if(!trellisFrontend){
+    if(!self.SaanoTrellisFrontend) throw new Error("trellis_frontend.js did not load");
+    trellisFrontend = self.SaanoTrellisFrontend.createFrontend({module:G2P});
+  }
+  const {ids} = trellisFrontend.textToIds(text);
+  // the package's default seed (meta.json "seed"), so a sentence renders as sanotts renders it
+  const t0 = performance.now();
+  const r = bundle.runtime.synthesize(ids);
+  return {pcm:r.pcm, ids, wall:(performance.now() - t0) / 1000, sr:r.sampleRate};
+}
 async function synthNano(key, text){
+  if((VOICES.find(v => v.key === key) || {}).dsp) return synthNanoDsp(key, text);
   const bundle = await loadNanoBundle(key);
   const N = NANO_MODULES[key];
   if(!N) throw new Error(bundle.meta.export_name + " did not load");
@@ -1528,6 +1642,7 @@ async function playSample(btn){
 for(const b of document.querySelectorAll("button.samp")) b.addEventListener("click", () => playSample(b));
 
 let lastSr = SR;
+for (const b of document.querySelectorAll("#pickbar button")) b.onclick = () => setPickSort(b.dataset.sort);
 renderMascots(); updateUI();
 // espeak-ng writes its dictionary-compile progress to stderr, which Emscripten
 // maps to console.error. Compiling the Russian lexicon per utterance is the
@@ -1538,8 +1653,8 @@ renderMascots(); updateUI();
 // console.debug; anything unrecognised still goes to console.error.
 const G2P_CHATTER = /^(?:Can't read dictionary file|Using phonemetable|Compiling: )|^\s*\d+ entries\s*$|^\s*\d+ rules, \d+ groups|^\s*$/;
 Promise.all([SaanoTTS(), SaanoG2P({ printErr: t => (G2P_CHATTER.test(t) ? console.debug : console.error)("g2p: " + t) }),
-             SaanoVoice(), SaanoTrellis(), SaanoNanoHeart(), SaanoNanoHeartNano()]).then(([m,g,v,t,nh,nn])=>{
-  Mod=m; G2P=g; Voice=v; Trellis=t; NANO_MODULES.heart=nh; NANO_MODULES.heartnano=nn;
+             SaanoVoice(), SaanoTrellis(), SaanoNanoHeart()]).then(([m,g,v,t,nh])=>{
+  Mod=m; G2P=g; Voice=v; Trellis=t; NANO_MODULES.heart=nh;
   const rc=G2P._snt_g2p_init ? G2P._snt_g2p_init() : 0;
   $("state").textContent="ready.";
   $("go").disabled=false;
