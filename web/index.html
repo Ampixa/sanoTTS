@@ -154,8 +154,10 @@
   .mascots { display:grid; grid-template-columns:repeat(auto-fill, minmax(94px, 1fr));
       gap:8px; margin:14px 0; }
   .mascots .m { display:flex; flex-direction:column; align-items:center; gap:4px;
-      padding:7px 4px 6px; border:2px solid var(--rule); background:var(--bg); }
-  .mascots .m.on { border-color:var(--accent); }
+      padding:7px 4px 6px; border:2px solid var(--rule); background:var(--bg); cursor:pointer; }
+  .mascots .m:hover { border-color:var(--muted2); }
+  .mascots .m.on, .mascots .m.on:hover { border-color:var(--accent); }
+  .mascots .m:hover .name { color:var(--accent); }
   .mascots .m .art { display:flex; flex-direction:column; align-items:center; gap:2px;
       padding:0; border:none; background:none; cursor:pointer; width:100%;
       font-family:inherit; font-weight:normal; }
@@ -728,6 +730,7 @@ function paramCount(v) {
   if (!m) throw new Error("cannot read params of voice " + v.key + ": " + v.params);
   return parseFloat(m[1]) * (m[2] === "M" ? 1e6 : 1e3);
 }
+const MISSING_MASCOTS = new Set();
 let pickSort = "small";
 function setPickSort(mode) {
   pickSort = mode;
@@ -762,19 +765,30 @@ function renderMascots() {
     // The languages added on 2026-09-08 now have mascot art of their own
     // (web/assets/mascots/generate_mascots.py); the emoji stays as the
     // fallback for anything whose PNG is missing.
-    const img = document.createElement("img");
-    img.src = "assets/mascots/" + (head.group || head.key) + ".png";
-    img.alt = head.label;
-    img.loading = "lazy";   // only the first row is above the fold
-    img.onerror = () => { const d = document.createElement("div"); d.className = "emj";
-                          d.textContent = head.emj; img.replaceWith(d); };
-    art.appendChild(img);
+    // A PNG that failed once is not requested again: the picker is rebuilt on every click.
+    const art_src = "assets/mascots/" + (head.group || head.key) + ".png";
+    const emoji = () => { const d = document.createElement("div"); d.className = "emj"; d.textContent = head.emj; return d; };
+    if (MISSING_MASCOTS.has(art_src)) {
+      art.appendChild(emoji());
+    } else {
+      const img = document.createElement("img");
+      img.src = art_src;
+      img.alt = head.label;
+      img.loading = "lazy";   // only the first row is above the fold
+      img.onerror = () => { MISSING_MASCOTS.add(art_src); img.replaceWith(emoji()); };
+      art.appendChild(img);
+    }
     const nm = document.createElement("span");
     nm.className = "name";
     nm.textContent = head.flag + " " + head.label;
     art.appendChild(nm);
-    // Clicking the art keeps the size already chosen for this language.
-    art.onclick = () => selectVoice(sizes.indexOf(voice) >= 0 ? voice : head);
+    // The whole tile selects the voice (it is drawn as one card, so every part of it must answer a
+    // click); it keeps the size already chosen for this language. The art stays a <button> so the tile
+    // is reachable from the keyboard; its click bubbles up to here. Size buttons handle their own click.
+    tile.onclick = (e) => {
+      if (e.target.closest(".chip")) return;
+      selectVoice(sizes.indexOf(voice) >= 0 ? voice : head);
+    };
     tile.appendChild(art);
     const describe = v => v.label + " \u2014 " + (v.exact ? v.exact.toLocaleString() + " parameters" : v.params + " params");
     if (sizes.length === 1) {
