@@ -976,8 +976,60 @@ def _keeps_final_period(word: str) -> bool:
             and len(max(word.split("."), key=len)) < 3)
 
 
+# Clock times. misaki (and so this port) has no rule for them: "3:30" lost its digits and was read as ":" only.
+# H:MM with two-digit minutes (00-59), hours 0-23, not part of a longer d:d:d run or a decimal; an am/pm written
+# straight after ("3:30pm") is split off. Read the usual English way: 3:30 -> "3 30" (three thirty),
+# 10:05 -> "10 oh 5", 3:00 -> "3 o'clock", but "3 PM" when am/pm follows.
+_TIME_RE = re.compile(r"(?<![\d:.])\b([01]?\d|2[0-3]):([0-5]\d)(?![\d:])(\s*(?:[aApP]\.?[mM]\.?)(?![^\W\d_]))?")
+
+
+def _time_words(match: re.Match) -> str:
+    hour, minute, ampm = int(match.group(1)), int(match.group(2)), match.group(3)
+    if minute == 0:
+        spoken = f"{hour}" if ampm else f"{hour} o'clock"
+    elif minute < 10:
+        spoken = f"{hour} oh {minute}"
+    else:
+        spoken = f"{hour} {minute}"
+    return spoken + (" " + _ampm(ampm) if ampm else "")
+
+
+def _ampm(word: str) -> str:
+    """'AM' / 'am' would be read as the word "am" (/æm/); the dotted form is read as letters (a.m. -> /ˌAˈɛm/)."""
+    return "a.m." if word.strip().lower().startswith("a") else "p.m."
+
+
+# an hour followed by am/pm without minutes: "10 AM", "7pm"
+_HOUR_AMPM_RE = re.compile(r"(?<![\d:.])\b((?:[01]?\d|2[0-3]))\s*([aApP]\.?[mM]\.?)(?![^\W\d_])")
+
+
+# other digit groups the tokenizer would drop silently (measured: "2:1" -> ":", "100km" -> "km", "mp3" -> "mp"):
+_HMS_RE = re.compile(r"(?<![\d:.])\b(\d{1,2}):([0-5]\d):([0-5]\d)(?![\d:])")       # 2:30:15 -> 2 30 15
+_RATIO_RE = re.compile(r"(?<![\d:.])\b(\d+):(\d+)(?![\d:])")                         # 2:1 -> 2 to 1
+_NUM_WORD_RE = re.compile(r"(\d)((?!(?:st|nd|rd|th)s?\b|s\b)[^\W\d_]{2,})")          # 100km -> 100 km (not 4th, 3rds)
+# letters then digits are only dropped when the letters include lower case ("mp3", "VOCl2", "CuZn3"); all-caps
+# codes ("EJ255", "U2") are already read digit-group-wise and stay as they are
+_WORD_NUM_RE = re.compile(r"\b((?=[^\W\d_]*[a-z])[^\W\d_]{2,})(\d)")                   # mp3 -> mp 3
+
+
+def normalize_times(text: str) -> str:
+    """Rewrite clock times, am/pm after an hour, and digit groups the tokenizer drops (see the regexes above) before
+    tokenizing; text without digits is returned unchanged."""
+    if not any(c.isdigit() for c in text):
+        return text
+    if ":" in text:
+        text = _HMS_RE.sub(lambda m: f"{int(m.group(1))} {m.group(2)} {m.group(3)}", text)
+        text = _TIME_RE.sub(_time_words, text)
+        text = _RATIO_RE.sub(lambda m: f"{m.group(1)} to {m.group(2)}", text)
+    if "m" in text or "M" in text:
+        text = _HOUR_AMPM_RE.sub(lambda m: f"{m.group(1)} {_ampm(m.group(2))}", text)
+    text = _NUM_WORD_RE.sub(r"\1 \2", text)
+    return _WORD_NUM_RE.sub(r"\1 \2", text)
+
+
 def tokenize(text: str) -> list[Token]:
     """Text -> tagged tokens, in place of `spacy.load('en_core_web_sm')`."""
+    text = normalize_times(text)
     tokens: list[Token] = []
     quote_open = True
     sentence_start = True

@@ -15,6 +15,8 @@ Run:  python3 -m pytest pypkg/tests/test_nano_g2p.py -v
 
 from __future__ import annotations
 
+import pytest
+
 import json
 import sys
 from pathlib import Path
@@ -116,3 +118,29 @@ if __name__ == "__main__":
     test_dictionary_path_beats_the_espeak_baseline()
     test_no_gpl_dependency_is_imported()
     print("nano_g2p gate: OK")
+
+
+# Digit groups the misaki-derived tokenizer used to drop silently ("at 3:30" was read "at :"), found by listening
+# to out-of-domain text on 2026-11-26. Each case must read the same as its spelled-out form.
+@pytest.mark.parametrize("raw,spelled", [
+    ("at 3:30 PM", "at three thirty p.m."),
+    ("at 3:30pm", "at three thirty p.m."),
+    ("at 10:05 AM", "at ten oh five a.m."),
+    ("at 3:00", "at three o'clock"),
+    ("at 12:00 p.m.", "at twelve p.m."),
+    ("at 10 AM", "at ten a.m."),
+    ("the score was 2:1", "the score was two to one"),
+    ("it took 2:30:15", "it took two thirty fifteen"),
+    ("a 100km walk", "a one hundred km walk"),
+    ("an mp3 file", "an mp three file"),
+])
+def test_digit_groups_are_read(raw, spelled):
+    from sanotts import nano_g2p
+    assert nano_g2p.phonemize_to_string(raw) == nano_g2p.phonemize_to_string(spelled)
+
+
+@pytest.mark.parametrize("text", ["the 2nd floor", "in the 1990s", "a 10x speedup", "a 4K screen", "COVID-19",
+                                  "an A4 page", "EJ255", "U2", "B-52", "I am 10 years old"])
+def test_number_forms_that_already_worked_are_unchanged(text):
+    from sanotts import nano_g2p
+    assert nano_g2p.normalize_times(text) == text
