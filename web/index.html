@@ -164,13 +164,29 @@
       image-rendering:pixelated; }
   .mascots .name { font-size:11.5px; line-height:1.2; color:var(--muted2); text-align:center; }
   .mascots .m.on .name { color:var(--ink); font-weight:bold; }
-  .mascots .chips { display:flex; gap:3px; flex-wrap:wrap; justify-content:center; }
-  .mascots .chip { font-family:inherit; font-size:10px; font-weight:normal; line-height:1.4;
-      padding:1px 5px; border:1px solid var(--rule); background:var(--bg); color:var(--faint);
-      cursor:pointer; }
-  .mascots .chip:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+  /* A size that is the only one for its voice is plain text; two sizes are a two-button switch. */
+  .mascots .size { font-size:10.5px; line-height:1.4; color:var(--muted2); padding:2px 0; }
+  .mascots .sizes { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .mascots .sizes .cap { font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted2); }
+  .mascots .chips { display:flex; justify-content:center; }
+  .mascots .chip { font-family:inherit; font-size:11px; font-weight:normal; line-height:1.3;
+      padding:3px 7px; border:1px solid var(--ink); background:var(--bg); color:var(--ink);
+      cursor:pointer; border-radius:0; }
+  .mascots .chip + .chip { border-left:none; }
+  .mascots .chip:first-child { border-radius:4px 0 0 4px; }
+  .mascots .chip:last-child { border-radius:0 4px 4px 0; }
+  .mascots .chip:hover:not(.sel) { background:var(--rule); }
+  .mascots .chip:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
   .mascots .chip.sel { border-color:var(--accent); background:var(--accent); color:#fff;
       font-weight:bold; }
+  .mascots .chip.sel + .chip { border-left:1px solid var(--ink); }
+  .mascots .chip + .chip.sel { margin-left:-1px; border-left:1px solid var(--accent); }
+  .pickbar { display:flex; gap:6px; align-items:center; flex-wrap:wrap; font-size:12px;
+      color:var(--muted2); margin:10px 0 -4px; }
+  .pickbar button { font-family:inherit; font-size:12px; font-weight:normal; padding:2px 8px;
+      border:1px solid var(--rule); background:var(--bg); color:var(--ink); cursor:pointer; border-radius:4px; }
+  .pickbar button:hover { border-color:var(--accent); }
+  .pickbar button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); font-weight:bold; }
 
   /* one row per language: what we measured, and a live sample */
   table.langtable { border-collapse:collapse; width:100%; margin:14px 0 8px; font-size:14px; }
@@ -248,6 +264,11 @@
   <b>448&nbsp;KB pinyin lexicon</b> instead) and spoken by that voice's own neural stack
   &mdash; all client-side, no server. Pick a voice:</p>
 
+  <div class="pickbar" id="pickbar" role="group" aria-label="Sort voices">Sort:
+    <button type="button" data-sort="small" aria-pressed="true">smallest first</button>
+    <button type="button" data-sort="large" aria-pressed="false">largest first</button>
+    <button type="button" data-sort="name" aria-pressed="false">A&ndash;Z</button>
+  </div>
   <div class="mascots" id="mascots"></div>
 
   <div class="row" style="margin-top:16px">
@@ -692,6 +713,21 @@ function selectVoice(v) {
   else if (v.nano) loadNanoBundle(v.key, voiceProgress).catch(e => log("prefetch " + v.key + ": " + (e && e.message || e)));
   else if (v.key !== "mcu") loadVoiceBundle(v.key, voiceProgress).catch(e => log("prefetch " + v.key + ": " + (e && e.message || e)));
 }
+// Parameter count of a voice: the exact figure when the table has one, else parsed from its label
+// ("294k", "1.57M"). Throws on a label it cannot read, so a typo in the table cannot silently sort wrong.
+function paramCount(v) {
+  if (v.exact) return v.exact;
+  const m = /^~?([0-9.]+)\s*([kM])$/.exec(v.params);
+  if (!m) throw new Error("cannot read params of voice " + v.key + ": " + v.params);
+  return parseFloat(m[1]) * (m[2] === "M" ? 1e6 : 1e3);
+}
+let pickSort = "small";
+function setPickSort(mode) {
+  pickSort = mode;
+  for (const b of document.querySelectorAll("#pickbar button"))
+    b.setAttribute("aria-pressed", String(b.dataset.sort === mode));
+  renderMascots();
+}
 function renderMascots() {
   const box = $("mascots");
   box.innerHTML = "";
@@ -701,6 +737,14 @@ function renderMascots() {
     if (!byGroup.has(g)) { byGroup.set(g, []); order.push(g); }
     byGroup.get(g).push(v);
   }
+  // Sizes inside a tile always run small to large; tiles follow the chosen sort
+  // (by their smallest size, by their largest size, or by name).
+  for (const g of order) byGroup.get(g).sort((a, b) => paramCount(a) - paramCount(b));
+  const lo = g => paramCount(byGroup.get(g)[0]), hi = g => paramCount(byGroup.get(g).at(-1));
+  const name = g => byGroup.get(g)[0].label.toLowerCase();
+  if (pickSort === "small") order.sort((a, b) => lo(a) - lo(b) || name(a).localeCompare(name(b)));
+  else if (pickSort === "large") order.sort((a, b) => hi(b) - hi(a) || name(a).localeCompare(name(b)));
+  else order.sort((a, b) => name(a).localeCompare(name(b)));
   for (const g of order) {
     const sizes = byGroup.get(g), head = sizes[0];
     const tile = document.createElement("div");
@@ -725,17 +769,38 @@ function renderMascots() {
     // Clicking the art keeps the size already chosen for this language.
     art.onclick = () => selectVoice(sizes.indexOf(voice) >= 0 ? voice : head);
     tile.appendChild(art);
-    const chips = document.createElement("div");
-    chips.className = "chips";
-    for (const v of sizes) {
-      const c = document.createElement("button");
-      c.className = "chip" + (v === voice ? " sel" : "");
-      c.textContent = v.params;
-      c.title = v.label + " \u2014 " + (v.exact ? v.exact.toLocaleString() + " parameters" : v.params + " params");
-      c.onclick = () => selectVoice(v);
-      chips.appendChild(c);
+    const describe = v => v.label + " \u2014 " + (v.exact ? v.exact.toLocaleString() + " parameters" : v.params + " params");
+    if (sizes.length === 1) {
+      // One size only: say how big it is, but do not draw it as something to press.
+      const sz = document.createElement("span");
+      sz.className = "size";
+      sz.textContent = head.params + " params";
+      sz.title = describe(head);
+      tile.appendChild(sz);
+    } else {
+      const wrap = document.createElement("div");
+      wrap.className = "sizes";
+      const cap = document.createElement("span");
+      cap.className = "cap";
+      cap.textContent = "size";
+      wrap.appendChild(cap);
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      chips.setAttribute("role", "group");
+      chips.setAttribute("aria-label", head.label + " size");
+      for (const v of sizes) {
+        const c = document.createElement("button");
+        c.type = "button";
+        c.className = "chip" + (v === voice ? " sel" : "");
+        c.textContent = v.params;
+        c.title = "use the " + describe(v);
+        c.setAttribute("aria-pressed", String(v === voice));
+        c.onclick = () => selectVoice(v);
+        chips.appendChild(c);
+      }
+      wrap.appendChild(chips);
+      tile.appendChild(wrap);
     }
-    tile.appendChild(chips);
     box.appendChild(tile);
   }
 }
@@ -1528,6 +1593,7 @@ async function playSample(btn){
 for(const b of document.querySelectorAll("button.samp")) b.addEventListener("click", () => playSample(b));
 
 let lastSr = SR;
+for (const b of document.querySelectorAll("#pickbar button")) b.onclick = () => setPickSort(b.dataset.sort);
 renderMascots(); updateUI();
 // espeak-ng writes its dictionary-compile progress to stderr, which Emscripten
 // maps to console.error. Compiling the Russian lexicon per utterance is the
