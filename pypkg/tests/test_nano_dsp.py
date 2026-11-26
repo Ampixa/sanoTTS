@@ -35,7 +35,7 @@ FIXTURE = ROOT / "mcu/test/fixtures/en_us_e13b"
 HEADER = ROOT / "mcu/models/en_us_e13b/nano_q8_meta.h"
 
 
-def _weights(seed=0, minphase=True, dim=16, blocks=2, hb=12, nb=8):
+def _weights(seed=0, minphase=True, dim=16, blocks=2, hb=12, nb=8, noise_fft=1024, mp_noclamp=False):
     r = np.random.default_rng(seed)
     n = lambda *s: r.standard_normal(s) * 0.1  # noqa: E731
     blk = [{"dw_w": n(dim, 1, 5), "dw_b": n(dim), "n_w": 1 + n(dim), "n_b": n(dim), "p1_w": n(2 * dim, dim),
@@ -43,16 +43,16 @@ def _weights(seed=0, minphase=True, dim=16, blocks=2, hb=12, nb=8):
            for _ in range(blocks)]
     head_b = np.concatenate([[0.0, 2.0], np.full(hb, -3.0), np.full(nb, -5.0)])
     return nano_dsp.DspWeights(n(dim, 100, 3), n(dim), 1, 1, blk, 1 + n(dim), n(dim), n(2 + hb + nb, dim), head_b,
-                               n(nano_dsp.N_HARM), minphase, hb, nb)
+                               n(nano_dsp.N_HARM), minphase, hb, nb, noise_fft, mp_noclamp)
 
 
 def _mel(t, seed=1):
     return (np.random.default_rng(seed).standard_normal((100, t)) - 4.0).astype(np.float32)
 
 
-@pytest.mark.parametrize("minphase", [False, True])
-def test_stream_matches_render(minphase):
-    w = _weights(minphase=minphase)
+@pytest.mark.parametrize("minphase,noise_fft,mp_noclamp", [(False, 1024, False), (True, 1024, False), (True, 512, True)])
+def test_stream_matches_render(minphase, noise_fft, mp_noclamp):
+    w = _weights(minphase=minphase, noise_fft=noise_fft, mp_noclamp=mp_noclamp)
     for t in (2, 9, 57, 300):
         mel = _mel(t)
         ref = nano_dsp.render(w, mel)
@@ -164,3 +164,20 @@ def test_voicepack_rejects_bad_dsp_decoder(tmp_path, case):
     sha = {"bad_sha": "0" * 64, "no_sha": None, "not_local": hashlib.sha256(data).hexdigest()}[case]
     with pytest.raises(voicepack.VoicePackError):
         voicepack.load_voice("t", voice_dir=_voice_dir(tmp_path, case != "not_local", data, sha))
+
+
+@pytest.mark.parametrize("n_fft", [512, 1024])
+def test_ola_matches_nano_istft(n_fft):
+    r = np.random.default_rng(3)
+    for t in (2, 7, 100):
+        spec = r.standard_normal((n_fft // 2 + 1, t)) + 1j * r.standard_normal((n_fft // 2 + 1, t))
+        ref = nano.istft(spec, n_fft, nano_dsp.HOP).astype(np.float64)
+        o = nano_dsp._OLA(n_fft); o.set_total(t)
+        assert np.abs(o.push(spec) - ref).max() < 1e-6
+        s, parts, k = nano_dsp._OLA(n_fft), [], 0
+        while k < t:
+            b = min(t, k + 3)
+            if b == t:
+                s.set_total(t)
+            parts.append(s.push(spec[:, k:b])); k = b
+        assert np.abs(np.concatenate(parts) - ref).max() < 1e-6

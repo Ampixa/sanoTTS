@@ -88,6 +88,8 @@ class DspWeights:
     minphase: bool = False  # harmonic phases = min phase of each frame's envelope + theta (dspdec --minphase)
     harm_bands: int = HARM_BANDS
     noise_bands: int = NOISE_BANDS
+    noise_fft: int = N_FFT          # noise synthesis FFT size (hop 256); dspdec --noise-fft
+    mp_noclamp: bool = False        # min-phase from the unclamped envelope (exact matrix path); --minphase-noclamp
 
     @property
     def left_halo(self):
@@ -101,6 +103,7 @@ class DspWeights:
         arrays = {"inp_w": self.inp_w, "inp_b": self.inp_b, "norm_w": self.norm_w, "norm_b": self.norm_b,
                   "head_w": self.head_w, "head_b": self.head_b, "theta": self.theta,
                   "minphase": np.array(int(self.minphase)), "bands": np.array([self.harm_bands, self.noise_bands]),
+                  "noise_fft": np.array(self.noise_fft), "mp_noclamp": np.array(int(self.mp_noclamp)),
                   "pads": np.array([self.in_left, self.in_right] + [v for b in self.blocks for v in (b["left"], b["right"])])}
         for i, b in enumerate(self.blocks):
             for k in ("dw_w", "dw_b", "n_w", "n_b", "p1_w", "p1_b", "p2_w", "p2_b", "gamma"):
@@ -122,7 +125,9 @@ class DspWeights:
                   | {"left": pads[2 + 2 * i], "right": pads[3 + 2 * i]} for i in range(n)]
         return cls(z["inp_w"], z["inp_b"], pads[0], pads[1], blocks, z["norm_w"], z["norm_b"], z["head_w"],
                    z["head_b"], z["theta"], bool(int(z["minphase"])) if "minphase" in z else False,
-                   *(int(v) for v in z["bands"]) if "bands" in z else (HARM_BANDS, NOISE_BANDS))
+                   *(int(v) for v in z["bands"]) if "bands" in z else (HARM_BANDS, NOISE_BANDS),
+                   int(z["noise_fft"]) if "noise_fft" in z else N_FFT,
+                   bool(int(z["mp_noclamp"])) if "mp_noclamp" in z else False)
 
 
 
@@ -185,21 +190,22 @@ WHITE_CACHE_FRAMES = 4096  # noise of the first 4096 frames (~44 s) is precomput
                            # does not depend on the text; later frames are drawn on demand
 
 
-def _band_interp_matrix(bands):
-    """[bands, 513]: linear map from a band log-envelope to its value at the 513 bin frequencies."""
-    key = ("bim", bands)
+def _band_interp_matrix(bands, n_fft=N_FFT):
+    """[bands, n_fft/2+1]: linear map from a band log-envelope to its value at the bin frequencies."""
+    key = ("bim", bands, n_fft)
     if key not in _CACHE:
+        nb = n_fft // 2 + 1
         eye = np.eye(bands)
-        _CACHE[key] = _interp_bands(eye[:, None, :].repeat(N_BINS, 1),
-                                    np.broadcast_to(np.arange(N_BINS) * SR / N_FFT, (bands, N_BINS))[..., None],
+        _CACHE[key] = _interp_bands(eye[:, None, :].repeat(nb, 1),
+                                    np.broadcast_to(np.arange(nb) * SR / n_fft, (bands, nb))[..., None],
                                     _mel_centres(bands))[..., 0]
     return _CACHE[key]
 
 
 def _minimum_phase(log_amp):
-    """[t, 513] log magnitude -> [t, 513] minimum-phase phase response (dspdec.minimum_phase)."""
+    """[t, 513] log magnitude -> [t, 513] minimum-phase phase response (dspdec.minimum_phase); keeps the input dtype."""
     c = np.fft.irfft(log_amp, n=N_FFT, axis=-1)
-    w = np.zeros(N_FFT)
+    w = np.zeros(N_FFT, dtype=c.dtype)
     w[0] = 1.0
     w[1:N_FFT // 2] = 2.0
     w[N_FFT // 2] = 1.0
@@ -215,9 +221,9 @@ def _minphase_matrix(bands=HARM_BANDS):
     return _CACHE[("mpm", bands)]
 
 
-def _noise_interp_matrix(bands=NOISE_BANDS):
-    """The noise envelope is always read at the 513 bin frequencies: precompute the linear map [bands, 513]."""
-    return _band_interp_matrix(bands)
+def _noise_interp_matrix(bands=NOISE_BANDS, n_fft=N_FFT):
+    """The noise envelope is always read at the same bin frequencies: precompute the linear map [bands, bins]."""
+    return _band_interp_matrix(bands, n_fft)
 
 
 class _Synth:
@@ -227,36 +233,56 @@ class _Synth:
         self.harm_c, self.noise_c = _mel_centres(self.hb), _mel_centres(self.nb)
         self.bin_f = np.arange(N_BINS) * SR / N_FFT
         self.orders = np.arange(1, N_HARM + 1, dtype=np.float64)
-        self.nim = _noise_interp_matrix(self.nb)
+        self.nfft = w.noise_fft
+        self.n_nb = self.nfft // 2 + 1
+        self.nim = _noise_interp_matrix(self.nb, self.nfft)
         self.him = _band_interp_matrix(self.hb) if w.minphase else None
         self.mpm = _minphase_matrix(self.hb) if w.minphase else None
-        key = ("white", seed)
+        self.mpm32 = self.mpm.astype(np.float32) if w.minphase else None
+        self.nim32 = self.nim.astype(np.float32)
+        self.him32 = self.him.astype(np.float32) if w.minphase else None
+        self.theta32 = w.theta.astype(np.float32)
+        # band position of a frequency: log1p(f / 700) * scale == mel(f) / mel(fmax) * (bands - 1)
+        self._mel_scale = (2595.0 / math.log(10.0)) / (2595.0 * math.log10(1.0 + (SR / 2) / 700.0)) * (self.hb - 1)
+        key = ("white", seed, self.n_nb)
         if key not in _CACHE:
             _CACHE[key] = self._white(0, WHITE_CACHE_FRAMES).astype(np.complex64)
         self.white_cache = _CACHE[key]
 
     def frame_params(self, h):
-        """head outputs [t, 66] -> f0 [t], harmonic amplitudes [t, 80], noise spectra [513, t] (before white noise),
-        harmonic phases [t, 80]."""
+        """head outputs [t, 66] -> f0 [t] (float64), harmonic amplitudes [t, 80], noise spectra [513, t] (before white
+        noise), harmonic phases [t, 80]. Envelope arithmetic in float32 (contiguous copies of the head slices);
+        f0, which drives the running phase, stays float64."""
         f0 = F0_REF * np.exp(F0_SCALE * h[:, 0])
-        voiced = 1.0 / (1.0 + np.exp(-h[:, 1]))
-        kf = f0[:, None] * self.orders
-        amp = np.exp(np.minimum(_interp_bands(h[:, 2:2 + self.hb], kf, self.harm_c), 4.0))
-        amp *= np.clip((0.95 * SR / 2 - kf) / (0.05 * SR / 2), 0.0, 1.0) * voiced[:, None]
-        env = np.exp(np.minimum(h[:, 2 + self.hb:] @ self.nim, 4.0))
+        voiced = (1.0 / (1.0 + np.exp(-h[:, 1]))).astype(np.float32)
+        kf = f0[:, None] * self.orders  # float64 [t, 80]
+        bands = np.ascontiguousarray(h[:, 2:2 + self.hb], dtype=np.float32)
+        nbands = np.ascontiguousarray(h[:, 2 + self.hb:], dtype=np.float32)
+        # harmonic envelope read at k * f0, linear in mel (as _interp_bands / dspdec.interp_bands)
+        pos = np.clip(np.log1p(kf * (1.0 / 700.0)) * self._mel_scale, 0.0, self.hb - 1).astype(np.float32)
+        lo = np.minimum(pos.astype(np.int64), self.hb - 2)
+        a = pos - lo
+        v_lo = np.take_along_axis(bands, lo, -1)
+        la = v_lo + (np.take_along_axis(bands, lo + 1, -1) - v_lo) * a
+        amp = np.exp(np.minimum(la, 4.0)) * (self._fade(kf) * voiced[:, None])
+        env = np.exp(np.minimum(nbands @ self.nim32, 4.0))
         if self.w.minphase:
-            bands = h[:, 2:2 + self.hb]
-            if bands.max() < 4.0:  # the log envelope is a convex combination of the bands, so the clamp is inactive
-                ph = bands @ self.mpm  # [t, 513], exact
+            if self.w.mp_noclamp or bands.max() < 4.0:  # no clamp: the phase is linear in the bands
+                ph = bands @ self.mpm32  # [t, 513], exact up to float32
             else:
-                ph = _minimum_phase(np.minimum(bands @ self.him, 4.0))
-            pos = np.clip(kf / (SR / N_FFT), 0.0, N_BINS - 1)
-            lo = np.minimum(np.floor(pos).astype(np.int64), N_BINS - 2)
-            a = pos - lo
-            th = (np.take_along_axis(ph, lo, -1) * (1 - a) + np.take_along_axis(ph, lo + 1, -1) * a) + self.w.theta
+                # the clamp at 4 is active (this model's bands reach ~15 in 25-40 % of frames): exact FFT path, float32
+                ph = _minimum_phase(np.minimum(bands @ self.him32, 4.0))
+            p2 = np.clip(kf * (N_FFT / SR), 0.0, N_BINS - 1).astype(np.float32)
+            l2 = np.minimum(p2.astype(np.int64), N_BINS - 2)
+            a2 = p2 - l2
+            g = np.take_along_axis(ph, l2, -1)
+            th = g + (np.take_along_axis(ph, l2 + 1, -1) - g) * a2 + self.theta32
         else:
-            th = np.broadcast_to(self.w.theta, amp.shape)
+            th = np.broadcast_to(self.theta32, amp.shape)
         return f0, amp, env.T, th
+
+    def _fade(self, kf):
+        return np.clip((0.95 * SR / 2 - kf) * (1.0 / (0.05 * SR / 2)), 0.0, 1.0).astype(np.float32)
 
     def white(self, lo, hi):
         if hi <= WHITE_CACHE_FRAMES:
@@ -270,7 +296,7 @@ class _Synth:
         Box-Muller of two splitmix64 hashes of (seed, f, j), so a frame's noise does not depend on the chunking
         and is cheap to vectorise (and to port to C)."""
         f = np.arange(lo, hi, dtype=np.uint64)[None, :]
-        j = np.arange(N_BINS, dtype=np.uint64)[:, None]
+        j = np.arange(self.n_nb, dtype=np.uint64)[:, None]
         with np.errstate(over="ignore"):  # uint64 multiply wraps by design
             key = (np.uint64(self.seed) * np.uint64(0x9E3779B97F4A7C15)) ^ (f << np.uint64(20)) ^ j
         u1 = (_splitmix64(key) >> np.uint64(11)).astype(np.float64) * (1.0 / 9007199254740992.0)
@@ -288,8 +314,7 @@ class _Synth:
         return np.concatenate([tab[:, -1:], tab, tab[:, :2]], axis=1).astype(TABLE_DTYPE)  # wrap: 1 before, 2 after
 
 
-_HANN = np.hanning(N_FFT + 1)[:N_FFT]  # periodic, as torch / nano.istft
-_HANN_SQ_Q = (_HANN * _HANN).reshape(4, HOP)  # squared window by quarter (hop = n_fft / 4)
+
 
 
 class _OLA:
@@ -297,34 +322,39 @@ class _OLA:
     the overlap-add vectorised over frames: frame j adds its quarter q to output block j + q, so a push is four
     strided adds instead of a Python loop per frame. Positions are in the padded signal (n_fft / 2 on each side)."""
 
-    def __init__(self):
+    def __init__(self, n_fft=N_FFT):
+        if n_fft % HOP:
+            raise ValueError(f"n_fft {n_fft} must be a multiple of the hop {HOP}")
+        self.n_fft, self.m = n_fft, n_fft // HOP
+        self.win = np.hanning(n_fft + 1)[:n_fft]  # periodic, as torch / nano.istft
+        self.wsq = (self.win * self.win).reshape(self.m, HOP)
         self.out = np.zeros((0, HOP))     # blocks [base, base + len) of the padded signal, accumulated
         self.norm = np.zeros((0, HOP))
         self.base = 0                     # first block kept
         self.added = 0                    # frames added
-        self.emitted = N_FFT // 2         # padded sample position up to which samples were returned
+        self.emitted = n_fft // 2         # padded sample position up to which samples were returned
         self.total = None
 
     def set_total(self, frames):
         self.total = frames
 
     def push(self, spec):
-        td = np.fft.irfft(spec, n=N_FFT, axis=0).T * _HANN  # [count, n_fft]
+        td = np.fft.irfft(spec, n=self.n_fft, axis=0).T * self.win  # [count, n_fft]
         count = td.shape[0]
-        need = self.added + count + 3 - self.base  # blocks touched: frame j covers blocks j .. j+3
+        need = self.added + count + self.m - 1 - self.base  # blocks touched: frame j covers blocks j .. j+m-1
         if need > self.out.shape[0]:
             grow = need - self.out.shape[0]
             self.out = np.concatenate([self.out, np.zeros((grow, HOP))])
             self.norm = np.concatenate([self.norm, np.zeros((grow, HOP))])
-        q4 = td.reshape(count, 4, HOP)
+        qm = td.reshape(count, self.m, HOP)
         j0 = self.added - self.base
-        for q in range(4):
-            self.out[j0 + q:j0 + q + count] += q4[:, q]
-            self.norm[j0 + q:j0 + q + count] += _HANN_SQ_Q[q]
+        for q in range(self.m):
+            self.out[j0 + q:j0 + q + count] += qm[:, q]
+            self.norm[j0 + q:j0 + q + count] += self.wsq[q]
         self.added += count
-        pad = N_FFT // 2
+        pad = self.n_fft // 2
         if self.total is not None and self.added == self.total:
-            hi = (self.total - 1) * HOP + N_FFT - pad  # end of the unpadded signal, in padded positions
+            hi = (self.total - 1) * HOP + self.n_fft - pad  # end of the unpadded signal, in padded positions
         else:
             hi = self.added * HOP                       # no later frame reaches before its own start
         lo = self.emitted
@@ -376,7 +406,7 @@ def render(w: DspWeights, mel: np.ndarray, seed: int = 7) -> np.ndarray:
     f0_s = f0[lo] * (1 - a) + f0[hi] * a
     phase = np.remainder(np.cumsum(2.0 * math.pi * f0_s / SR), 2.0 * math.pi)
     harm = _harm_from_tables(syn.tables(amp, th), lo, hi, a, phase)
-    ola = _OLA()
+    ola = _OLA(w.noise_fft)
     ola.set_total(t)
     noise = ola.push(env * syn.white(0, t))
     return (harm + noise[:n]).astype(np.float32)
@@ -392,7 +422,7 @@ class DspStream:
         self.ctl = np.zeros((0, 2 + w.harm_bands + w.noise_bands))  # controls computed for frames [0, len)
         self.f0 = np.zeros(0)
         self.tab = np.zeros((0, TABLE + 3), dtype=TABLE_DTYPE)
-        self.istft = _OLA()
+        self.istft = _OLA(w.noise_fft)
         self.noise_buf = np.zeros(0)
         self.noise_pushed = 0
         self.harm_done = 0      # samples of the harmonic part emitted so far
