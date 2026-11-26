@@ -29,7 +29,10 @@ SR, HOP, N_FFT = 24000, 256, 1024
 N_HARM, HARM_BANDS, NOISE_BANDS = 80, 40, 24
 F0_REF, F0_SCALE, MEL_MEAN, MEL_STD = 200.0, 0.5, -4.0, 4.0
 N_BINS = N_FFT // 2 + 1
-TABLE = 4096  # wavetable points per period; linear lookup error ~ (2 pi k / TABLE)^2 / 8 for harmonic k
+TABLE_LINEAR = False      # 1024-point cubic lookup (a 2048-point linear table was slower: bigger FFT)
+TABLE_DTYPE = np.float32  # tables and harmonic arithmetic in float32 (memory-bound); phase stays float64
+TABLE = 1024  # wavetable points per period, read with cubic (Catmull-Rom) interpolation: max error 1.1e-4 of peak
+              # against the exact harmonic sum on real speech (table_acc.py), the same as 4096 points read linearly
 
 
 def _mel_centres(n, fmax=SR / 2):
@@ -178,7 +181,8 @@ def controls(w: DspWeights, mel_win: np.ndarray, at_start: bool, at_end: bool) -
 
 
 _CACHE: dict = {}
-WHITE_CACHE_FRAMES = 128  # noise of the first frames is precomputed per seed: it does not depend on the text
+WHITE_CACHE_FRAMES = 4096  # noise of the first 4096 frames (~44 s) is precomputed per seed (complex64, ~17 MB): it
+                           # does not depend on the text; later frames are drawn on demand
 
 
 def _band_interp_matrix(bands):
@@ -228,7 +232,7 @@ class _Synth:
         self.mpm = _minphase_matrix(self.hb) if w.minphase else None
         key = ("white", seed)
         if key not in _CACHE:
-            _CACHE[key] = self._white(0, WHITE_CACHE_FRAMES)
+            _CACHE[key] = self._white(0, WHITE_CACHE_FRAMES).astype(np.complex64)
         self.white_cache = _CACHE[key]
 
     def frame_params(self, h):
@@ -256,9 +260,9 @@ class _Synth:
 
     def white(self, lo, hi):
         if hi <= WHITE_CACHE_FRAMES:
-            return self.white_cache[:, lo:hi]
+            return self.white_cache[:, lo:hi].astype(np.complex128)
         if lo < WHITE_CACHE_FRAMES:
-            return np.concatenate([self.white_cache[:, lo:], self._white(WHITE_CACHE_FRAMES, hi)], 1)
+            return np.concatenate([self.white_cache[:, lo:].astype(np.complex128), self._white(WHITE_CACHE_FRAMES, hi)], 1)
         return self._white(lo, hi)
 
     def _white(self, lo, hi):
@@ -281,17 +285,81 @@ class _Synth:
         spec = np.zeros((amp.shape[0], TABLE // 2 + 1), dtype=np.complex128)
         spec[:, 1:N_HARM + 1] = (TABLE / 2) * amp * np.exp(1j * (th - math.pi / 2))
         tab = np.fft.irfft(spec, n=TABLE, axis=1)
-        return np.concatenate([tab, tab[:, :1]], axis=1)
+        return np.concatenate([tab[:, -1:], tab, tab[:, :2]], axis=1).astype(TABLE_DTYPE)  # wrap: 1 before, 2 after
+
+
+_HANN = np.hanning(N_FFT + 1)[:N_FFT]  # periodic, as torch / nano.istft
+_HANN_SQ_Q = (_HANN * _HANN).reshape(4, HOP)  # squared window by quarter (hop = n_fft / 4)
+
+
+class _OLA:
+    """Streaming iSTFT (centre padding, Hann, normalised by the summed squared window: nano.istft's contract) with
+    the overlap-add vectorised over frames: frame j adds its quarter q to output block j + q, so a push is four
+    strided adds instead of a Python loop per frame. Positions are in the padded signal (n_fft / 2 on each side)."""
+
+    def __init__(self):
+        self.out = np.zeros((0, HOP))     # blocks [base, base + len) of the padded signal, accumulated
+        self.norm = np.zeros((0, HOP))
+        self.base = 0                     # first block kept
+        self.added = 0                    # frames added
+        self.emitted = N_FFT // 2         # padded sample position up to which samples were returned
+        self.total = None
+
+    def set_total(self, frames):
+        self.total = frames
+
+    def push(self, spec):
+        td = np.fft.irfft(spec, n=N_FFT, axis=0).T * _HANN  # [count, n_fft]
+        count = td.shape[0]
+        need = self.added + count + 3 - self.base  # blocks touched: frame j covers blocks j .. j+3
+        if need > self.out.shape[0]:
+            grow = need - self.out.shape[0]
+            self.out = np.concatenate([self.out, np.zeros((grow, HOP))])
+            self.norm = np.concatenate([self.norm, np.zeros((grow, HOP))])
+        q4 = td.reshape(count, 4, HOP)
+        j0 = self.added - self.base
+        for q in range(4):
+            self.out[j0 + q:j0 + q + count] += q4[:, q]
+            self.norm[j0 + q:j0 + q + count] += _HANN_SQ_Q[q]
+        self.added += count
+        pad = N_FFT // 2
+        if self.total is not None and self.added == self.total:
+            hi = (self.total - 1) * HOP + N_FFT - pad  # end of the unpadded signal, in padded positions
+        else:
+            hi = self.added * HOP                       # no later frame reaches before its own start
+        lo = self.emitted
+        if hi <= lo:
+            return np.zeros(0)
+        o = self.out.reshape(-1)[lo - self.base * HOP:hi - self.base * HOP].copy()
+        nm = self.norm.reshape(-1)[lo - self.base * HOP:hi - self.base * HOP]
+        nz = nm > 1e-11
+        o[nz] /= nm[nz]
+        self.emitted = hi
+        keep = hi // HOP  # drop whole blocks that are fully emitted
+        drop = keep - self.base
+        if drop > 0:
+            self.out, self.norm, self.base = self.out[drop:], self.norm[drop:], keep
+        return o
 
 
 def _harm_from_tables(tab, lo, hi, a, phase):
     """tab [t, TABLE + 1]; per-sample frame indices lo/hi, crossfade a, wrapped phase -> harmonic samples."""
     x = phase * (TABLE / (2.0 * math.pi))
     i = np.minimum(x.astype(np.int64), TABLE - 1)
-    fr = x - i
-    v_lo = tab[lo, i] * (1 - fr) + tab[lo, i + 1] * fr
-    v_hi = tab[hi, i] * (1 - fr) + tab[hi, i + 1] * fr
-    return v_lo * (1 - a) + v_hi * a
+    f = (x - i).astype(TABLE_DTYPE)
+    a = a.astype(TABLE_DTYPE)
+    if TABLE_LINEAR:
+        flat_lo, flat_hi = lo * (TABLE + 3) + i + 1, hi * (TABLE + 3) + i + 1
+        t = tab.reshape(-1)
+        v_lo = t[flat_lo] + (t[flat_lo + 1] - t[flat_lo]) * f
+        v_hi = t[flat_hi] + (t[flat_hi + 1] - t[flat_hi]) * f
+        return (v_lo + (v_hi - v_lo) * a).astype(np.float64)
+
+    def cubic(rows):
+        p0, p1, p2, p3 = tab[rows, i], tab[rows, i + 1], tab[rows, i + 2], tab[rows, i + 3]
+        return p1 + 0.5 * f * (p2 - p0 + f * (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3 + f * (3.0 * (p1 - p2) + p3 - p0)))
+    c_lo = cubic(lo)
+    return (c_lo + (cubic(hi) - c_lo) * a).astype(np.float64)
 
 
 def render(w: DspWeights, mel: np.ndarray, seed: int = 7) -> np.ndarray:
@@ -308,7 +376,9 @@ def render(w: DspWeights, mel: np.ndarray, seed: int = 7) -> np.ndarray:
     f0_s = f0[lo] * (1 - a) + f0[hi] * a
     phase = np.remainder(np.cumsum(2.0 * math.pi * f0_s / SR), 2.0 * math.pi)
     harm = _harm_from_tables(syn.tables(amp, th), lo, hi, a, phase)
-    noise = _nano.istft(env * syn.white(0, t), N_FFT, HOP).astype(np.float64)
+    ola = _OLA()
+    ola.set_total(t)
+    noise = ola.push(env * syn.white(0, t))
     return (harm + noise[:n]).astype(np.float32)
 
 
@@ -321,8 +391,8 @@ class DspStream:
         self.final = False
         self.ctl = np.zeros((0, 2 + w.harm_bands + w.noise_bands))  # controls computed for frames [0, len)
         self.f0 = np.zeros(0)
-        self.tab = np.zeros((0, TABLE + 1))
-        self.istft = _nano._StreamingISTFT(N_FFT, HOP, None)
+        self.tab = np.zeros((0, TABLE + 3), dtype=TABLE_DTYPE)
+        self.istft = _OLA()
         self.noise_buf = np.zeros(0)
         self.noise_pushed = 0
         self.harm_done = 0      # samples of the harmonic part emitted so far
@@ -348,7 +418,7 @@ class DspStream:
         self.tab = np.concatenate([self.tab, self.syn.tables(amp, th)], 0)
         if self.final:
             self.istft.set_total(end)
-        self.noise_buf = np.concatenate([self.noise_buf, self.istft.push(env * self.syn.white(done, end)).astype(np.float64)])
+        self.noise_buf = np.concatenate([self.noise_buf, self.istft.push(env * self.syn.white(done, end))])
 
     def _harmonic(self):
         t = self.f0.size
