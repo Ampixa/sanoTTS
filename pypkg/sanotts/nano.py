@@ -120,8 +120,14 @@ class NanoWeights:
     def front_f32(self, name, count):
         return self._cached(("front_f32", name, count), lambda: self._front_f32_uncached(name, count))
 
+    def _need_dec(self) -> bytes:
+        if self._dec is None:
+            raise ValueError("this voice ships no neural decoder blob (it is decoded by its dsp_decoder)")
+        return self._dec
+
     def _dec_q8_uncached(self, name: str, out_ch: int, in_flat: int) -> Q8Layer:
         m = self.m
+        self._need_dec()
         return self._q8(self._dec, m[f"DOFF_{name}_W8"], m[f"DOFF_{name}_SCALE"],
                         m[f"DOFF_{name}_BIAS"], out_ch, m[f"NANO_{name}_N16"], in_flat)
 
@@ -129,7 +135,7 @@ class NanoWeights:
         return self._cached(("dec_q8", name, out_ch, in_flat), lambda: self._dec_q8_uncached(name, out_ch, in_flat))
 
     def _dec_f32_uncached(self, name: str, count: int) -> np.ndarray:
-        return self._f32(self._dec, self.m[f"DOFF_{name}_F32"], count)
+        return self._f32(self._need_dec(), self.m[f"DOFF_{name}_F32"], count)
 
     def dec_f32(self, name, count):
         return self._cached(("dec_f32", name, count), lambda: self._dec_f32_uncached(name, count))

@@ -161,7 +161,7 @@ class NanoVoicePack:
     directory: Path
     meta: dict[str, Any]
     front: bytes
-    dec: bytes
+    dec: bytes | None
     offsets: dict[str, int]
     # Optional harmonic-plus-noise decoder weights (meta.json "dsp_decoder"); when present the voice is decoded
     # by nano_dsp instead of the neural decoder in `dec`, which still ships so older versions can play it.
@@ -194,9 +194,14 @@ def _load_nano_directory(name: str, directory: Path) -> NanoVoicePack:
         raise VoicePackError(
             f"{directory}: meta.json runtime is {meta.get('runtime')!r}, expected 'snt_nano'"
         )
-    blobs: dict[str, bytes] = {}
+    blobs: dict[str, bytes | None] = {}
     for key in ("front", "dec"):
         filename = meta.get(key)
+        if key == "dec" and not filename and meta.get("dsp_decoder"):
+            # A voice decoded by the harmonic-plus-noise decoder needs no neural decoder blob; one that ships
+            # without it cannot be played by sanotts <= 0.5.6 and must not be registered for those versions.
+            blobs[key] = None
+            continue
         if not filename:
             raise VoicePackError(f"{directory}: meta.json has no {key!r} entry")
         path = directory / filename

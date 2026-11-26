@@ -181,3 +181,33 @@ def test_ola_matches_nano_istft(n_fft):
                 s.set_total(t)
             parts.append(s.push(spec[:, k:b])); k = b
         assert np.abs(np.concatenate(parts) - ref).max() < 1e-6
+
+
+def _drop_dec(d: Path, keep_dsp: bool):
+    meta = json.loads((d / "meta.json").read_text(encoding="utf-8"))
+    for k in ("dec", "dec_bytes", "dec_sha256"):
+        meta.pop(k, None)
+    if not keep_dsp:
+        meta.pop("dsp_decoder", None)
+        meta.pop("dsp_decoder_sha256", None)
+    (d / "meta.json").write_text(json.dumps(meta), encoding="utf-8")
+    (d / "model_q8.bin").unlink()
+
+
+def test_dsp_voice_needs_no_neural_decoder_blob(tmp_path):
+    data = _dsp_bytes()
+    d = _voice_dir(tmp_path, True, data, hashlib.sha256(data).hexdigest())
+    _drop_dec(d, keep_dsp=True)
+    pack = voicepack.load_voice("t", voice_dir=d)
+    assert pack.dec is None and pack.dsp == data
+    w = nano.NanoWeights(pack.front, pack.dec, pack.offsets)
+    with pytest.raises(ValueError):
+        w.dec_f32("HEAD_B", 1) if "DOFF_HEAD_B_F32" in pack.offsets else w._need_dec()
+
+
+def test_voice_without_any_decoder_is_refused(tmp_path):
+    data = _dsp_bytes()
+    d = _voice_dir(tmp_path, True, data, hashlib.sha256(data).hexdigest())
+    _drop_dec(d, keep_dsp=False)
+    with pytest.raises(voicepack.VoicePackError):
+        voicepack.load_voice("t", voice_dir=d)
