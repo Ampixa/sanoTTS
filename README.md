@@ -320,9 +320,8 @@ the acoustic model and a noise-shaping ConvNeXt + iSTFT decoder, at 24 kHz.
 2026-11-26 (sanotts 0.5.7, `heartnano-dsp/` on Hugging Face) it is duration 14,746 +
 acoustic 42,235 (int8) + a 47,234-parameter harmonic-plus-noise decoder (float32)
 = 104,215 parameters in 274 KB. The duration and acoustic models see only nearby
-phonemes, so audio starts after the first words instead of after the whole text;
-the decoder predicts pitch, voicing and spectral envelopes and synthesises 80
-minimum-phase harmonics plus filtered noise in NumPy. sanotts 0.5.6 installs the
+phonemes, so audio starts after the first words instead of after the whole text.
+sanotts 0.5.6 installs the
 263,103-parameter version of 2026-11-25 (same front end, int8 neural decoder,
 `heartnanos/`). The first heart-nano, duration 22,858 + acoustic 65,299 + decoder 206,122 =
 294,279 parameters in 337 KB of int8 blobs (`web/voices/heartnano/`), is what the
