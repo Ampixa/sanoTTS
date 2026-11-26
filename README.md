@@ -1,19 +1,19 @@
 # sanoTTS — a tiny neural voice that runs anywhere
 
 ***sano*** (सानो) — Nepali for **"small."** A family of tiny neural text-to-speech
-voices — **263k to 2.3M parameters** — that run with **no cloud and no NPU**:
+voices — **104k to 2.3M parameters** — that run with **no cloud and no NPU**:
 real-time on a ~$3 ESP32-S3 (out a GPIO into an LM386 and a speaker), or live
 in the browser via WASM.
 
 ![sanoTTS — thirty tiny voices, sixteen languages, browser + $3 chip](docs/assets/saanotts-hero-v2.png)
 
-- smallest neural TTS family known — **263k to 2.3M parameters**
+- smallest neural TTS family known — **104k to 2.3M parameters**
 - runs **real-time on a $3 microcontroller** — measured **RTF 0.383 on an
   ESP32-S3**, 2.6x faster than real time, with the Xtensa LX7 SIMD kernels the
   Arduino library assembles by default ([BOARDS.md](BOARDS.md), 2026-09-04).
   Scalar C on the same board is 1.58, i.e. slower than real time
 - runs right in your browser — **WebAssembly**, no server
-- **0.3 to 8.7 MB** per voice depending on precision — 311 KB int8 (heart-nano),
+- **0.3 to 8.7 MB** per voice depending on precision — 274 KB (heart-nano: int8 front end + float32 decoder),
   ~3 MB fp16, 5.5-8.7 MB fp32 — zero dependencies (espeak-ng phonemizer included)
 - **30 voices** across **16 languages** in the browser demo — English, German,
   French, Spanish, Italian, Portuguese, Russian, Czech, Romanian, Turkish,
@@ -28,9 +28,9 @@ in the browser via WASM.
   run a listening test. Numbers and method in
   [`experiments/evidence/ood-tatoeba-20260908.json`](experiments/evidence/ood-tatoeba-20260908.json)
 - **heart**, our best-sounding voice at **2.27M parameters** (24 kHz), and
-  **heart-nano**, the same voice in **263k parameters** — a complete text-to-speech
-  stack, int8, in 311 KB, that starts speaking after the first few words
-  (sanotts 0.5.6). heart and the first heart-nano (294k) synthesize live in the
+  **heart-nano**, the same voice in **104k parameters** — a complete text-to-speech
+  stack in 274 KB of weights, with a harmonic-plus-noise decoder, that starts
+  speaking after the first few words (sanotts 0.5.7). heart and the first heart-nano (294k) synthesize live in the
   browser demo; the browser runtime does not run the streaming heart-nano yet
 - open source, **GPL-3.0**
 
@@ -70,8 +70,8 @@ result = sanotts.synthesize("Hello world", voice="amy")   # numpy audio @ 22.05 
 
 Voices, largest to smallest: `heart` (2.27M), `hfc` and `amy-1p8m` (1.8M),
 `amy`, `kristin`, `vi` and `id` (1.46M), `amy-1p1m` (1.1M), and `heart-nano`
-(263k, 311 KB of weights, since sanotts 0.5.6; earlier versions install the first,
-294k heart-nano under that name).
+(104k, 274 KB of weights, since sanotts 0.5.7; 0.5.6 installs a 263k model and
+earlier versions the first, 294k heart-nano under that name).
 
 They are fetched from
 [huggingface.co/ampixa/sanoTTS](https://huggingface.co/ampixa/sanoTTS) into
@@ -172,7 +172,7 @@ host, and load them the same way `web/index.html` does:
 - per-voice weights, fetched lazily on first use of that voice and never
   bundled with the runtime:
   - **int8** — the first heart-nano (294k) at **337 KB**, the on-device stack
-    unchanged (the streaming 263k heart-nano is pip-only for now)
+    unchanged (the streaming 104k heart-nano is pip-only for now)
   - **fp16** — the ten voices added 2026-09-08 at **~3.0 MB** each; fp16 is the
     reference for these, not an approximation, since every number they have was
     measured on the fp16 package. The browser widens them to fp32 after
@@ -196,8 +196,8 @@ exclude the shared external G2P.
 
 ![Size comparison: sanoTTS 0.75M-1.8M params vs TinyTTS 1.62M vs Inflect Nano 4.63M vs Kokoro 82M, linear axis](docs/assets/chart-size-comparison.svg)
 
-Kokoro is 36x larger than our largest voice (heart, 2.27M), and 312x larger than
-our smallest (heart-nano, 263k).
+Kokoro is 36x larger than our largest voice (heart, 2.27M), and about 785x larger
+than our smallest (heart-nano, 104k).
 Shipped-file sizes: sanoTTS amy 2.8 MB fp16 and TinyTTS 3.5 MB fp16, both
 verified from the released files; Kokoro's ~330 MB fp32 is its widely cited
 public figure.
@@ -214,8 +214,8 @@ public figure.
 | _Kokoro_ | _82 M_ | _4.89_ | _4.52_ | _3.69_ |
 
 The heart-nano rows in this README's tables are the first, 294k model. The current
-263k heart-nano (2026-11-25) has not been scored on this 24-sentence set yet; on
-CV3-Eval English it scores UTMOS 2.51 against the first model's 2.37 and WER 1.42 %
+104k heart-nano (2026-11-26) has not been scored on this 24-sentence set yet; on
+CV3-Eval English it scores UTMOS 3.88 against the first model's 2.37 and WER 1.15 %
 against 1.57 % (our runs, details on the
 [model card](https://huggingface.co/ampixa/sanoTTS)).
 
@@ -317,11 +317,14 @@ directory name, never a parameter count for these binaries.)
 `heart` and `heart-nano` are a second recipe: a 100-band mel interface between
 the acoustic model and a noise-shaping ConvNeXt + iSTFT decoder, at 24 kHz.
 `heart-nano` is the smallest complete neural TTS stack we have built. Since
-2026-11-25 it is a streaming-native student: duration 14,746 + acoustic 42,235 +
-decoder 206,122 = 263,103 parameters, 311 KB of int8 blobs (`heartnanos/` on
-Hugging Face, sanotts >= 0.5.6), whose duration and acoustic models see only
-nearby phonemes, so audio starts after the first words instead of after the whole
-text. The first heart-nano, duration 22,858 + acoustic 65,299 + decoder 206,122 =
+2026-11-26 (sanotts 0.5.7, `heartnano-dsp/` on Hugging Face) it is duration 14,746 +
+acoustic 42,235 (int8) + a 47,234-parameter harmonic-plus-noise decoder (float32)
+= 104,215 parameters in 274 KB. The duration and acoustic models see only nearby
+phonemes, so audio starts after the first words instead of after the whole text;
+the decoder predicts pitch, voicing and spectral envelopes and synthesises 80
+minimum-phase harmonics plus filtered noise in NumPy. sanotts 0.5.6 installs the
+263,103-parameter version of 2026-11-25 (same front end, int8 neural decoder,
+`heartnanos/`). The first heart-nano, duration 22,858 + acoustic 65,299 + decoder 206,122 =
 294,279 parameters in 337 KB of int8 blobs (`web/voices/heartnano/`), is what the
 browser demo and the microcontroller build still run, with the int8 arithmetic of
 the microcontroller build unchanged (`mcu/src/snt_nano.c`, golden fixture
