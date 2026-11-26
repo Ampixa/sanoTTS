@@ -576,7 +576,7 @@
 <script src="snt_trellis.js?v=20260819"></script>
 <script src="trellis_frontend.js?v=20260819"></script>
 <script src="snt_nano_heart.js?v=20260902"></script>
-<script src="snt_nano_heartnano.js?v=20260902"></script>
+<script src="heartnano_dsp.js?v=20261126"></script>
 <script>
 // ARENA: the esp32 build lives inside 320KB SRAM, but the browser has no such
 // budget -- 2MB covers paragraph-length chunks (320KB OOMs past ~100 ids).
@@ -630,12 +630,19 @@ const VOICES = [
   // against the corpus vocab), a different network behind it. One wasm
   // module per voice because the runtime bakes the model's shapes in at
   // compile time. `heart` ships float32 weights (the int8 form of this
-  // stack fails the 0.98 golden gate at 0.951); `heartnano` ships the int8
-  // blobs and int8 math of the device build, unchanged.
+  // stack fails the 0.98 golden gate at 0.951).
+  //
+  // `heartnano` is the sanotts 0.5.7 heart-nano (104,215 params): the int8
+  // local-feature front end plus the harmonic-plus-noise decoder. snt_nano
+  // cannot run it, so `dsp` names its bundle (web/voices/heartnano-dsp/) and
+  // loadNanoBundle/synthNano hand it to heartnano_dsp.js, a plain-JS port of
+  // the Python package checked against it (tools/verify_heartnano_dsp_node.mjs).
+  // The 294k voice it replaces (web/voices/heartnano/, snt_nano_heartnano.js)
+  // stays on disk for deployed older copies of this page.
   {key:"heart",    label:"heart",      params:"2.27M", flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\u2764\uFE0F",
     nano:true},
-  {key:"heartnano",label:"heart-nano", params:"294k",  flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83D\uDC95",
-    nano:true},
+  {key:"heartnano",label:"heart-nano", params:"104k",  exact:104215, flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83D\uDC95",
+    nano:true, dsp:"heartnano-dsp"},
   // --- added 2026-09-08: ten more languages, each in two sizes ------------
   // Same SaanoVoice lane as vietnamese/indonesian/nepali/hindi/chinese above
   // -- nothing new in the runtime -- so espeak_voice, g2p_voice_slot and
@@ -812,7 +819,7 @@ function updateUI() {
 let Mod=null, G2P=null, Voice=null, Trellis=null, audioCtx=null, lastPcm=null, mcuAssets=null;
 const voiceBundles = new Map(); // key -> Promise<{meta,front,dec}>
 let trellisBundle=null, trellisFrontend=null;
-// snt_nano voices: one module per voice (SaanoNanoHeart, SaanoNanoHeartNano)
+// snt_nano voices: one module per voice (SaanoNanoHeart; heart-nano runs in heartnano_dsp.js)
 const NANO_MODULES = {};        // key -> instantiated Emscripten module
 const nanoBundles = new Map();  // key -> Promise<{meta,front,dec}>
 const NANO_ARENA = 16*1024*1024, NANO_OUT_CAP = 24000*30;
@@ -1158,6 +1165,8 @@ function loadVoiceBundle(key, onProgress){
 // meta.json ("weights": "f32" | "int8"), plus the module that was compiled
 // against that exact export (meta.export_name).
 function loadNanoBundle(key, onProgress){
+  const dspDir = (VOICES.find(v => v.key === key) || {}).dsp;
+  if(dspDir) return loadNanoDspBundle(key, dspDir, onProgress);
   if(!nanoBundles.has(key)){
     nanoBundles.set(key, (async () => {
       const meta = await fetchVoiceJson(key + "/meta.json");
@@ -1174,7 +1183,47 @@ function loadNanoBundle(key, onProgress){
   }
   return nanoBundles.get(key);
 }
+// heart-nano 0.5.7: front_q8.bin + dsp_decoder_f32.bin, run by heartnano_dsp.js
+// (SaanoNanoDsp). Both blobs are size- and sha256-checked against meta.json by
+// fetchVoiceFile; createVoice re-checks sizes, offsets and tensor shapes and
+// throws on any mismatch.
+function loadNanoDspBundle(key, dir, onProgress){
+  if(!nanoBundles.has(key)){
+    const pending = (async () => {
+      if(!self.SaanoNanoDsp) throw new Error("heartnano_dsp.js did not load");
+      const meta = await fetchVoiceJson(dir + "/meta.json");
+      if(meta.runtime !== "nano_dsp_js") throw new Error(dir + "/meta.json: runtime " + meta.runtime + ", expected nano_dsp_js");
+      const note = progressTracker(onProgress, key + " voice");
+      const [front, dsp] = await Promise.all([
+        fetchVoiceFile(dir + "/" + meta.front,
+          {note, expect:{bytes:meta.front_bytes, sha256:meta.front_sha256}}),
+        fetchVoiceFile(dir + "/" + meta.dsp,
+          {note, expect:{bytes:meta.dsp_bytes, sha256:meta.dsp_sha256}}),
+      ]);
+      const runtime = self.SaanoNanoDsp.createVoice({meta, front, dsp});
+      if(onProgress) onProgress(note.summary(), "done");
+      return {meta, runtime};
+    })();
+    // as loadVoiceBundle: memoise the success only, so a failed fetch can be retried
+    pending.catch(() => { if(nanoBundles.get(key) === pending) nanoBundles.delete(key); });
+    nanoBundles.set(key, pending);
+  }
+  return nanoBundles.get(key);
+}
+async function synthNanoDsp(key, text){
+  const bundle = await loadNanoBundle(key);
+  if(!trellisFrontend){
+    if(!self.SaanoTrellisFrontend) throw new Error("trellis_frontend.js did not load");
+    trellisFrontend = self.SaanoTrellisFrontend.createFrontend({module:G2P});
+  }
+  const {ids} = trellisFrontend.textToIds(text);
+  // the package's default seed (meta.json "seed"), so a sentence renders as sanotts renders it
+  const t0 = performance.now();
+  const r = bundle.runtime.synthesize(ids);
+  return {pcm:r.pcm, ids, wall:(performance.now() - t0) / 1000, sr:r.sampleRate};
+}
 async function synthNano(key, text){
+  if((VOICES.find(v => v.key === key) || {}).dsp) return synthNanoDsp(key, text);
   const bundle = await loadNanoBundle(key);
   const N = NANO_MODULES[key];
   if(!N) throw new Error(bundle.meta.export_name + " did not load");
@@ -1604,8 +1653,8 @@ renderMascots(); updateUI();
 // console.debug; anything unrecognised still goes to console.error.
 const G2P_CHATTER = /^(?:Can't read dictionary file|Using phonemetable|Compiling: )|^\s*\d+ entries\s*$|^\s*\d+ rules, \d+ groups|^\s*$/;
 Promise.all([SaanoTTS(), SaanoG2P({ printErr: t => (G2P_CHATTER.test(t) ? console.debug : console.error)("g2p: " + t) }),
-             SaanoVoice(), SaanoTrellis(), SaanoNanoHeart(), SaanoNanoHeartNano()]).then(([m,g,v,t,nh,nn])=>{
-  Mod=m; G2P=g; Voice=v; Trellis=t; NANO_MODULES.heart=nh; NANO_MODULES.heartnano=nn;
+             SaanoVoice(), SaanoTrellis(), SaanoNanoHeart()]).then(([m,g,v,t,nh])=>{
+  Mod=m; G2P=g; Voice=v; Trellis=t; NANO_MODULES.heart=nh;
   const rc=G2P._snt_g2p_init ? G2P._snt_g2p_init() : 0;
   $("state").textContent="ready.";
   $("go").disabled=false;

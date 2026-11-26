@@ -1,0 +1,452 @@
+{
+ "key": "heart-nano",
+ "runtime": "nano_dsp_js",
+ "description": "sanotts 0.5.7 heart-nano (104,215 params): int8 local-feature front end + harmonic-plus-noise decoder, run by web/heartnano_dsp.js",
+ "sanotts_version": "0.5.7",
+ "params": 104215,
+ "param_breakdown": {
+  "duration": 14746,
+  "acoustic": 42235,
+  "dsp_decoder": 47234
+ },
+ "sample_rate": 24000,
+ "hop": 256,
+ "vocab_size": 62,
+ "frontend": "misaki-normalized espeak-ng IPA, character-level 62-symbol vocabulary (web/trellis_frontend.js)",
+ "seed": "2236265385529901705",
+ "front": "front_q8.bin",
+ "front_bytes": 75504,
+ "front_sha256": "a8681189df2e8299800c56179b66d8c274cc6756cee2114492ef9b6898354acb",
+ "dsp": "dsp_decoder_f32.bin",
+ "dsp_bytes": 188936,
+ "dsp_sha256": "c453281fb2b408ec93af079e12838fd343857fb41b54397a10e77d1947b2ba15",
+ "dsp_config": {
+  "pads": [
+   1,
+   1,
+   3,
+   1,
+   3,
+   1,
+   3,
+   1
+  ],
+  "minphase": true,
+  "harm_bands": 40,
+  "noise_bands": 24,
+  "noise_fft": 512,
+  "mp_noclamp": true
+ },
+ "dsp_tensors": [
+  {
+   "name": "inp_w",
+   "shape": [
+    48,
+    100,
+    3
+   ],
+   "offset": 0
+  },
+  {
+   "name": "inp_b",
+   "shape": [
+    48
+   ],
+   "offset": 14400
+  },
+  {
+   "name": "norm_w",
+   "shape": [
+    48
+   ],
+   "offset": 14448
+  },
+  {
+   "name": "norm_b",
+   "shape": [
+    48
+   ],
+   "offset": 14496
+  },
+  {
+   "name": "head_w",
+   "shape": [
+    66,
+    48
+   ],
+   "offset": 14544
+  },
+  {
+   "name": "head_b",
+   "shape": [
+    66
+   ],
+   "offset": 17712
+  },
+  {
+   "name": "theta",
+   "shape": [
+    80
+   ],
+   "offset": 17778
+  },
+  {
+   "name": "b0_dw_w",
+   "shape": [
+    48,
+    1,
+    5
+   ],
+   "offset": 17858
+  },
+  {
+   "name": "b0_dw_b",
+   "shape": [
+    48
+   ],
+   "offset": 18098
+  },
+  {
+   "name": "b0_n_w",
+   "shape": [
+    48
+   ],
+   "offset": 18146
+  },
+  {
+   "name": "b0_n_b",
+   "shape": [
+    48
+   ],
+   "offset": 18194
+  },
+  {
+   "name": "b0_p1_w",
+   "shape": [
+    96,
+    48
+   ],
+   "offset": 18242
+  },
+  {
+   "name": "b0_p1_b",
+   "shape": [
+    96
+   ],
+   "offset": 22850
+  },
+  {
+   "name": "b0_p2_w",
+   "shape": [
+    48,
+    96
+   ],
+   "offset": 22946
+  },
+  {
+   "name": "b0_p2_b",
+   "shape": [
+    48
+   ],
+   "offset": 27554
+  },
+  {
+   "name": "b0_gamma",
+   "shape": [
+    48
+   ],
+   "offset": 27602
+  },
+  {
+   "name": "b1_dw_w",
+   "shape": [
+    48,
+    1,
+    5
+   ],
+   "offset": 27650
+  },
+  {
+   "name": "b1_dw_b",
+   "shape": [
+    48
+   ],
+   "offset": 27890
+  },
+  {
+   "name": "b1_n_w",
+   "shape": [
+    48
+   ],
+   "offset": 27938
+  },
+  {
+   "name": "b1_n_b",
+   "shape": [
+    48
+   ],
+   "offset": 27986
+  },
+  {
+   "name": "b1_p1_w",
+   "shape": [
+    96,
+    48
+   ],
+   "offset": 28034
+  },
+  {
+   "name": "b1_p1_b",
+   "shape": [
+    96
+   ],
+   "offset": 32642
+  },
+  {
+   "name": "b1_p2_w",
+   "shape": [
+    48,
+    96
+   ],
+   "offset": 32738
+  },
+  {
+   "name": "b1_p2_b",
+   "shape": [
+    48
+   ],
+   "offset": 37346
+  },
+  {
+   "name": "b1_gamma",
+   "shape": [
+    48
+   ],
+   "offset": 37394
+  },
+  {
+   "name": "b2_dw_w",
+   "shape": [
+    48,
+    1,
+    5
+   ],
+   "offset": 37442
+  },
+  {
+   "name": "b2_dw_b",
+   "shape": [
+    48
+   ],
+   "offset": 37682
+  },
+  {
+   "name": "b2_n_w",
+   "shape": [
+    48
+   ],
+   "offset": 37730
+  },
+  {
+   "name": "b2_n_b",
+   "shape": [
+    48
+   ],
+   "offset": 37778
+  },
+  {
+   "name": "b2_p1_w",
+   "shape": [
+    96,
+    48
+   ],
+   "offset": 37826
+  },
+  {
+   "name": "b2_p1_b",
+   "shape": [
+    96
+   ],
+   "offset": 42434
+  },
+  {
+   "name": "b2_p2_w",
+   "shape": [
+    48,
+    96
+   ],
+   "offset": 42530
+  },
+  {
+   "name": "b2_p2_b",
+   "shape": [
+    48
+   ],
+   "offset": 47138
+  },
+  {
+   "name": "b2_gamma",
+   "shape": [
+    48
+   ],
+   "offset": 47186
+  }
+ ],
+ "offsets": {
+  "NANO_FORMAT_VERSION": 1,
+  "NANO_MAGIC_FRONT": 1312902726,
+  "NANO_MAGIC_DEC": 1312902724,
+  "NANO_VOCAB": 62,
+  "NANO_DUR_HIDDEN": 26,
+  "NANO_DUR_DEPTH": 3,
+  "NANO_DUR_KERNEL": 3,
+  "NANO_DUR_MAX_TOKENS": 256,
+  "NANO_DUR_MAX_DURATION": 80,
+  "NANO_AC_HIDDEN": 31,
+  "NANO_AC_TOKEN_DEPTH": 3,
+  "NANO_AC_DEPTH": 3,
+  "NANO_AC_KERNEL": 3,
+  "NANO_MELS": 100,
+  "NANO_DIM": 62,
+  "NANO_BLOCKS": 4,
+  "NANO_PW_HIDDEN": 186,
+  "NANO_DW_KERNEL": 7,
+  "NANO_EMBED_KERNEL": 7,
+  "NANO_NOISE_CH": 4,
+  "NANO_N_FFT": 1024,
+  "NANO_HOP": 256,
+  "NANO_BINS": 513,
+  "NANO_HEAD_OUT": 1026,
+  "NANO_NORM_TYPE": 0,
+  "NANO_ACT_TYPE": 0,
+  "NANO_DUR_PROJ_N16": 32,
+  "NANO_DUR_B0_C0_N16": 80,
+  "NANO_DUR_B0_C1_N16": 80,
+  "NANO_DUR_B1_C0_N16": 80,
+  "NANO_DUR_B1_C1_N16": 80,
+  "NANO_DUR_B2_C0_N16": 80,
+  "NANO_DUR_B2_C1_N16": 80,
+  "NANO_DUR_OUT_N16": 32,
+  "NANO_AC_TPROJ_N16": 48,
+  "NANO_AC_TB0_C0_N16": 96,
+  "NANO_AC_TB0_C1_N16": 96,
+  "NANO_AC_TB1_C0_N16": 96,
+  "NANO_AC_TB1_C1_N16": 96,
+  "NANO_AC_TB2_C0_N16": 96,
+  "NANO_AC_TB2_C1_N16": 96,
+  "NANO_AC_FPROJ_N16": 48,
+  "NANO_AC_FB0_C0_N16": 96,
+  "NANO_AC_FB0_C1_N16": 96,
+  "NANO_AC_FB1_C0_N16": 96,
+  "NANO_AC_FB1_C1_N16": 96,
+  "NANO_AC_FB2_C0_N16": 96,
+  "NANO_AC_FB2_C1_N16": 96,
+  "NANO_AC_OUT_N16": 32,
+  "NANO_EMBED_N16": 704,
+  "NANO_NOISE_N16": 32,
+  "NANO_B0_PW0_N16": 64,
+  "NANO_B0_PW1_N16": 192,
+  "NANO_B1_PW0_N16": 64,
+  "NANO_B1_PW1_N16": 192,
+  "NANO_B2_PW0_N16": 64,
+  "NANO_B2_PW1_N16": 192,
+  "NANO_B3_PW0_N16": 64,
+  "NANO_B3_PW1_N16": 192,
+  "NANO_HEAD_N16": 64,
+  "NOFF_DUR_EMB_F32": 0,
+  "NOFF_DUR_PROJ_W8": 6448,
+  "NOFF_DUR_PROJ_SCALE": 7280,
+  "NOFF_DUR_PROJ_BIAS": 7392,
+  "NOFF_DUR_B0_C0_W8": 7504,
+  "NOFF_DUR_B0_C0_SCALE": 9584,
+  "NOFF_DUR_B0_C0_BIAS": 9696,
+  "NOFF_DUR_B0_C1_W8": 9808,
+  "NOFF_DUR_B0_C1_SCALE": 11888,
+  "NOFF_DUR_B0_C1_BIAS": 12000,
+  "NOFF_DUR_B0_SCALE_F32": 12112,
+  "NOFF_DUR_B1_C0_W8": 12128,
+  "NOFF_DUR_B1_C0_SCALE": 14208,
+  "NOFF_DUR_B1_C0_BIAS": 14320,
+  "NOFF_DUR_B1_C1_W8": 14432,
+  "NOFF_DUR_B1_C1_SCALE": 16512,
+  "NOFF_DUR_B1_C1_BIAS": 16624,
+  "NOFF_DUR_B1_SCALE_F32": 16736,
+  "NOFF_DUR_B2_C0_W8": 16752,
+  "NOFF_DUR_B2_C0_SCALE": 18832,
+  "NOFF_DUR_B2_C0_BIAS": 18944,
+  "NOFF_DUR_B2_C1_W8": 19056,
+  "NOFF_DUR_B2_C1_SCALE": 21136,
+  "NOFF_DUR_B2_C1_BIAS": 21248,
+  "NOFF_DUR_B2_SCALE_F32": 21360,
+  "NOFF_DUR_OUT_W8": 21376,
+  "NOFF_DUR_OUT_SCALE": 21408,
+  "NOFF_DUR_OUT_BIAS": 21424,
+  "NOFF_AC_EMB_F32": 21440,
+  "NOFF_AC_TPROJ_W8": 29136,
+  "NOFF_AC_TPROJ_SCALE": 30624,
+  "NOFF_AC_TPROJ_BIAS": 30752,
+  "NOFF_AC_TB0_C0_W8": 30880,
+  "NOFF_AC_TB0_C0_SCALE": 33856,
+  "NOFF_AC_TB0_C0_BIAS": 33984,
+  "NOFF_AC_TB0_C1_W8": 34112,
+  "NOFF_AC_TB0_C1_SCALE": 37088,
+  "NOFF_AC_TB0_C1_BIAS": 37216,
+  "NOFF_AC_TB0_SCALE_F32": 37344,
+  "NOFF_AC_TB1_C0_W8": 37360,
+  "NOFF_AC_TB1_C0_SCALE": 40336,
+  "NOFF_AC_TB1_C0_BIAS": 40464,
+  "NOFF_AC_TB1_C1_W8": 40592,
+  "NOFF_AC_TB1_C1_SCALE": 43568,
+  "NOFF_AC_TB1_C1_BIAS": 43696,
+  "NOFF_AC_TB1_SCALE_F32": 43824,
+  "NOFF_AC_TB2_C0_W8": 43840,
+  "NOFF_AC_TB2_C0_SCALE": 46816,
+  "NOFF_AC_TB2_C0_BIAS": 46944,
+  "NOFF_AC_TB2_C1_W8": 47072,
+  "NOFF_AC_TB2_C1_SCALE": 50048,
+  "NOFF_AC_TB2_C1_BIAS": 50176,
+  "NOFF_AC_TB2_SCALE_F32": 50304,
+  "NOFF_AC_FPROJ_W8": 50320,
+  "NOFF_AC_FPROJ_SCALE": 51808,
+  "NOFF_AC_FPROJ_BIAS": 51936,
+  "NOFF_AC_FB0_C0_W8": 52064,
+  "NOFF_AC_FB0_C0_SCALE": 55040,
+  "NOFF_AC_FB0_C0_BIAS": 55168,
+  "NOFF_AC_FB0_C1_W8": 55296,
+  "NOFF_AC_FB0_C1_SCALE": 58272,
+  "NOFF_AC_FB0_C1_BIAS": 58400,
+  "NOFF_AC_FB0_SCALE_F32": 58528,
+  "NOFF_AC_FB1_C0_W8": 58544,
+  "NOFF_AC_FB1_C0_SCALE": 61520,
+  "NOFF_AC_FB1_C0_BIAS": 61648,
+  "NOFF_AC_FB1_C1_W8": 61776,
+  "NOFF_AC_FB1_C1_SCALE": 64752,
+  "NOFF_AC_FB1_C1_BIAS": 64880,
+  "NOFF_AC_FB1_SCALE_F32": 65008,
+  "NOFF_AC_FB2_C0_W8": 65024,
+  "NOFF_AC_FB2_C0_SCALE": 68000,
+  "NOFF_AC_FB2_C0_BIAS": 68128,
+  "NOFF_AC_FB2_C1_W8": 68256,
+  "NOFF_AC_FB2_C1_SCALE": 71232,
+  "NOFF_AC_FB2_C1_BIAS": 71360,
+  "NOFF_AC_FB2_SCALE_F32": 71488,
+  "NOFF_AC_OUT_W8": 71504,
+  "NOFF_AC_OUT_SCALE": 74704,
+  "NOFF_AC_OUT_BIAS": 75104,
+  "NANO_FRONT_BYTES": 75504,
+  "NANO_DEC_BYTES": 235936,
+  "NANO_LOCAL_FEATURES": 1
+ },
+ "source": {
+  "hf_repo": "ampixa/sanoTTS",
+  "revision": "091814b27c17febea3b5951f0a836e5c30506636",
+  "folder": "heartnano-dsp",
+  "meta.json": "171729d2f5a830547d988bea0980dc02c3947359c70435cb152a430de0d4a04b",
+  "front_q8.bin": "a8681189df2e8299800c56179b66d8c274cc6756cee2114492ef9b6898354acb",
+  "nano_q8_meta.h": "fb6298b5d2cb595139151796374e32d87532f05f6b7340d942f2d963e68d5692",
+  "dsp_decoder.npz": "caca0d0ab83ff2b774e61d28bd5dd409e053ba9f8632b48a3f1c8a003fc44029",
+  "lineage": "heart-nano 0.5.7: heartnanos front end (k3 local features, unchanged) + harmonic-plus-noise decoder hn-s48 (ControlNet dim 48, 80 harmonics with minimum-phase phases, 512-point noise), 65k steps, EMA",
+  "exported": "2026-11-24T21:37:39+00:00 via ~/heartnano-s/export_front_local.py"
+ },
+ "converted_by": "tools/convert_heartnano_dsp_web.py"
+}
