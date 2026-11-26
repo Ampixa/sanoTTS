@@ -103,3 +103,30 @@ def test_corrupt_table_raises(tmp_path):
     path.write_bytes(b"not xz")
     with pytest.raises(oov.OOVModelError, match="could not read"):
         oov._WordTable(path, "a" * 64)
+
+
+def _model_with_meta(tmp_path, **extra):
+    """A copy of the shipped model whose meta_json gains `extra` (weights unchanged, so a new sha256)."""
+    import json
+    with np.load(oov.MODEL_PATH, allow_pickle=False) as z:
+        arrays = {k: z[k] for k in z.files}
+    meta = json.loads(str(arrays["meta_json"]))
+    meta.update(extra)
+    arrays["meta_json"] = np.array(json.dumps(meta, ensure_ascii=False))
+    out = tmp_path / "model.npz"
+    np.savez(out, **arrays)
+    return out
+
+
+def test_model_may_name_the_table_source(decoder, tmp_path):
+    # a replacement model that declares the shipped table's model keeps that table in front of it
+    m = oov.OOVPhonemizer(_model_with_meta(tmp_path, table_model_sha256=decoder.model_sha256))
+    assert m.model_sha256 != decoder.model_sha256
+    shipped = oov.OOVPhonemizer().table()
+    assert m.table() is not None and m.table().get("Hello") == shipped.get("Hello") is not None
+
+
+def test_table_of_another_model_is_refused_without_the_declaration(tmp_path):
+    m = oov.OOVPhonemizer(_model_with_meta(tmp_path, note="changed"))
+    with pytest.raises(oov.OOVModelError):
+        m.table()

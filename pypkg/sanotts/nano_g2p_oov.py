@@ -374,6 +374,10 @@ class OOVPhonemizer:
         self._fast: tuple | None = None
         self._enc_fast: tuple | None = None
         self.model_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+        # The word table holds one model's answers. A smaller model may sit behind a table built by the model
+        # it replaces (its meta names that model), so common words keep the larger model's answers and only
+        # the words the table lacks are decoded here. Without the field the table must be this model's own.
+        self.table_sha256 = str(meta.get("table_model_sha256") or self.model_sha256)
         self._table_path = None if table_path is None else Path(table_path)
         self._table: _WordTable | None = None
 
@@ -382,7 +386,7 @@ class OOVPhonemizer:
         if self._table is None and self._table_path is not None:
             if not self._table_path.is_file():
                 raise OOVModelError(f"word table not found at {self._table_path}")
-            self._table = _WordTable(self._table_path, self.model_sha256)
+            self._table = _WordTable(self._table_path, self.table_sha256)
         return self._table
 
     def _known(self, word: str) -> str | None:
