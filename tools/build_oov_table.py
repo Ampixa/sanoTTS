@@ -68,7 +68,7 @@ def build(out_path: str) -> None:
     threadpool_limits(limits=1)
     if any(p.get("num_threads") != 1 for p in threadpool_info()):
         raise SystemExit(f"could not cap BLAS at one thread: {threadpool_info()}")
-    model = nano_g2p_oov.OOVPhonemizer(table_path=None)
+    model = nano_g2p_oov.OOVPhonemizer(nano_g2p_oov.TABLE_MODEL_PATH, table_path=None)
     model.warm()
     limit = model.max_positions - 2  # bos + eos
     keys: list[str] = []
@@ -90,7 +90,7 @@ def build(out_path: str) -> None:
         if i % 20000 == 0:
             print(f"{i}/{len(keys)} {time.perf_counter() - t0:.0f}s", flush=True)
 
-    model_sha = hashlib.sha256(Path(nano_g2p_oov.MODEL_PATH).read_bytes()).hexdigest()
+    model_sha = hashlib.sha256(Path(nano_g2p_oov.TABLE_MODEL_PATH).read_bytes()).hexdigest()
     payload = {
         "format": 1,
         "model_sha256": model_sha,
@@ -106,7 +106,7 @@ def build(out_path: str) -> None:
 
 def pack(entries_path: str, out_path: str) -> None:
     payload = json.loads(lzma.decompress(Path(entries_path).read_bytes()))
-    model_sha = hashlib.sha256(Path(nano_g2p_oov.MODEL_PATH).read_bytes()).hexdigest()
+    model_sha = hashlib.sha256(Path(nano_g2p_oov.TABLE_MODEL_PATH).read_bytes()).hexdigest()
     if payload["model_sha256"] != model_sha:
         raise SystemExit(f"{entries_path} was built for model {payload['model_sha256']}, not {model_sha}")
     meta = {k: payload[k] for k in ("source", "built_on")}

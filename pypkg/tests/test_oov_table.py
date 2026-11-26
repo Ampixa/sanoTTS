@@ -20,7 +20,7 @@ from sanotts import nano_g2p_oov as oov  # noqa: E402
 
 @pytest.fixture(scope="module")
 def decoder():
-    return oov.OOVPhonemizer(table_path=None)
+    return oov.OOVPhonemizer(oov.TABLE_MODEL_PATH, table_path=None)  # the model the table was built with
 
 
 @pytest.fixture(scope="module")
@@ -106,11 +106,13 @@ def test_corrupt_table_raises(tmp_path):
 
 
 def _model_with_meta(tmp_path, **extra):
-    """A copy of the shipped model whose meta_json gains `extra` (weights unchanged, so a new sha256)."""
+    """A copy of the shipped model whose meta_json drops table_model_sha256 and gains `extra`
+    (weights unchanged, so a new sha256)."""
     import json
     with np.load(oov.MODEL_PATH, allow_pickle=False) as z:
         arrays = {k: z[k] for k in z.files}
     meta = json.loads(str(arrays["meta_json"]))
+    meta.pop("table_model_sha256", None)
     meta.update(extra)
     arrays["meta_json"] = np.array(json.dumps(meta, ensure_ascii=False))
     out = tmp_path / "model.npz"
@@ -120,7 +122,7 @@ def _model_with_meta(tmp_path, **extra):
 
 def test_model_may_name_the_table_source(decoder, tmp_path):
     # a replacement model that declares the shipped table's model keeps that table in front of it
-    m = oov.OOVPhonemizer(_model_with_meta(tmp_path, table_model_sha256=decoder.model_sha256))
+    m = oov.OOVPhonemizer(_model_with_meta(tmp_path, table_model_sha256=decoder.table_sha256))
     assert m.model_sha256 != decoder.model_sha256
     shipped = oov.OOVPhonemizer().table()
     assert m.table() is not None and m.table().get("Hello") == shipped.get("Hello") is not None
@@ -130,3 +132,11 @@ def test_table_of_another_model_is_refused_without_the_declaration(tmp_path):
     m = oov.OOVPhonemizer(_model_with_meta(tmp_path, note="changed"))
     with pytest.raises(oov.OOVModelError):
         m.table()
+
+
+def test_shipped_model_is_the_small_one_behind_the_751k_table():
+    import hashlib
+    m = oov.OOVPhonemizer()
+    assert oov.MODEL_PATH.name == "oov_small_en_us.npz"
+    assert m.table_sha256 == hashlib.sha256(oov.TABLE_MODEL_PATH.read_bytes()).hexdigest()
+    assert m.table() is not None and m.table().get("Hello") is not None

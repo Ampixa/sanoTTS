@@ -1,7 +1,8 @@
 """The bundled voice registry (sanotts/tables/voices.json).
 
-Since 0.5.7 the name heart-nano means the streaming 104k voice with the harmonic-plus-noise decoder
-(heartnano-dsp/). 0.5.6 pointed it at heartnanos/ (263k, neural decoder); heart-nano-s is kept as an alias so
+Since 0.5.7 the name heart-nano means the streaming 104k voice with the harmonic-plus-noise decoder; since
+0.5.8 it is the same voice with float16 decoder weights and no neural decoder blob (heartnano-f16/; 0.5.7 read
+heartnano-dsp/). 0.5.6 pointed it at heartnanos/ (263k, neural decoder); heart-nano-s is kept as an alias so
 0.5.5 scripts keep working. The first heart-nano (heartnano/, 294k) is no longer in the registry.
 
 Run:  python3 -m pytest pypkg/tests/test_voice_registry.py -v
@@ -28,9 +29,9 @@ def _voices():
 
 def test_heart_nano_is_the_streaming_voice():
     e = voicepack._registry_entry("heart-nano")
-    assert e["package"] == "heartnano-dsp"
+    assert e["package"] == "heartnano-f16"
     assert e["parameters"] == 104_215
-    assert e["archive"] == "heartnano-dsp-s48k65"
+    assert e["archive"] == "heartnano-f16-s48k65"
     assert voicepack.voice_runtime("heart-nano") == "nano"
 
 
@@ -63,4 +64,4 @@ def test_unknown_voice_lists_names():
 def test_dsp_voice_has_its_own_cache_directory():
     # The cache counts a package as present once meta.json exists, so shipping the DSP decoder inside the
     # existing heartnanos/ directory would leave every cached 0.5.6 install on the neural decoder in silence.
-    assert voicepack._registry_entry("heart-nano")["package"] != "heartnanos"
+    assert voicepack._registry_entry("heart-nano")["package"] not in ("heartnanos", "heartnano-dsp")

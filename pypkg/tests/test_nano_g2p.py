@@ -77,8 +77,21 @@ def _edit_distance(a: list[int], b: list[int]) -> int:
 
 
 def test_oov_model_is_stable() -> None:
-    model = shared_phonemizer()
+    # OOV_EXPECTED is the 751k model's (the word table's source), decoded without the table.
+    from sanotts import nano_g2p_oov  # noqa: PLC0415
+    model = nano_g2p_oov.OOVPhonemizer(nano_g2p_oov.TABLE_MODEL_PATH, table_path=None)
     for word, expected in OOV_EXPECTED.items():
+        got = model(word)
+        assert got == expected, f"{word!r}: expected {expected!r}, got {got!r}"
+
+
+# The shipped stack (table, then the 96k model): four words come from the table, two are decoded.
+SHIPPED_EXPECTED = dict(OOV_EXPECTED, Euroclydon="jˌʊɹOklˈIdᵊn")
+
+
+def test_shipped_oov_path_is_stable() -> None:
+    model = shared_phonemizer()
+    for word, expected in SHIPPED_EXPECTED.items():
         got = model(word)
         assert got == expected, f"{word!r}: expected {expected!r}, got {got!r}"
 

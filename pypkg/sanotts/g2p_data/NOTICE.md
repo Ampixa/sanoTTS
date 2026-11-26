@@ -37,7 +37,22 @@ a substitute for them: that extra pulls in `phonemizer-fork` (GPL-3.0),
 `espeakng-loader`, `spacy` and `spacy-curated-transformers`, which is both the
 licence this work removes and the dependency weight this package refuses.
 
-## `oov_bart_en_us.npz`
+## `oov_small_en_us.npz` (shipped in the wheel since sanotts 0.5.8)
+
+- **What it is:** the OOV model the package runs: a 96,511-parameter BART of
+  the same layout as `oov_bart_en_us.npz` below (one encoder layer, one decoder
+  layer, one attention head, same tokens) at d_model 64, float16 weights,
+  211,658 B. It was distilled from `oov_bart_en_us.npz`; neither model involves
+  espeak-ng.
+- **Licence:** GPL-3.0-or-later, as the rest of sanoTTS. The model it was
+  distilled from is Apache-2.0 (Peter Reid, below).
+- **How it is used:** words the dictionaries lack are first looked up in
+  `oov_table_en_us.npz.xz` (the 751k model's answers); only words missing
+  there are decoded by this model. Its meta records the sha256 of
+  `oov_bart_en_us.npz` as `table_model_sha256` so the table is accepted.
+
+## `oov_bart_en_us.npz` (repository only since 0.5.8; the word table's source)
+
 
 - **Upstream:** <https://huggingface.co/PeterReid/graphemes_to_phonemes_en_us>
 - **Revision:** `a5631b285d18d59483c32c0c3379cb9fac924f4b`

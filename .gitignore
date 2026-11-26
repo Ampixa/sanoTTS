@@ -21,6 +21,7 @@ artifacts/
 # wheel, so a blanket *.npz silently drops it and every English voice fails
 # on a clean install with "fallback model not found".
 !pypkg/sanotts/g2p_data/oov_bart_en_us.npz
+!pypkg/sanotts/g2p_data/oov_small_en_us.npz
 *.npy
 *.wav
 *.mp3

@@ -1,14 +1,19 @@
 """Numpy-only grapheme -> phoneme model for words the dictionary does not have.
 
-The checkpoint is PeterReid/graphemes_to_phonemes_en_us (Apache-2.0), a
-751,551-parameter BART with one encoder layer, one decoder layer, one attention
-head and d_model 128, trained on misaki's own us_gold/us_silver dictionaries.
-It was not distilled from espeak-ng, which is the whole point: it is the OOV
-path for a front end that must not carry a GPL dependency.
+The shipped model, `g2p_data/oov_small_en_us.npz`, is a 96,511-parameter
+BART (one encoder layer, one decoder layer, one attention head, d_model 64)
+distilled from PeterReid/graphemes_to_phonemes_en_us (Apache-2.0), a
+751,551-parameter BART of the same shape at d_model 128 that was trained on
+misaki's own us_gold/us_silver dictionaries. Neither involves espeak-ng, which
+is the whole point: this is the OOV path for a front end that must not carry a
+GPL dependency.
 
-`tools/build_nano_g2p_assets.py` converts the published safetensors to
-`g2p_data/oov_bart_en_us.npz`; this module is the forward pass, transcribed
-from transformers' `BartModel` so it can run under numpy alone:
+The 751k model (`g2p_data/oov_bart_en_us.npz`, converted from the published
+safetensors by `tools/build_nano_g2p_assets.py`) stays in the repository but
+not in the wheel: the word table below holds its answers for common words, so
+only the words the table lacks are decoded by the small model. This module is
+the forward pass for either, transcribed from transformers' `BartModel` so it
+can run under numpy alone:
 
   * post-norm blocks (residual add, then LayerNorm), which is BART, not the
     pre-norm arrangement most later decoders use;
@@ -22,7 +27,7 @@ from transformers' `BartModel` so it can run under numpy alone:
 Decoding is greedy, per word, with the decoder's keys and values cached
 (`_greedy`); `prefetch` decodes a text's unknown words as one batch, and
 common words are not decoded at all but read from a table of this model's
-own outputs (`_WordTable`, built by tools/build_oov_table.py).
+751k model's outputs (`_WordTable`, built by tools/build_oov_table.py).
 """
 
 from __future__ import annotations
@@ -39,9 +44,11 @@ from pathlib import Path
 import numpy as np
 
 DATA_DIR = Path(__file__).resolve().parent / "g2p_data"
-MODEL_PATH = DATA_DIR / "oov_bart_en_us.npz"
-# This model's own output for common words, precomputed by
-# tools/build_oov_table.py (see _WordTable).
+MODEL_PATH = DATA_DIR / "oov_small_en_us.npz"
+# The model the word table was built with (repository only, not in the wheel).
+TABLE_MODEL_PATH = DATA_DIR / "oov_bart_en_us.npz"
+# TABLE_MODEL_PATH's output for common words, precomputed by
+# tools/build_oov_table.py (see _WordTable); MODEL_PATH's meta names its sha256.
 TABLE_PATH = DATA_DIR / "oov_table_en_us.npz.xz"
 
 # The tokenizer reserves 0..3 for <pad>/<s>/</s>/<unk> and then indexes the

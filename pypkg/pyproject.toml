@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sanotts"
-version = "0.5.7"
+version = "0.5.8"
 description = "Self-contained, numpy-only inference runtime for sanoTTS voices, including the 263k and 2.27M heart voices."
 readme = { text = "sanotts: pip-installable, numpy-only inference for sanoTTS voices. Two graphs are supported: the piperlite voices (amy, kristin, hfc, vi, id) and the nano voices (heart at 2.27M parameters, heart-nano at 263k, streaming from the first words), the latter running mel-100 -> ConvNeXt1D -> iSTFT with a noise-fed decoder. Both are gated against the same PyTorch references the C runtime is held to. Voices download on demand or load from a local directory.", content-type = "text/plain" }
 license = { text = "MIT" }
@@ -38,7 +38,8 @@ include = [
   "sanotts/**/*.py",
   "sanotts/tables/*.json",
   "sanotts/g2p_data/*.json",
-  "sanotts/g2p_data/*.npz",
+  # The small OOV model only; oov_bart_en_us.npz (751k, the word table's source) stays in the repo.
+  "sanotts/g2p_data/oov_small_en_us.npz",
   # The OOV model's precomputed answers for common words (tools/build_oov_table.py).
   "sanotts/g2p_data/oov_table_en_us.npz.xz",
   "sanotts/g2p_data/NOTICE.md",
@@ -57,7 +58,7 @@ include = [
 # escape hatch for exactly that -- files that must ship even though the VCS
 # ignores them.
 artifacts = [
-  "sanotts/g2p_data/*.npz",
+  "sanotts/g2p_data/oov_small_en_us.npz",
 ]
 
 [tool.hatch.build.targets.wheel]
