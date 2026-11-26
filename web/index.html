@@ -278,7 +278,7 @@
 
 
   <ul class="hl">
-    <li>smallest neural TTS family known &mdash; <b>294k to 2.3M parameters</b></li>
+    <li>smallest neural TTS family known &mdash; <b>104k to 2.3M parameters</b></li>
     <li>runs <b>real-time</b> on a <b>$3 microcontroller</b> (ESP32-S3)</li>
     <li>runs right in your browser &mdash; <b>WebAssembly</b>, no server</li>
     <li>under <b>4&nbsp;MB</b> per voice, zero dependencies (espeak-ng phonemizer included)</li>
@@ -292,6 +292,12 @@
     <li><b>new:</b> <b>heart</b>, our best-sounding voice at <b>2.27M parameters</b> and 24&nbsp;kHz, and
       <b>heart-nano</b>, the same voice squeezed into <b>294k parameters</b> &mdash; a complete
       text-to-speech stack, int8, in 337&nbsp;KB. Both synthesize live in the picker above</li>
+    <li><b>new (2026-11-26):</b> <b>heart-nano</b> in <b>104k parameters</b> &mdash; the same front end
+      that starts speaking after the first few words, now with a 47k-parameter harmonic-plus-noise
+      decoder. On CV3-Eval English: word error 1.15&nbsp;% and UTMOS 3.88 (the 294k version: 1.57&nbsp;% and 2.37).
+      For Python only for now (<code>pip install sanotts==0.5.7</code>, voice <code>heart-nano</code>):
+      the browser picker above still plays the 294k version.
+      <a href="https://huggingface.co/ampixa/sanoTTS">Numbers and method</a></li>
     <li><b>new, experimental:</b> <b>trellis</b> &mdash; a whole new architecture that fits a
       complete voice in <b>under 1M parameters</b> and runs about <b>5&times; faster</b> in the
       browser than our 1.4M&ndash;1.8M voices. It synthesizes live up there too &mdash; a research
@@ -325,12 +331,12 @@
     <text x="592.1" y="245" text-anchor="middle" fill="#666" font-size="10">80M</text>
     <text x="382" y="263" text-anchor="middle" fill="#888" font-size="10">parameters &#8212; linear axis, so the sliver IS the point</text>
 
-    <!-- sanoTTS family: darker crimson 0..0.29M (smallest voice), crimson to 2.27M (largest); 5.588 px per million -->
+    <!-- sanoTTS family: darker crimson 0..0.10M (smallest voice), crimson to 2.27M (largest); 5.588 px per million -->
     <text x="135" y="39" text-anchor="end" fill="#111" font-weight="bold" font-size="12">sanoTTS (11 voices)</text>
-    <text x="135" y="53" text-anchor="end" fill="#666" font-size="10">0.29M&#8211;2.27M params</text>
+    <text x="135" y="53" text-anchor="end" fill="#666" font-size="10">0.10M&#8211;2.27M params</text>
     <rect x="145" y="30" width="12.7" height="20" fill="#DC143C"><title>sanoTTS family: largest voice heart, 2.27M params</title></rect>
-    <rect x="145" y="30" width="1.6" height="20" fill="#8B0A26"><title>sanoTTS family: smallest voice heart-nano, 294k params</title></rect>
-    <text x="163" y="44" fill="#DC143C" font-weight="bold">0.29M&#8211;2.27M</text>
+    <rect x="145" y="30" width="0.6" height="20" fill="#8B0A26"><title>sanoTTS family: smallest voice heart-nano, 104k params</title></rect>
+    <text x="163" y="44" fill="#DC143C" font-weight="bold">0.10M&#8211;2.27M</text>
 
     <!-- TinyTTS 1.62M -->
     <text x="135" y="92" text-anchor="end" fill="#111" font-weight="bold" font-size="13">TinyTTS</text>
@@ -353,7 +359,7 @@
   <p style="text-align:center;margin:14px 0 6px">Kokoro is
     <span style="color:var(--accent);font-weight:bold;font-size:30px;vertical-align:-2px">36&times;</span>
     larger than our largest voice &mdash; and
-    <span style="color:var(--accent);font-weight:bold;font-size:30px;vertical-align:-2px">279&times;</span>
+    <span style="color:var(--accent);font-weight:bold;font-size:30px;vertical-align:-2px">787&times;</span>
     larger than our smallest.</p>
   <p class="note" style="text-align:center">Shipped-file sizes: sanoTTS amy 2.8&nbsp;MB fp16 and TinyTTS
   3.5&nbsp;MB fp16, both verified from the released files; Kokoro's ~330&nbsp;MB fp32 is its widely cited
@@ -388,8 +394,8 @@
   <p class="note">Same 24-sentence set, three independent no-reference metrics; best value per row in
   crimson. sanoTTS amy leads on SCOREQ and UTMOS; on DNSMOS-SIG TinyTTS edges us by 0.01 &mdash; no single
   metric tells the whole story. <i>heart</i> is a different voice and recipe (24&nbsp;kHz, noise-shaping
-  decoder) scored on the identical 24 sentences; <i>heart-nano</i>, its 294k sibling, scores
-  2.29 / 2.45 / 3.35 on the same three metrics.</p>
+  decoder) scored on the identical 24 sentences; the 294k <i>heart-nano</i> in the picker scores
+  2.29 / 2.45 / 3.35 on the same three metrics (the 104k heart-nano has not been scored on this set yet).</p>
 
   <p class="lead" style="margin:32px 0 6px"><b>The size-quality frontier we traced</b></p>
   <svg viewBox="0 0 640 260" font-family="Lucida Console, Monaco, monospace" font-size="11"
